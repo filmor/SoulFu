@@ -27,6 +27,8 @@ extern int obj_num_property;
 extern char property_type[MAX_PROPERTY];
 
 extern unsigned char main_character_data[MAX_CHARACTER][CHARACTER_SIZE]; 
+extern unsigned char main_character_on[MAX_CHARACTER];
+extern unsigned char* main_character_script_start[MAX_CHARACTER];
 
 
 void obj_setup(void);

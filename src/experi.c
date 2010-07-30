@@ -1,5 +1,10 @@
 // <ZZ> This file has stuff for giving experience...
 
+#include "experi.h"
+#include "soulfu.h"
+#include "object.h"
+#include <stdlib.h>
+
 #define MAX_EXPERIENCE_TYPE  8
 #define EXPERIENCE_GIVE                0
 #define EXPERIENCE_GET_NEEDED          1
