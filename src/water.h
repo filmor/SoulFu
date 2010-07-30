@@ -8,6 +8,7 @@
 #define WATER_GENERATE_SIZE 64
 #define WATER_GENERATORS 256
 
+extern unsigned char drown_delay[256];
 void water_generate(unsigned short numer_of_frames);
 
 #endif

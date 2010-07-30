@@ -2,14 +2,6 @@
 unsigned char* pnumber_file = NULL;
 
 signed short global_damage_amount;
-#define MAX_DAMAGE_TYPE 7
-#define DAMAGE_EDGE      0
-#define DAMAGE_BASH      1
-#define DAMAGE_ACID      2
-#define DAMAGE_FIRE      3
-#define DAMAGE_ICE       4
-#define DAMAGE_VOLT      5
-#define DAMAGE_WOUND     6
 unsigned char damage_color_rgb[MAX_DAMAGE_TYPE][3] = {{200, 0, 0},
                                                        {200, 0, 0},
                                                        {117, 214, 0},

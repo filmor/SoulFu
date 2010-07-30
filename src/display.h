@@ -47,5 +47,10 @@
 //      display_fade                - Draws the fade effect
 //      display_look_at             - Sets up the camera matrix...
 
+extern float camera_to_distance;
+extern int camera_rotation_add_xy[2];
+extern unsigned char display_full_screen;
 extern float camera_fore_xyz[3];               // The forward vector of the camera
+extern float camera_xyz[3];
+extern float map_side_xy[2];
 #endif

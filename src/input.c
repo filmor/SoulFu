@@ -1,5 +1,11 @@
 #include "input.h"
 
+#include "soulfu.h"
+#include "display.h"
+
+#include <stdlib.h>
+#include <SDL/SDL_events.h>
+
 // !!!BAD!!!
 // !!!BAD!!!
 // !!!BAD!!!  Stuff up here
@@ -192,8 +198,8 @@ void input_update(void)
         {
             // Joystick controls...
             joystick = (player_device_type[i]-2) & (MAX_JOYSTICK-1);
-            player_device_xy[i][X] = joystick_position_xy[joystick][X];
-            player_device_xy[i][Y] = joystick_position_xy[joystick][Y];
+            player_device_xy[i][0] = joystick_position_xy[joystick][0];
+            player_device_xy[i][1] = joystick_position_xy[joystick][1];
 
 
             // Fill in button presses...  Only set 'em (don't unset 'em here...  unset when used...)
@@ -221,8 +227,8 @@ void input_update(void)
         }
         else
         {
-            player_device_xy[i][X] = 0.0f;
-            player_device_xy[i][Y] = 0.0f;
+            player_device_xy[i][0] = 0.0f;
+            player_device_xy[i][1] = 0.0f;
             if(player_device_type[i] == 1)
             {
                 if(global_block_keyboard_timer > 0 || input_active > 0)
@@ -243,19 +249,19 @@ void input_update(void)
                     // Keyboard controls...
                     if(key_down[player_device_button[i][PLAYER_DEVICE_BUTTON_MOVE_UP] % MAX_KEY])
                     {
-                        player_device_xy[i][Y]-=1.0f;
+                        player_device_xy[i][1]-=1.0f;
                     }
                     if(key_down[player_device_button[i][PLAYER_DEVICE_BUTTON_MOVE_DOWN] % MAX_KEY])
                     {
-                        player_device_xy[i][Y]+=1.0f;
+                        player_device_xy[i][1]+=1.0f;
                     }
                     if(key_down[player_device_button[i][PLAYER_DEVICE_BUTTON_MOVE_LEFT] % MAX_KEY])
                     {
-                        player_device_xy[i][X]-=1.0f;
+                        player_device_xy[i][0]-=1.0f;
                     }
                     if(key_down[player_device_button[i][PLAYER_DEVICE_BUTTON_MOVE_RIGHT] % MAX_KEY])
                     {
-                        player_device_xy[i][X]+=1.0f;
+                        player_device_xy[i][0]+=1.0f;
                     }
 
 
@@ -332,8 +338,8 @@ void input_setup(void)
     repeat(i, MAX_JOYSTICK)
     {
         joystick_structure[i] = NULL;
-        joystick_position_xy[i][X] = 0.0f;
-        joystick_position_xy[i][Y] = 0.0f;
+        joystick_position_xy[i][0] = 0.0f;
+        joystick_position_xy[i][1] = 0.0f;
         repeat(j, MAX_JOYSTICK_BUTTON)
         {
             joystick_button_pressed[i][j] = FALSE;
@@ -529,7 +535,7 @@ void input_read(void)
             case SDL_JOYAXISMOTION:
                 if(event.jaxis.which < MAX_JOYSTICK)
                 {
-                    if(event.jaxis.axis == X || event.jaxis.axis == Y)
+                    if(event.jaxis.axis == 0 || event.jaxis.axis == 1)
                     {
                         joystick_position_xy[event.jaxis.which][event.jaxis.axis] = 0.0f;
                         if(event.jaxis.value < -JOY_TOLERANCE)
@@ -659,171 +665,6 @@ void input_read(void)
 }
 
 
-//-------------------------------------------------------------------------------------------
-/* <ZZ> Old input_read() with stuck keys
-void input_read(void)
-{
-    // <ZZ> This function asks SDL what's happening, and translates that into something more
-    //      useful.  It fills up lots of input arrays...
-    SDL_Event event;
-    int i, j, num_event;
-
-
-
-    // Unpress all of the keys
-    repeat(i, MAX_KEY)
-    {
-        key_pressed[i] = FALSE;
-        key_unpressed[i] = FALSE;
-    }
-
-
-    // Unpress all of the joystick buttons...
-    repeat(i, num_joystick)
-    {
-        repeat(j, MAX_JOYSTICK_BUTTON)
-        {
-            joystick_button_pressed[i][j] = FALSE;
-            joystick_button_unpressed[i][j] = FALSE;
-        }
-    }
-
-
-    // Handle events that we've gotten since last update...
-    while(SDL_PollEvent(&event))
-    {
-        switch(event.type)
-        {
-            case SDL_KEYDOWN:
-                key_down[event.key.keysym.sym] = TRUE;
-                key_pressed[event.key.keysym.sym] = TRUE;
-                window_key_pressed[event.key.keysym.sym] = TRUE;
-
-
-                // Remember the key...
-                last_key_pressed = (unsigned short) event.key.keysym.sym;
-
-
-                // If it's an ASCII character, add it to the key_buffer...
-                if((event.key.keysym.sym < MAX_ASCII && event.key.keysym.sym >= ' ') || event.key.keysym.sym == SDLK_BACKSPACE || event.key.keysym.sym == SDLK_RETURN)
-                {
-                    if(event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT))
-                    {
-                        // Write a shifted character
-                        input_write_key_buffer(key_shift[(unsigned char) event.key.keysym.sym]);
-                    }
-                    else
-                    {
-                        // Write a lowercase character
-                        input_write_key_buffer((unsigned char) event.key.keysym.sym);
-                    }
-                }
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-//                #ifdef DEVTOOL
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-                    if(event.key.keysym.sym == SDLK_ESCAPE)
-                    {
-                        quitgame = TRUE;
-                        log_message("INFO:   Escape key pressed (DEVTOOL only)");
-                    }
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-//                #endif
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-                break;
-            case SDL_KEYUP:
-                key_down[event.key.keysym.sym] = FALSE;
-                key_unpressed[event.key.keysym.sym] = TRUE;
-                break;
-            case SDL_QUIT:
-                quitgame = TRUE;
-                break;
-            case SDL_MOUSEMOTION:
-                if(display_full_screen)
-                {
-                    mouse_x += event.motion.xrel * 0.625f;
-                    mouse_y += event.motion.yrel * 0.625f;
-                    clip(0.0f, mouse_x, 400.0f);
-                    clip(0.0f, mouse_y, 300.0f);
-                }
-                else
-                {
-                    mouse_x = event.motion.x * 400.0f / screen_x;
-                    mouse_y = event.motion.y * 300.0f / screen_y;
-                }
-                break;
-            case SDL_JOYAXISMOTION:
-                if(event.jaxis.which < MAX_JOYSTICK)
-                {
-                    if(event.jaxis.axis == X || event.jaxis.axis == Y)
-                    {
-                        joystick_position_xy[event.jaxis.which][event.jaxis.axis] = 0.0f;
-                        if(event.jaxis.value < -JOY_TOLERANCE)
-                        {
-                            joystick_position_xy[event.jaxis.which][event.jaxis.axis] = (event.jaxis.value+JOY_TOLERANCE)/(32768.0f-JOY_TOLERANCE);
-                        }
-                        else if(event.jaxis.value > JOY_TOLERANCE)
-                        {
-                            joystick_position_xy[event.jaxis.which][event.jaxis.axis] = (event.jaxis.value-JOY_TOLERANCE)/(32768.0f-JOY_TOLERANCE);
-                        }
-                    }
-                }    
-                break;
-            case SDL_JOYBUTTONUP:
-                if(event.jbutton.which < MAX_JOYSTICK)
-                {
-                    if(event.jbutton.button < MAX_JOYSTICK_BUTTON)
-                    {
-                        joystick_button_unpressed[event.jbutton.which][event.jbutton.button] = TRUE;
-                        joystick_button_down[event.jbutton.which][event.jbutton.button] = FALSE;
-                    }
-                }
-                break;
-            case SDL_JOYBUTTONDOWN:
-                if(event.jbutton.which < MAX_JOYSTICK)
-                {
-                    if(event.jbutton.button < MAX_JOYSTICK_BUTTON)
-                    {
-                        joystick_button_pressed[event.jbutton.which][event.jbutton.button] = TRUE;
-                        joystick_button_down[event.jbutton.which][event.jbutton.button] = TRUE;
-                    }
-                }
-                break;
-            case SDL_MOUSEBUTTONUP:
-            case SDL_MOUSEBUTTONDOWN:
-                i = (event.button.button-1);
-                if(i < MAX_MOUSE_BUTTON)
-                {
-                    if(event.button.state == SDL_PRESSED)
-                    {
-                        if(mouse_draw)
-                        {
-                            mouse_pressed[i] = TRUE;
-                            mouse_down[i] = TRUE;
-                        }
-                    }
-                    if(event.button.state == SDL_RELEASED)
-                    {
-                        mouse_unpressed[i] = TRUE;
-                        mouse_down[i] = FALSE;
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
-}
-*/
-
-//-------------------------------------------------------------------------------------------
 void input_camera_controls(void)
 {
     // <ZZ> This function allows the players to rotate the camera and zoom in and out...
@@ -884,8 +725,8 @@ void input_camera_controls(void)
                     else
                     {
                         // Rotational control...
-                        camera_rotation_add_xy[X] += (signed int) (off_x * CAMERA_ROTATION_RATE);
-                        camera_rotation_add_xy[Y] -= (signed int) (off_y * CAMERA_ROTATION_RATE);
+                        camera_rotation_add_xy[0] += (signed int) (off_x * CAMERA_ROTATION_RATE);
+                        camera_rotation_add_xy[1] -= (signed int) (off_y * CAMERA_ROTATION_RATE);
                     }
                 }
                 else
@@ -935,7 +776,7 @@ void input_camera_controls(void)
             off_x = 0;
             if(key_down[SDLK_KP7]) { off_x += 3; }
             if(key_down[SDLK_KP9]) { off_x -= 3; }
-            camera_rotation_add_xy[X] += (signed int) (off_x * CAMERA_ROTATION_RATE * main_frame_skip);
+            camera_rotation_add_xy[0] += (signed int) (off_x * CAMERA_ROTATION_RATE * main_frame_skip);
         }
 
 
@@ -985,7 +826,7 @@ void input_camera_controls(void)
                 if(button < MAX_JOYSTICK_BUTTON) { if(joystick_button_down[i][button]) { off_x += 3; } }
                 button = player_device_button[i][PLAYER_DEVICE_BUTTON_MOVE_RIGHT];
                 if(button < MAX_JOYSTICK_BUTTON) { if(joystick_button_down[i][button]) { off_x -= 3; } }
-                camera_rotation_add_xy[X] += (signed int) (off_x * CAMERA_ROTATION_RATE * main_frame_skip);
+                camera_rotation_add_xy[0] += (signed int) (off_x * CAMERA_ROTATION_RATE * main_frame_skip);
             }
         }
     }

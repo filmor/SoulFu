@@ -1,9 +1,20 @@
-// <ZZ> This file has stuff for moving characters and stuff.  Stuff.
+#include "charact.h"
+
+#include "soulfu.h"
+#include "object.h"
+#include "display.h"
+#include "common.h"
+#include "room.h"
+#include "water.h"
+#include "damage.h"
+#include "item.h"
+#include <math.h>
+#include <stdlib.h>
+
 #define CLIMB_HEIGHT 1.75f
 #define WALL_COLLISION_DELAY 20
 #define BOUNCE_SCALE -0.35f
 
-//-----------------------------------------------------------------------------------------------
 unsigned char action_can_turn[ACTION_MAX];
 void character_action_setup()
 {
@@ -31,7 +42,7 @@ void character_action_setup()
     action_can_turn[ACTION_SPECIAL_12] = FALSE;
 }
 
-//-----------------------------------------------------------------------------------------------
+
 void character_collide_all()
 {
     // <ZZ> Makes a list of all the characters that need to be checked for collisions...
@@ -105,22 +116,22 @@ void character_collide_all()
 
 
                 // Do a circular collision check...
-                disx = character_xyz[X] - check_xyz[X];
-                disy = character_xyz[Y] - check_xyz[Y];
+                disx = character_xyz[0] - check_xyz[0];
+                disy = character_xyz[1] - check_xyz[1];
                 distance = (disx*disx) + (disy*disy);
                 collide_distance*=collide_distance;
                 if(distance < collide_distance)
                 {
                     // Then check the dot to divide the door in two (front and back)...
                     check_front_xyz = (float*) (check_data+120);
-                    distance = (disx * check_front_xyz[X]) + (disy * check_front_xyz[Y]);
+                    distance = (disx * check_front_xyz[0]) + (disy * check_front_xyz[1]);
                     distance = (*((float*) (character_data+160))) + 0.5f - distance;
                     if(distance > 0.0f)
                     {
                         // Character is on the other side of the door...  Might be okay if the
                         // door is open (Knock Out)...  But character can bump an open door if
                         // far to the back (leaving room) or if too high up...
-                        clearance = ((check_xyz[Z]+check_data[175])-(character_xyz[Z]+character_data[175])); // Distance between head and top of door passage (in feet)
+                        clearance = ((check_xyz[2]+check_data[175])-(character_xyz[2]+character_data[175])); // Distance between head and top of door passage (in feet)
                         if(check_data[66] != ACTION_KNOCK_OUT || (clearance < 0.0f) || distance > 6.0f)
                         {
                             // We have a collision...
@@ -149,34 +160,34 @@ void character_collide_all()
                                 // Bump head if well behind the door...
                                 if(distance > 1.0f && clearance < 0.0f)
                                 {
-                                    character_xyz[Z] += clearance;
+                                    character_xyz[2] += clearance;
                                     // But don't push 'em through floor...
-                                    if(character_xyz[Z] < *((float*) (character_data + 44)))
+                                    if(character_xyz[2] < *((float*) (character_data + 44)))
                                     {
-                                        character_xyz[Z] = *((float*) (character_data + 44));
+                                        character_xyz[2] = *((float*) (character_data + 44));
                                     }
                                 }
 
                                 // Stop character from moving towards door...  Don't restrict motion away from door...
-                                disz = 0.000001f - ((character_vel_xyz[X] * check_front_xyz[X]) + (character_vel_xyz[Y] * check_front_xyz[Y]));
+                                disz = 0.000001f - ((character_vel_xyz[0] * check_front_xyz[0]) + (character_vel_xyz[1] * check_front_xyz[1]));
                                 if(disz > 0.0f)
                                 {
-                                    character_vel_xyz[X] += check_front_xyz[X] * disz;
-                                    character_vel_xyz[Y] += check_front_xyz[Y] * disz;
+                                    character_vel_xyz[0] += check_front_xyz[0] * disz;
+                                    character_vel_xyz[1] += check_front_xyz[1] * disz;
                                 }
 
 
                                 // Pushable characters are thrown back super hard so they don't get pushed through door...
                                 if(character_data[104] & MORE_FLAG_PUSHABLE)
                                 {
-                                    character_xyz[X] = character_xyz[X] + check_front_xyz[X]*distance;
-                                    character_xyz[Y] = character_xyz[Y] + check_front_xyz[Y]*distance;
+                                    character_xyz[0] = character_xyz[0] + check_front_xyz[0]*distance;
+                                    character_xyz[1] = character_xyz[1] + check_front_xyz[1]*distance;
                                 }
                                 else
                                 {
                                     distance = (CHAR_FLAGS & CHAR_HOVER_ON) ? distance*0.002f : distance*0.20f;
-                                    character_vel_xyz[X] += check_front_xyz[X]*distance;
-                                    character_vel_xyz[Y] += check_front_xyz[Y]*distance;
+                                    character_vel_xyz[0] += check_front_xyz[0]*distance;
+                                    character_vel_xyz[1] += check_front_xyz[1]*distance;
                                 }
                             }
                         }
@@ -216,14 +227,14 @@ void character_collide_all()
                 character_vel_xyz = (float*) (character_data+24);
 
                 // Do a circular collision check...
-                disx = character_xyz[X] - check_xyz[X];
-                disy = character_xyz[Y] - check_xyz[Y];
+                disx = character_xyz[0] - check_xyz[0];
+                disy = character_xyz[1] - check_xyz[1];
                 distance = (disx*disx) + (disy*disy);
                 collide_distance*=collide_distance;
                 if(distance < collide_distance)
                 {
-                    collide_distance = (character_xyz[Z] < check_xyz[Z]) ? ((float) character_data[175] - check_vel_xyz[Z]) : ((float) check_data[175] - character_vel_xyz[Z]);
-                    disz = character_xyz[Z] - check_xyz[Z];
+                    collide_distance = (character_xyz[2] < check_xyz[2]) ? ((float) character_data[175] - check_vel_xyz[2]) : ((float) check_data[175] - character_vel_xyz[2]);
+                    disz = character_xyz[2] - check_xyz[2];
                     ABS(disz);
                     if(disz < collide_distance)
                     {
@@ -255,29 +266,29 @@ void character_collide_all()
                                 distance += 0.01f;
                                 disx /= distance;
                                 disy /= distance;
-                                distance = -disy*check_vel_xyz[X] + disx*check_vel_xyz[Y];
+                                distance = -disy*check_vel_xyz[0] + disx*check_vel_xyz[1];
                                 if(distance > 0.0f)
                                 {
-                                    distance = disx*check_vel_xyz[X] + disy*check_vel_xyz[Y];
-                                    check_vel_xyz[X] = distance*disx;
-                                    check_vel_xyz[Y] = distance*disy;
+                                    distance = disx*check_vel_xyz[0] + disy*check_vel_xyz[1];
+                                    check_vel_xyz[0] = distance*disx;
+                                    check_vel_xyz[1] = distance*disy;
                                 }
 
-                                distance = -disy*character_vel_xyz[X] + disx*character_vel_xyz[Y];
+                                distance = -disy*character_vel_xyz[0] + disx*character_vel_xyz[1];
                                 if(distance < 0.0f)
                                 {
-                                    distance = disx*character_vel_xyz[X] + disy*character_vel_xyz[Y];
-                                    character_vel_xyz[X] = distance*disx;
-                                    character_vel_xyz[Y] = distance*disy;
+                                    distance = disx*character_vel_xyz[0] + disy*character_vel_xyz[1];
+                                    character_vel_xyz[0] = distance*disx;
+                                    character_vel_xyz[1] = distance*disy;
                                 }
                             }
                             else
                             {
                                 // One char is standing on the other...  Check for platforms and mounting...
-                                if(check_xyz[Z] < character_xyz[Z])
+                                if(check_xyz[2] < character_xyz[2])
                                 {
                                     // Check for mounting...
-                                    if(character_vel_xyz[Z] < 0.0f)
+                                    if(character_vel_xyz[2] < 0.0f)
                                     {
                                         if((CHECK_FLAGS & CHAR_CAN_BE_MOUNTED) && (*(unsigned short*) (check_data+106)) >= MAX_CHARACTER)
                                         {
@@ -326,13 +337,13 @@ void character_collide_all()
                                             if(distance < collide_distance || !(CHAR_FLAGS & CHAR_PLATFORM_ON))
                                             {
                                                 // Make the character stand on the platform
-                                                character_xyz[Z] = check_xyz[Z] + check_data[175] - 0.1f;
-                                                if(character_vel_xyz[Z] < 0.01f)
+                                                character_xyz[2] = check_xyz[2] + check_data[175] - 0.1f;
+                                                if(character_vel_xyz[2] < 0.01f)
                                                 {
                                                     CHAR_FLAGS |= CHAR_ON_PLATFORM;
-                                                    character_vel_xyz[Z] = -GRAVITY;
-                                                    character_vel_xyz[X] += check_vel_xyz[X];
-                                                    character_vel_xyz[Y] += check_vel_xyz[Y];
+                                                    character_vel_xyz[2] = -GRAVITY;
+                                                    character_vel_xyz[0] += check_vel_xyz[0];
+                                                    character_vel_xyz[1] += check_vel_xyz[1];
 
 
                                                     // Press event...
@@ -347,7 +358,7 @@ void character_collide_all()
                                 else
                                 {
                                     // Check for mounting...
-                                    if(check_vel_xyz[Z] < 0.0f)
+                                    if(check_vel_xyz[2] < 0.0f)
                                     {
                                         if((CHAR_FLAGS & CHAR_CAN_BE_MOUNTED) && (*(unsigned short*) (character_data+106)) >= MAX_CHARACTER)
                                         {
@@ -396,13 +407,13 @@ void character_collide_all()
                                             if(distance < collide_distance || !(CHECK_FLAGS & CHAR_PLATFORM_ON))
                                             {
                                                 // Make the character stand on the platform
-                                                check_xyz[Z] = character_xyz[Z] + character_data[175] - 0.1f;
-                                                if(check_vel_xyz[Z] < 0.01f)
+                                                check_xyz[2] = character_xyz[2] + character_data[175] - 0.1f;
+                                                if(check_vel_xyz[2] < 0.01f)
                                                 {
                                                     CHECK_FLAGS |= CHAR_ON_PLATFORM;
-                                                    check_vel_xyz[Z] = -GRAVITY;
-                                                    check_vel_xyz[X] += character_vel_xyz[X];
-                                                    check_vel_xyz[Y] += character_vel_xyz[Y];
+                                                    check_vel_xyz[2] = -GRAVITY;
+                                                    check_vel_xyz[0] += character_vel_xyz[0];
+                                                    check_vel_xyz[1] += character_vel_xyz[1];
 
 
                                                     // Press event...
@@ -587,10 +598,10 @@ void character_draw_all(unsigned char after_water, unsigned char draw_only_doors
             {
                 // It's a door...
                 character_data = main_character_data[i];
-                x = camera_xyz[X] - ((float*) character_data)[X];
-                y = camera_xyz[Y] - ((float*) character_data)[Y];
-                z = camera_xyz[Z] - ((float*) character_data)[Z];
-                door_list_distance[num_door_list] = (camera_fore_xyz[X] * x) + (camera_fore_xyz[Y] * y) + (camera_fore_xyz[Z] * z);
+                x = camera_xyz[0] - ((float*) character_data)[0];
+                y = camera_xyz[1] - ((float*) character_data)[1];
+                z = camera_xyz[2] - ((float*) character_data)[2];
+                door_list_distance[num_door_list] = (camera_fore_xyz[0] * x) + (camera_fore_xyz[1] * y) + (camera_fore_xyz[2] * z);
                 door_list[num_door_list] = i;
                 door_list_order[num_door_list] = 0;
                 repeat(j, num_door_list)
@@ -674,8 +685,8 @@ void character_draw_all(unsigned char after_water, unsigned char draw_only_doors
                         global_render_light_color_rgb[0] = 255;
                         global_render_light_color_rgb[1] = 255;
                         global_render_light_color_rgb[2] = 255;
-                        global_render_light_offset_xy[X] = 0.75f;  // 0.25
-                        global_render_light_offset_xy[Y] = 0.60f;  // 0.38
+                        global_render_light_offset_xy[0] = 0.75f;  // 0.25
+                        global_render_light_offset_xy[1] = 0.60f;  // 0.38
 
 
                         // Modify lighting for poison...
@@ -734,15 +745,15 @@ void character_draw_all(unsigned char after_water, unsigned char draw_only_doors
 
                         // Modify lighting for character brightness (script value and falling in pits)...
                         brightness = character_data[206];
-                        if(((float*) character_data)[Z] < ROOM_PIT_HIGH_LEVEL)
+                        if(((float*) character_data)[2] < ROOM_PIT_HIGH_LEVEL)
                         {
-                            if(((float*) character_data)[Z] < ROOM_PIT_LOW_LEVEL)
+                            if(((float*) character_data)[2] < ROOM_PIT_LOW_LEVEL)
                             {
                                 brightness = 0;
                             }
                             else
                             {
-                                brightness -= (unsigned char) ((0.0625f * (ROOM_PIT_HIGH_LEVEL - ((float*) character_data)[Z])) * brightness);
+                                brightness -= (unsigned char) ((0.0625f * (ROOM_PIT_HIGH_LEVEL - ((float*) character_data)[2])) * brightness);
                             }
                         }
                         global_render_light_color_rgb[0] = (global_render_light_color_rgb[0] * brightness) >> 8;
@@ -861,20 +872,20 @@ void character_draw_all(unsigned char after_water, unsigned char draw_only_doors
                     character_data = main_character_data[i];
                     if(!(CHAR_FLAGS & CHAR_NO_COLLISION))
                     {
-                        top_left_xyz[X] = *((float*) (character_data));
-                        top_left_xyz[Y] = *((float*) (character_data+4));
-                        top_left_xyz[Z] = *((float*) (character_data+8));
-                        bottom_right_xyz[X] = *((float*) (character_data));
-                        bottom_right_xyz[Y] = *((float*) (character_data+4));
-                        bottom_right_xyz[Z] = *((float*) (character_data+8));
+                        top_left_xyz[0] = *((float*) (character_data));
+                        top_left_xyz[1] = *((float*) (character_data+4));
+                        top_left_xyz[2] = *((float*) (character_data+8));
+                        bottom_right_xyz[0] = *((float*) (character_data));
+                        bottom_right_xyz[1] = *((float*) (character_data+4));
+                        bottom_right_xyz[2] = *((float*) (character_data+8));
                         boxsize = *((float*) (character_data+160));
                         height = *(character_data+175);
-                        top_left_xyz[X]-=boxsize;
-                        top_left_xyz[Y]-=boxsize;
-                        top_left_xyz[Z]+=height;
-                        bottom_right_xyz[X]+=boxsize;
-                        bottom_right_xyz[Y]+=boxsize;
-                        render_solid_box(red, top_left_xyz[X], top_left_xyz[Y], top_left_xyz[Z], bottom_right_xyz[X], bottom_right_xyz[Y], bottom_right_xyz[Z]);
+                        top_left_xyz[0]-=boxsize;
+                        top_left_xyz[1]-=boxsize;
+                        top_left_xyz[2]+=height;
+                        bottom_right_xyz[0]+=boxsize;
+                        bottom_right_xyz[1]+=boxsize;
+                        render_solid_box(red, top_left_xyz[0], top_left_xyz[1], top_left_xyz[2], bottom_right_xyz[0], bottom_right_xyz[1], bottom_right_xyz[2]);
                     }
                 }
             }
@@ -899,15 +910,15 @@ unsigned char global_collision_hit_wall;
 void char_collision_point(float* position_xyz, float* velocity_xyz, float x_offset, float y_offset)
 {
     float x, y, z;
-    x = position_xyz[X]+x_offset+velocity_xyz[X];
-    y = position_xyz[Y]+y_offset+velocity_xyz[Y];
+    x = position_xyz[0]+x_offset+velocity_xyz[0];
+    y = position_xyz[1]+y_offset+velocity_xyz[1];
     z = room_heightmap_height(roombuffer, x, y);
     if(z > global_collision_z)
     {
         // Remember our highest floor level...
         global_collision_z = z;
     }
-    if(position_xyz[Z] < (z-CLIMB_HEIGHT))
+    if(position_xyz[2] < (z-CLIMB_HEIGHT))
     {
         // We hit a wall...
         global_collision_fail_count++;
@@ -919,8 +930,8 @@ void char_collision_point(float* position_xyz, float* velocity_xyz, float x_offs
 void char_floor_point(float* position_xyz)
 {
     float x, y, z;
-    x = position_xyz[X];
-    y = position_xyz[Y];
+    x = position_xyz[0];
+    y = position_xyz[1];
     z = room_heightmap_height(roombuffer, x, y);
     if(z > global_collision_z)
     {
@@ -1311,7 +1322,7 @@ void character_update_all()
 
 
                 // Drown timer for rider...
-                if(((position_xyz[Z]+height) < room_water_level && room_water_type != WATER_TYPE_LAVA) || (position_xyz[Z] < room_water_level && room_water_type == WATER_TYPE_LAVA && ((signed char*)character_data)[100] < 4))  // DefFire of 4 prevents lava damage...
+                if(((position_xyz[2]+height) < room_water_level && room_water_type != WATER_TYPE_LAVA) || (position_xyz[2] < room_water_level && room_water_type == WATER_TYPE_LAVA && ((signed char*)character_data)[100] < 4))  // DefFire of 4 prevents lava damage...
                 {
                     if((character_data[82] > 0) && (character_data[80] < 255) && (!(character_data[105]&VIRTUE_FLAG_NO_DROWN) || room_water_type == WATER_TYPE_LAVA))
                     {
@@ -1330,7 +1341,7 @@ void character_update_all()
                             // Spawn a damage particle...
                             if(room_water_type != WATER_TYPE_SAND)
                             {
-                                child_data = obj_spawn(PARTICLE, position_xyz[X], position_xyz[Y], position_xyz[Z]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
+                                child_data = obj_spawn(PARTICLE, position_xyz[0], position_xyz[1], position_xyz[2]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
                                 if(child_data)
                                 {
                                     // Tint the number...
@@ -1448,8 +1459,8 @@ void character_update_all()
                     // Character is able to turn...
                     x = (*((float*) (character_data+12)));
                     y = (*((float*) (character_data+16)));
-                    x-=position_xyz[X];
-                    y-=position_xyz[Y];
+                    x-=position_xyz[0];
+                    y-=position_xyz[1];
                     if((x*x + y*y) > 1.00f)
                     {
                         // Gotoxy is at least a little bit away from our character...  Start doin' a
@@ -1474,7 +1485,7 @@ void character_update_all()
 // !!!BAD!!!
 // !!!BAD!!!  Get rid of atan()...  Maybe do every 16 frames or so (save desired facing in character data)...  Maybe some lookup thing...
 // !!!BAD!!!
-                        desired_facing = (unsigned short) (((float) atan2(y, x)) * (65535.0f / (2.0f*PI)));
+                        desired_facing = (unsigned short) (((float) atan2(y, x)) * (65535.0f / (2.0f*M_PI)));
                         current_facing = *((unsigned short*) (character_data+56));
                         spin_rate = *((unsigned short*) (character_data+58));
                         spin_difference = desired_facing - current_facing;
@@ -1547,7 +1558,7 @@ void character_update_all()
                 // Update motion...  Gravity...
                 if(CHAR_FLAGS & CHAR_GRAVITY_ON)
                 {
-                    velocity_xyz[Z] += GRAVITY;
+                    velocity_xyz[2] += GRAVITY;
                 }
 
 
@@ -1582,10 +1593,10 @@ void character_update_all()
                         global_collision_fail_count = 0;
 
                         k = 0;
-                        while(k < NUM_SINE_ENTRIES)
+                        while(k < 4096)
                         {
-                            sine = sine_table[k]*boxsize;
-                            cosine = cosine_table[k]*boxsize;
+                            sine = sin(k/4096.0 * 2.0 * M_PI) * boxsize;
+                            cosine = cos(k/4096.0 * 2.0 * M_PI) * boxsize;
                             char_collision_point(position_xyz, velocity_xyz, sine, cosine);
                             k+=256;
                         }
@@ -1596,7 +1607,7 @@ void character_update_all()
                         {
                             // Yup we did...  Now we'll have to modify our velocity and do the
                             // checks again until it works...
-                            x = (velocity_xyz[X]*velocity_xyz[X] + velocity_xyz[Y]*velocity_xyz[Y]);
+                            x = (velocity_xyz[0]*velocity_xyz[0] + velocity_xyz[1]*velocity_xyz[1]);
                             y = (global_collision_vx*global_collision_vx + global_collision_vy*global_collision_vy);
                             // Scale the velocity correction amount (global_collision_v's) to match
                             // the old in magnitude (but not direction)...
@@ -1604,8 +1615,8 @@ void character_update_all()
                             global_collision_vx*=x;
                             global_collision_vy*=x;
                             // Then do a weighted average of 'em for our new velocity...
-                            velocity_xyz[X] = (velocity_xyz[X]*0.80f)+(global_collision_vx*0.40f);
-                            velocity_xyz[Y] = (velocity_xyz[Y]*0.80f)+(global_collision_vy*0.40f);
+                            velocity_xyz[0] = (velocity_xyz[0]*0.80f)+(global_collision_vx*0.40f);
+                            velocity_xyz[1] = (velocity_xyz[1]*0.80f)+(global_collision_vy*0.40f);
                         }
                         else
                         {
@@ -1617,8 +1628,8 @@ void character_update_all()
                     if(global_collision_fail_count)
                     {
                         // Even our last check failed...  Looks like we'll just have to stop movement...
-                        velocity_xyz[X] = 0.0f;
-                        velocity_xyz[Y] = 0.0f;
+                        velocity_xyz[0] = 0.0f;
+                        velocity_xyz[1] = 0.0f;
                         global_collision_z = *((float*) (character_data + 44));  // Use floor height from last position...
                     }
                     // Save our floor height for later...
@@ -1628,32 +1639,32 @@ void character_update_all()
 
 
                 // Actually move the character...  At this point our velocity has been approved...  Wherever we end up should be safe for our character to fit in (not bumping any walls)...  At least that's how it's supposed to work...
-                position_xyz[X]+=velocity_xyz[X];
-                position_xyz[Y]+=velocity_xyz[Y];
-                position_xyz[Z]+=velocity_xyz[Z];
+                position_xyz[0]+=velocity_xyz[0];
+                position_xyz[1]+=velocity_xyz[1];
+                position_xyz[2]+=velocity_xyz[2];
 
 
                 // Stop character from passing through ceiling...
-                position_xyz[Z] = (position_xyz[Z] > ROOM_CEILING_BUMP_Z) ? ROOM_CEILING_BUMP_Z : position_xyz[Z];
+                position_xyz[2] = (position_xyz[2] > ROOM_CEILING_BUMP_Z) ? ROOM_CEILING_BUMP_Z : position_xyz[2];
 
 
                 // Now check to see if the character hit the floor below 'em...
-//                if(position_xyz[Z] < global_collision_z && velocity_xyz[Z] < 0.0f)
-//                if(position_xyz[Z] < (global_collision_z-velocity_xyz[Z]) && velocity_xyz[Z] < 0.0f)
-                if(position_xyz[Z] < (global_collision_z-velocity_xyz[Z]+0.25f) && velocity_xyz[Z] < 0.0f)
+//                if(position_xyz[2] < global_collision_z && velocity_xyz[2] < 0.0f)
+//                if(position_xyz[2] < (global_collision_z-velocity_xyz[2]) && velocity_xyz[2] < 0.0f)
+                if(position_xyz[2] < (global_collision_z-velocity_xyz[2]+0.25f) && velocity_xyz[2] < 0.0f)
                 {
                     // Character is below the ground and sinking...  Raise 'em up...
-                    position_xyz[Z] = ((position_xyz[Z]-velocity_xyz[Z]+0.25f) > global_collision_z) ? global_collision_z : (position_xyz[Z]-velocity_xyz[Z]+0.25f);
+                    position_xyz[2] = ((position_xyz[2]-velocity_xyz[2]+0.25f) > global_collision_z) ? global_collision_z : (position_xyz[2]-velocity_xyz[2]+0.25f);
                     on_ground = TRUE;
                 }
 
 
 
 //                // Now check to see if the character hit the floor below 'em...
-//                if(position_xyz[Z] < (global_collision_z+0.25f) && velocity_xyz[Z] < 0.0f)
+//                if(position_xyz[2] < (global_collision_z+0.25f) && velocity_xyz[2] < 0.0f)
 //                {
 //                    // Character is below the ground and sinking...  Raise 'em up...
-//                    position_xyz[Z] = ((position_xyz[Z]+0.25f) > global_collision_z) ? global_collision_z : (position_xyz[Z]+0.25f);
+//                    position_xyz[2] = ((position_xyz[2]+0.25f) > global_collision_z) ? global_collision_z : (position_xyz[2]+0.25f);
 //                    on_ground = TRUE;
 //                }
 
@@ -1665,11 +1676,11 @@ void character_update_all()
                     y+=1.0f;
                     (*((float*) (character_data + 20))) = (*((float*) (character_data + 20)) < y) ? (((*((float*) (character_data + 20)))*0.80f) + (y*0.20f)) : (*((float*) (character_data + 20)));
 
-                    y = (*((unsigned short*) (character_data+42)) == 0) ? 0.5f*sine_table[((main_game_frame+(i<<3))&63)<<6] : 0.0f;  // Waver amount, or 0.0 if petrified...
+                    y = (*((unsigned short*) (character_data+42)) == 0) ? 0.5f*sin((((main_game_frame+(i<<3))&63)<<6) * 2.0 * M_PI) : 0.0f;  // Waver amount, or 0.0 if petrified...
                     y += *((float*) (character_data + 20));  // plus hoverz...
-                    velocity_xyz[Z] = ((y - position_xyz[Z]) * 0.01f) + (velocity_xyz[Z]*0.90f);
-                    velocity_xyz[Z] = (on_ground && velocity_xyz[Z] < 0.0f) ? (0.0f) : (velocity_xyz[Z]);  // Don't allow movement below ground...
-//                    (*((float*) (character_data + 20))) = (position_xyz[Z] < (global_collision_z+1.25f)) ? ((*((float*) (character_data + 20)))+0.025f) : (*((float*) (character_data + 20)));  // Slowly correct hoverz if we're bumping the ground...
+                    velocity_xyz[2] = ((y - position_xyz[2]) * 0.01f) + (velocity_xyz[2]*0.90f);
+                    velocity_xyz[2] = (on_ground && velocity_xyz[2] < 0.0f) ? (0.0f) : (velocity_xyz[2]);  // Don't allow movement below ground...
+//                    (*((float*) (character_data + 20))) = (position_xyz[2] < (global_collision_z+1.25f)) ? ((*((float*) (character_data + 20)))+0.025f) : (*((float*) (character_data + 20)));  // Slowly correct hoverz if we're bumping the ground...
                     on_ground = FALSE;
                 }
 
@@ -1691,7 +1702,7 @@ void character_update_all()
 
 
                 // Do water checks...
-                in_water = (position_xyz[Z] < room_water_level);
+                in_water = (position_xyz[2] < room_water_level);
                 if(in_water)
                 {
                     // Character is in water/lava/sand area...
@@ -1715,7 +1726,7 @@ void character_update_all()
 
 
                     // Drown timer...
-                    if(((position_xyz[Z]+height-1.0f) < room_water_level && room_water_type != WATER_TYPE_LAVA) || (position_xyz[Z] < room_water_level && room_water_type == WATER_TYPE_LAVA && ((signed char*)character_data)[100] < 4))  // DefFire of 4 prevents lava damage...
+                    if(((position_xyz[2]+height-1.0f) < room_water_level && room_water_type != WATER_TYPE_LAVA) || (position_xyz[2] < room_water_level && room_water_type == WATER_TYPE_LAVA && ((signed char*)character_data)[100] < 4))  // DefFire of 4 prevents lava damage...
                     {
                         if((character_data[82] > 0) && (character_data[80] < 255) && (!(character_data[105]&VIRTUE_FLAG_NO_DROWN) || room_water_type == WATER_TYPE_LAVA))
                         {
@@ -1734,7 +1745,7 @@ void character_update_all()
                                 // Spawn a damage particle...
                                 if(room_water_type != WATER_TYPE_SAND)
                                 {
-                                    child_data = obj_spawn(PARTICLE, position_xyz[X], position_xyz[Y], position_xyz[Z]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
+                                    child_data = obj_spawn(PARTICLE, position_xyz[0], position_xyz[1], position_xyz[2]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
                                     if(child_data)
                                     {
                                         // Tint the number...
@@ -1796,14 +1807,14 @@ void character_update_all()
                     // Make the character sink or swim depending on flag...
                     if(room_water_type == WATER_TYPE_LAVA)
                     {
-                        velocity_xyz[Z] *= 0.60f;
+                        velocity_xyz[2] *= 0.60f;
                         on_ground = TRUE;
                     }
                     else if(room_water_type == WATER_TYPE_SAND)
                     {
-                        if(velocity_xyz[Z] < (GRAVITY*-0.5f))
+                        if(velocity_xyz[2] < (GRAVITY*-0.5f))
                         {
-                            velocity_xyz[Z] = GRAVITY*-0.5f;
+                            velocity_xyz[2] = GRAVITY*-0.5f;
                         }
                         on_ground = TRUE;
                     }
@@ -1813,7 +1824,7 @@ void character_update_all()
                         if(can_swim)
                         {
                             // Swim action...
-                            if(!on_ground && (position_xyz[Z]+height*0.50f) < room_water_level)
+                            if(!on_ground && (position_xyz[2]+height*0.50f) < room_water_level)
                             {
                                 character_data[66] = ACTION_SWIM;
                             }
@@ -1821,21 +1832,21 @@ void character_update_all()
                             // Float on surface...  Bouy'd up by percentage of height under water...
                             if(height < 2.1f)
                             {
-                                y = room_water_level - position_xyz[Z] + 4.0f;
+                                y = room_water_level - position_xyz[2] + 4.0f;
                             }
                             else
                             {
-                                y = room_water_level - position_xyz[Z] + 2.20f;
+                                y = room_water_level - position_xyz[2] + 2.20f;
                             }
-                            y += 0.25f*sine_table[((main_game_frame+(i<<3))&63)<<6];  // waver amount...
-                            velocity_xyz[Z] -= (GRAVITY*y*0.25f);
-                            if(velocity_xyz[Z] > 2.0f)
+                            y += 0.25f*sin((((main_game_frame+(i<<3))&63)<<6) * 2.0 * M_PI);  // waver amount...
+                            velocity_xyz[2] -= (GRAVITY*y*0.25f);
+                            if(velocity_xyz[2] > 2.0f)
                             {
                                 // Limit rise rate so characters don't go shooting out of the water...
-                                velocity_xyz[Z] = 2.0f;
+                                velocity_xyz[2] = 2.0f;
                             }
                         }
-                        velocity_xyz[Z] *= 0.90f;
+                        velocity_xyz[2] *= 0.90f;
                     }
                 }
                 else
@@ -1853,7 +1864,7 @@ void character_update_all()
 
 
                     // Pit hurt...
-                    if((position_xyz[Z] < ROOM_PIT_HURT_LEVEL) && !(CHAR_FLAGS & CHAR_HOVER_ON))
+                    if((position_xyz[2] < ROOM_PIT_HURT_LEVEL) && !(CHAR_FLAGS & CHAR_HOVER_ON))
                     {
                         // Call the pit event function...  Should poof character and play scream sound...
                         character_data[67] = EVENT_FELL_IN_PIT;
@@ -1884,8 +1895,8 @@ void character_update_all()
 
                 // Generate the character's matrix...
                 x = 1.0f;
-                sine = sine_table[(*((unsigned short*) (character_data+56)))>>4];
-                cosine = cosine_table[(*((unsigned short*) (character_data+56)))>>4];
+                sine = sin(((*((unsigned short*) (character_data+56)))>>4) * 2.0 * M_PI);
+                cosine = cos(((*((unsigned short*) (character_data+56)))>>4) * 2.0 * M_PI);
 
 
                 // Flatten'd characters...
@@ -1942,28 +1953,28 @@ void character_update_all()
                     velx = (velx + (velx*dexterity*0.02f));
                     vely = (vely + (vely*dexterity*0.02f));
 
-                    velocity_xyz[X] = (*((float*) (character_data+108)))*velx + (*((float*) (character_data+120)))*vely;
-                    velocity_xyz[Y] = (*((float*) (character_data+112)))*velx + (*((float*) (character_data+124)))*vely;
+                    velocity_xyz[0] = (*((float*) (character_data+108)))*velx + (*((float*) (character_data+120)))*vely;
+                    velocity_xyz[1] = (*((float*) (character_data+112)))*velx + (*((float*) (character_data+124)))*vely;
 
 
                     if((turning && !(character_data[104] & MORE_FLAG_FAST_TURN)) || in_water)
                     {
-                        velocity_xyz[X] *= 0.5f;
-                        velocity_xyz[Y] *= 0.5f;
+                        velocity_xyz[0] *= 0.5f;
+                        velocity_xyz[1] *= 0.5f;
 
                         if(in_water && room_water_type != WATER_TYPE_WATER)
                         {
                             // Sand and lava slow us down more than water...
-                            velocity_xyz[X] *= 0.75f;
-                            velocity_xyz[Y] *= 0.75f;
+                            velocity_xyz[0] *= 0.75f;
+                            velocity_xyz[1] *= 0.75f;
                         }
 
                     }
 
                     // Bounce off ground just a little bit...
-                    if(velocity_xyz[Z] < 0.0f && !in_water)
+                    if(velocity_xyz[2] < 0.0f && !in_water)
                     {
-                        velocity_xyz[Z] *= BOUNCE_SCALE;
+                        velocity_xyz[2] *= BOUNCE_SCALE;
                     }
                 }
                 else
@@ -1976,8 +1987,8 @@ void character_update_all()
 
                         x = (*((float*) (character_data+12)));
                         y = (*((float*) (character_data+16)));
-                        x-=position_xyz[X];
-                        y-=position_xyz[Y];
+                        x-=position_xyz[0];
+                        y-=position_xyz[1];
                         velx = (x*x + y*y);
                         velx = (float) sqrt(velx);
                         velx += 1.0f;  // Prevents divide by 0 and shakiness associated with small goto offset...
@@ -1987,18 +1998,18 @@ void character_update_all()
                         if(CHAR_FLAGS & CHAR_HOVER_ON)
                         {
                             // Flying characters have custom friction and poor acceleration...
-                            velocity_xyz[X] += x*0.1f;
-                            velocity_xyz[Y] += y*0.1f;
-                            velocity_xyz[X] *= (*((float*) (character_data+212)));  //0.95f;
-                            velocity_xyz[Y] *= (*((float*) (character_data+212)));  //0.95f;
+                            velocity_xyz[0] += x*0.1f;
+                            velocity_xyz[1] += y*0.1f;
+                            velocity_xyz[0] *= (*((float*) (character_data+212)));  //0.95f;
+                            velocity_xyz[1] *= (*((float*) (character_data+212)));  //0.95f;
                         }
                         else
                         {
                             // Jumping characters have high friction for better control...
-                            velocity_xyz[X] += x;
-                            velocity_xyz[Y] += y;
-                            velocity_xyz[X] *= 0.75f;
-                            velocity_xyz[Y] *= 0.75f;
+                            velocity_xyz[0] += x;
+                            velocity_xyz[1] += y;
+                            velocity_xyz[0] *= 0.75f;
+                            velocity_xyz[1] *= 0.75f;
                         }
                     }
                     else
@@ -2008,10 +2019,10 @@ void character_update_all()
                         vely = (*((float*) (data+7)))*0.025f;
                         velx = (velx + (velx*dexterity*0.02f));
                         vely = (vely + (vely*dexterity*0.02f));
-                        velocity_xyz[X] += (*((float*) (character_data+108)))*velx + (*((float*) (character_data+120)))*vely;
-                        velocity_xyz[Y] += (*((float*) (character_data+112)))*velx + (*((float*) (character_data+124)))*vely;
-                        velocity_xyz[X] *= 0.975f;
-                        velocity_xyz[Y] *= 0.975f;
+                        velocity_xyz[0] += (*((float*) (character_data+108)))*velx + (*((float*) (character_data+120)))*vely;
+                        velocity_xyz[1] += (*((float*) (character_data+112)))*velx + (*((float*) (character_data+124)))*vely;
+                        velocity_xyz[0] *= 0.975f;
+                        velocity_xyz[1] *= 0.975f;
                     }
                 }
             }
@@ -2213,7 +2224,7 @@ void character_update_all()
 
 
                         // Spawn a damage particle...
-                        child_data = obj_spawn(PARTICLE, position_xyz[X], position_xyz[Y], position_xyz[Z]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
+                        child_data = obj_spawn(PARTICLE, position_xyz[0], position_xyz[1], position_xyz[2]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
                         if(child_data)
                         {
                             // Tint the number...
@@ -2262,7 +2273,7 @@ void character_update_all()
 
 
                         // Spawn a damage particle...
-                        child_data = obj_spawn(PARTICLE, position_xyz[X], position_xyz[Y], position_xyz[Z]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
+                        child_data = obj_spawn(PARTICLE, position_xyz[0], position_xyz[1], position_xyz[2]+(character_data[175] - 1), pnumber_file, MAX_PARTICLE);
                         if(child_data)
                         {
                             // Tint the number according to the damage type...
@@ -2293,8 +2304,8 @@ void character_update_all()
                 (*((unsigned short*) (character_data+42)))--;
 
                 // Stop movement...
-                velocity_xyz[X] = 0.0f;
-                velocity_xyz[Y] = 0.0f;
+                velocity_xyz[0] = 0.0f;
+                velocity_xyz[1] = 0.0f;
             }
             else
             {
@@ -2578,8 +2589,8 @@ void character_local_player_control(void)
                     // by window cameras...
                     x = *((float*) (character_data));
                     y = *((float*) (character_data+4));
-                    x+= (player_device_xy[i][X]*map_side_xy[X] - player_device_xy[i][Y]*map_side_xy[Y])*10.0f;
-                    y+= (player_device_xy[i][X]*map_side_xy[Y] + player_device_xy[i][Y]*map_side_xy[X])*10.0f;
+                    x+= (player_device_xy[i][0]*map_side_xy[0] - player_device_xy[i][1]*map_side_xy[1])*10.0f;
+                    y+= (player_device_xy[i][0]*map_side_xy[1] + player_device_xy[i][1]*map_side_xy[0])*10.0f;
                     *((float*) (character_data+12)) = x;
                     *((float*) (character_data+16)) = y;
 
@@ -2589,10 +2600,10 @@ void character_local_player_control(void)
 
 
                     // Transfer player button presses into character data...
-                    axis = ((player_device_xy[i][Y]<-0.10f) << 3);  // 8 = Up
-                    axis|= ((player_device_xy[i][Y]>0.10f)  << 2);  // 4 = Down
-                    axis|= ((player_device_xy[i][X]<-0.10f) << 1);  // 2 = Left
-                    axis|= ((player_device_xy[i][X]>0.10f)      );  // 1 = Right
+                    axis = ((player_device_xy[i][1]<-0.10f) << 3);  // 8 = Up
+                    axis|= ((player_device_xy[i][1]>0.10f)  << 2);  // 4 = Down
+                    axis|= ((player_device_xy[i][0]<-0.10f) << 1);  // 2 = Left
+                    axis|= ((player_device_xy[i][0]>0.10f)      );  // 1 = Right
                     repeat(button, 4)
                     {
                         if(player_device_button_pressed[i][button])
@@ -2661,7 +2672,7 @@ void character_refresh_items_all()
             character_data = main_character_data[i];
 
             // Only allow if not petrified and not mounted and not in deep water...
-            if((*((unsigned short*) (character_data+42)) == 0) && (*((unsigned short*) (character_data+164)) >= MAX_CHARACTER) && ((((float*) character_data)[Z] > room_water_level)   || (room_water_type != WATER_TYPE_WATER)   ||   ((((float*) character_data)[Z] + (character_data[175] * 0.50f)) > room_water_level && (CHAR_FLAGS & CHAR_ON_GROUND))))
+            if((*((unsigned short*) (character_data+42)) == 0) && (*((unsigned short*) (character_data+164)) >= MAX_CHARACTER) && ((((float*) character_data)[2] > room_water_level)   || (room_water_type != WATER_TYPE_WATER)   ||   ((((float*) character_data)[2] + (character_data[175] * 0.50f)) > room_water_level && (CHAR_FLAGS & CHAR_ON_GROUND))))
             {
                 repeat(slot, 4)
                 {

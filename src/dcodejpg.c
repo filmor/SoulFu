@@ -9,6 +9,8 @@
 #include <setjmp.h> // jmp_buf -/-
 #include <jpeglib.h>
 
+#include <string.h>
+
 unsigned char file_is_a_heightmap;
 struct my_error_mgr
 {

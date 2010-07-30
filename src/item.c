@@ -1,6 +1,5 @@
-// <ZZ> This file contains functions related to player inventory & item registry...
+#include "item.h"
 
-#define MAX_ITEM_TYPE 256
 unsigned char* item_type_script[MAX_ITEM_TYPE];
 unsigned char* item_type_icon[MAX_ITEM_TYPE];
 unsigned char* item_type_overlay[MAX_ITEM_TYPE];
