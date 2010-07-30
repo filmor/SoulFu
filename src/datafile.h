@@ -42,6 +42,7 @@
 extern int sdf_read_line_number;
 extern int sdf_read_remaining;
 extern int sdf_num_files;
+extern int sdf_extra_files;
 // !!!BAD!!! Noone should see the actual file ...
 extern char* sdf_read_file;
 extern unsigned char* sdf_index;

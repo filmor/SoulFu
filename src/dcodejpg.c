@@ -1,16 +1,15 @@
-// <ZZ> This file contains functions to convert JPEG files to RGB
-//  **  my_error_mgr            - A structure for the JPEG thing's error handling (ignore)
-//  **  my_error_exit           - A function for the JPEG thing's error handling (ignore)
-//  **  put_scanline_someplace  - Fills in the RGB file with data, Runs line by line (helper)
-//  **  decode_jpg              - The main function to do a JPG conversion
-#define TEXTURE_NO_ALPHA       0    // Normal texture
-#define TEXTURE_ALPHA          1    // Color keyed transparency, Prefix '-'
-#define TEXTURE_SUPER_ALPHA    2    // Color keyed with edge blur, Prefix '='
-#define TEXTURE_DONT_LOAD      3    // Not supposed to load this onto card, Prefix '+'
-#define TEXTURE_ON_CARD        4    // Has been loaded onto the card
+#include "dcodejpg.h"
+
+#include "datafile.h"
+
+#include "soulfu.h" // repeat
+
+#include <stdio.h> // FILE for jpeglib.h
+#include <stdlib.h> // size_t -/-
+#include <setjmp.h> // jmp_buf -/-
+#include <jpeglib.h>
 
 unsigned char file_is_a_heightmap;
-//-----------------------------------------------------------------------------------------------
 struct my_error_mgr
 {
     // <ZZ> Helper for the JPEG library.
@@ -19,7 +18,7 @@ struct my_error_mgr
 };
 typedef struct my_error_mgr* my_error_ptr;
 
-//-----------------------------------------------------------------------------------------------
+
 METHODDEF(void) my_error_exit (j_common_ptr cinfo)
 {
     // <ZZ> Helper for the JPEG library.
@@ -28,11 +27,10 @@ METHODDEF(void) my_error_exit (j_common_ptr cinfo)
     longjmp(myerr->setjmp_buffer, 1);
 }
 
-//-----------------------------------------------------------------------------------------------
 void put_scanline_someplace(JSAMPLE* read, unsigned char* newdata, int samples, int bytes_per_sample)
 {
-    // <ZZ> This function sticks a decoded scanline (at read) into a location (at newdata).  This
-    //      is a helper for the JPEG decode thing.
+    // <ZZ> This function sticks a decoded scanline (at read) into a location
+    //      (at newdata). This is a helper for the JPEG decode thing.
     int i;
     unsigned char r, g, b;
 //    unsigned char hi, lo;
@@ -45,8 +43,10 @@ void put_scanline_someplace(JSAMPLE* read, unsigned char* newdata, int samples, 
         {
             repeat(i, samples)
             {
-                g = *read;  read+=3;
-                *newdata = g;   newdata++;
+                g = *read;
+                read += 3;
+                *newdata = g;
+                newdata++;
             }
         }
         else
@@ -94,15 +94,14 @@ void put_scanline_someplace(JSAMPLE* read, unsigned char* newdata, int samples, 
     }
 }
 
-//-----------------------------------------------------------------------------------------------
 signed char decode_jpg(unsigned char* index, unsigned char* filename)
 {
-    // <ZZ> This function decompresses a jpg file that has been stored in memory.  Index is a
-    //      pointer to the start of the file's index in sdf_index, and can be gotten from
-    //      sdf_find_index.  If the function works okay, it should create a new RGB file in the
-    //      index and return TRUE.  It might also delete the original compressed file to save
-    //      space, but that's a compile time option.  If it fails it should return FALSE, or
-    //      it might decide to crash.
+    // <ZZ> This function decompresses a jpg file that has been stored in memory.
+    //      Index is a pointer to the start of the file's index in sdf_index, and can
+    //      be gotten from sdf_find_index. If the function works okay, it should
+    //      create a new RGB file in the index and return TRUE. It might also delete
+    //      the original compressed file to save space, but that's a compile time
+    //      option.  If it fails it should return FALSE, or it might decide to crash.
     struct jpeg_decompress_struct cinfo;
     struct my_error_mgr jerr;
     JSAMPARRAY buffer;      // Output row buffer
@@ -112,7 +111,6 @@ signed char decode_jpg(unsigned char* index, unsigned char* filename)
     unsigned char* newdata; // Decompressed
     unsigned int newsize;   // Decompressed
     int j;
-
 
     // Log what we're doing
     file_is_a_heightmap = FALSE;
@@ -126,10 +124,10 @@ signed char decode_jpg(unsigned char* index, unsigned char* filename)
 
 
     // Find the location of the file data, and its size...
+    // !!!BAD!!! int == int*? DAMN
     data = (unsigned char*) sdf_read_unsigned_int(index);
     size = sdf_read_unsigned_int(index+4) & 0x00FFFFFF;
     newdata = NULL;
-
 
     // Setup the custom error handler
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -148,14 +146,11 @@ signed char decode_jpg(unsigned char* index, unsigned char* filename)
         return FALSE;
     }
 
-
     // Decompress the data
     jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, data, size);
+    jpeg_mem_src(&cinfo, data, size);
     jpeg_read_header(&cinfo, TRUE);
     jpeg_start_decompress(&cinfo);
-
-
 
     // Make sure we have room in the index for a new file
     #ifdef KEEP_COMPRESSED_FILES
@@ -168,8 +163,8 @@ signed char decode_jpg(unsigned char* index, unsigned char* filename)
     #endif
 
 
-
-    // Allocate memory for the new file...  2 byte flags, 4 byte texture, 2 byte x, 2 byte y, x*y*3 bytes for data (x*y bytes for heightmap)
+    // Allocate memory for the new file...  2 byte flags, 4 byte texture, 2 byte x,
+    // 2 byte y, x*y*3 bytes for data (x*y bytes for heightmap)
     newsize = 10;
     if(file_is_a_heightmap)
     {
@@ -197,8 +192,6 @@ signed char decode_jpg(unsigned char* index, unsigned char* filename)
         *(index+4) = SDF_FILE_IS_RGB;
         repeat(j, 8) { *(index+8+j) = 0; }
         memcpy(index+8, filename, strlen(filename));
-
-
 
         // Write the texture info and file dimensions to the first 10 bytes
         sdf_write_unsigned_short(newdata, (unsigned short) 0);   newdata+=2;

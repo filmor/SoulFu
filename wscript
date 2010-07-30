@@ -8,6 +8,9 @@ def configure(conf):
     conf.check_tool('compiler_cc')
     conf.check_cfg(package='sdl', at_least_version='1.2.11',\
                    args='--libs --cflags')
+"""Definitely needs:
+    jpeglib.h from jpeg, libGL, libGLext, SDL, SDL_net
+    """
 #    conf.check_cfg(msg='Checking for ffmpeg', \
 #                   package='libavcodec libavformat libavutil', \
 #                   args='--libs --cflags',
