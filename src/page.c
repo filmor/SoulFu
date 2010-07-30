@@ -1,5 +1,9 @@
 #include "page.h"
+
+#include "soulfu.h"
 #include "datafile.h"
+
+#include <math.h>
 
 float page_xy[PAGE_FRAME][PAGE_COL*2];      // The page animation
 

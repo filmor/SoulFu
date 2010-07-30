@@ -8,6 +8,8 @@
 #define MAX_KEY_BUFFER 256                      // Must be 256
 #define MAX_ASCII 128                           // Must be 128
 extern int num_joystick;
+extern char mouse_text_timer;
+extern float mouse_character_distance;
 extern unsigned char mouse_draw;
 extern unsigned char key_down[MAX_KEY];                // TRUE if key is held down
 extern unsigned char key_pressed[MAX_KEY];             // TRUE if key was just pressed (updated once per timing cycle)

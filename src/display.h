@@ -63,15 +63,28 @@
 #define CIRCLE_TOTAL_POINTS (CIRCLE_POINTS + 5)  // 4 for corners, 1 redundant
 #define WARNING_SIZE 20.0f              //
 
+
+extern unsigned int texture_automap_stair;
+extern unsigned int texture_automap_town;
+extern unsigned int texture_automap_boss;
+extern unsigned int texture_automap_virtue;
+extern unsigned int texture_armorst;
+extern unsigned int texture_armor;
+extern unsigned int texture_petrify;
+
+extern float rotate_enviro_matrix[6]; 
 extern unsigned int texture_ascii;
 extern unsigned int texture_bookfnt;
 extern float window_camera_matrix[16];
+extern float onscreen_matrix[16];
 extern float screen_frustum_x;
 extern float screen_frustum_y;
 extern float camera_to_distance;
 extern float target_xyz[3];
 extern int camera_rotation_add_xy[2];
+extern float rotate_camera_matrix[16];
 extern unsigned short camera_rotation_xy[2];
+extern float camera_distance;
 extern unsigned char display_full_screen;
 extern float camera_fore_xyz[3];               // The forward vector of the camera
 extern float camera_side_xyz[3];

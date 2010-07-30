@@ -1,6 +1,8 @@
 #ifndef SOULFU_VOLUME_H
 #define SOULFU_VOLUME_H
 
+extern float global_volumetric_shadow_vector_xyzz[4];
+
 /* volume.c */
 void volume_shadow_edge(float *start_xyz, float *end_xyz);
 void volume_rdy_find_temp_stuff(unsigned char *data, unsigned short frame);

@@ -1,3 +1,14 @@
+#include "render.h"
+
+#include "soulfu.h"
+#include "input.h"
+#include "display.h"
+#include "datafile.h"
+#include "object.h"
+#include "common.h"
+#include "dcodesrc.h"
+
+#include <string.h>
 
 #ifdef DEVTOOL
 unsigned char global_billboard_active = TRUE;
@@ -84,9 +95,9 @@ unsigned char* render_generate_model_world_data(unsigned char* data, unsigned sh
     num_bone = num_bone<<1;
     repeat(i, num_bone)
     {
-        *((float*) write) = (joint_position_data[X]*matrix[0]) + (joint_position_data[Y]*matrix[3]) + (joint_position_data[Z]*matrix[6]);  write+=4;
-        *((float*) write) = (joint_position_data[X]*matrix[1]) + (joint_position_data[Y]*matrix[4]) + (joint_position_data[Z]*matrix[7]);  write+=4;
-        *((float*) write) = (joint_position_data[X]*matrix[2]) + (joint_position_data[Y]*matrix[5]) + (joint_position_data[Z]*matrix[8]);  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[0]) + (joint_position_data[1]*matrix[3]) + (joint_position_data[2]*matrix[6]);  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[1]) + (joint_position_data[1]*matrix[4]) + (joint_position_data[2]*matrix[7]);  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[2]) + (joint_position_data[1]*matrix[5]) + (joint_position_data[2]*matrix[8]);  write+=4;
 //if((i & 1) == 0)
 //{
 //  log_message("INFO:     Front %d == (%f, %f, %f)", i>>1, *((float*)(write-12)), *((float*)(write-8)), *((float*)(write-4)));
@@ -104,9 +115,9 @@ unsigned char* render_generate_model_world_data(unsigned char* data, unsigned sh
 //log_message("INFO:   Calculating joint positions");
     repeat(i, num_joint)
     {
-        *((float*) write) = (joint_position_data[X]*matrix[0]) + (joint_position_data[Y]*matrix[3]) + (joint_position_data[Z]*matrix[6]) + matrix[9];  write+=4;
-        *((float*) write) = (joint_position_data[X]*matrix[1]) + (joint_position_data[Y]*matrix[4]) + (joint_position_data[Z]*matrix[7]) + matrix[10];  write+=4;
-        *((float*) write) = (joint_position_data[X]*matrix[2]) + (joint_position_data[Y]*matrix[5]) + (joint_position_data[Z]*matrix[8]) + matrix[11];  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[0]) + (joint_position_data[1]*matrix[3]) + (joint_position_data[2]*matrix[6]) + matrix[9];  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[1]) + (joint_position_data[1]*matrix[4]) + (joint_position_data[2]*matrix[7]) + matrix[10];  write+=4;
+        *((float*) write) = (joint_position_data[0]*matrix[2]) + (joint_position_data[1]*matrix[5]) + (joint_position_data[2]*matrix[8]) + matrix[11];  write+=4;
 //  log_message("INFO:     Joint %d == (%f, %f, %f)", i, *((float*)(write-12)), *((float*)(write-8)), *((float*)(write-4)));
         joint_position_data+=3;
     }
@@ -125,8 +136,8 @@ unsigned char* render_generate_model_world_data(unsigned char* data, unsigned sh
             // Rotate and translate each shadow coordinate...
             repeat(j, 4)
             {
-                *((float*) write) = ((((float*) frame_data)[X])*matrix[0]) + ((((float*) frame_data)[Y])*matrix[3]) + matrix[9];  write+=4;
-                *((float*) write) = ((((float*) frame_data)[X])*matrix[1]) + ((((float*) frame_data)[Y])*matrix[4]) + matrix[10];  write+=4;
+                *((float*) write) = ((((float*) frame_data)[0])*matrix[0]) + ((((float*) frame_data)[1])*matrix[3]) + matrix[9];  write+=4;
+                *((float*) write) = ((((float*) frame_data)[0])*matrix[1]) + ((((float*) frame_data)[1])*matrix[4]) + matrix[10];  write+=4;
                 frame_data+=8;
             }
         }
@@ -198,9 +209,9 @@ void render_fix_model_to_bone_length(unsigned char* data, unsigned short frame, 
         // Clear joint movement vectors
         repeat(j, num_joint)
         {
-            joint_movement_xyz[j][X] = 0;
-            joint_movement_xyz[j][Y] = 0;
-            joint_movement_xyz[j][Z] = 0;
+            joint_movement_xyz[j][0] = 0;
+            joint_movement_xyz[j][1] = 0;
+            joint_movement_xyz[j][2] = 0;
         }
 
 
@@ -214,41 +225,41 @@ void render_fix_model_to_bone_length(unsigned char* data, unsigned short frame, 
             desired_length = *((float*) (bone_data+5+(j*9)));
 
 
-            start_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
-            start_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
-            start_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
+            start_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
+            start_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
+            start_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
 
 
-            end_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
-            end_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
-            end_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
+            end_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
+            end_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
+            end_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
 
 
             // Vector from bone start to bone end to find length...
-            end_xyz[X]-=start_xyz[X];
-            end_xyz[Y]-=start_xyz[Y];
-            end_xyz[Z]-=start_xyz[Z];
+            end_xyz[0]-=start_xyz[0];
+            end_xyz[1]-=start_xyz[1];
+            end_xyz[2]-=start_xyz[2];
             length = vector_length(end_xyz);
             if(length < 0.001f) length = 0.001f;
 
             // Figure out the movement...
             length = (length-desired_length)/length;
-            end_xyz[X]*=length;
-            end_xyz[Y]*=length;
-            end_xyz[Z]*=length;
+            end_xyz[0]*=length;
+            end_xyz[1]*=length;
+            end_xyz[2]*=length;
             if(exempt_joint == joint[0])
             {
                 // Only joint[1] should move
-                joint_movement_xyz[joint[1]][X] = -end_xyz[X];
-                joint_movement_xyz[joint[1]][Y] = -end_xyz[Y];
-                joint_movement_xyz[joint[1]][Z] = -end_xyz[Z];
+                joint_movement_xyz[joint[1]][0] = -end_xyz[0];
+                joint_movement_xyz[joint[1]][1] = -end_xyz[1];
+                joint_movement_xyz[joint[1]][2] = -end_xyz[2];
             }
             else if(exempt_joint == joint[1])
             {
                 // Only joint[0] should move
-                joint_movement_xyz[joint[0]][X] = end_xyz[X];
-                joint_movement_xyz[joint[0]][Y] = end_xyz[Y];
-                joint_movement_xyz[joint[0]][Z] = end_xyz[Z];
+                joint_movement_xyz[joint[0]][0] = end_xyz[0];
+                joint_movement_xyz[joint[0]][1] = end_xyz[1];
+                joint_movement_xyz[joint[0]][2] = end_xyz[2];
             }
             else
             {
@@ -259,13 +270,13 @@ void render_fix_model_to_bone_length(unsigned char* data, unsigned short frame, 
                 if(joint_weight[1] < JOINT_COLLISION_SCALE) joint_weight[1] = JOINT_COLLISION_SCALE;
                 total_weight = joint_weight[0] + joint_weight[1];
 
-                joint_movement_xyz[joint[0]][X] += end_xyz[X]*joint_weight[1]/total_weight;
-                joint_movement_xyz[joint[0]][Y] += end_xyz[Y]*joint_weight[1]/total_weight;
-                joint_movement_xyz[joint[0]][Z] += end_xyz[Z]*joint_weight[1]/total_weight;
+                joint_movement_xyz[joint[0]][0] += end_xyz[0]*joint_weight[1]/total_weight;
+                joint_movement_xyz[joint[0]][1] += end_xyz[1]*joint_weight[1]/total_weight;
+                joint_movement_xyz[joint[0]][2] += end_xyz[2]*joint_weight[1]/total_weight;
 
-                joint_movement_xyz[joint[1]][X] -= end_xyz[X]*joint_weight[0]/total_weight;
-                joint_movement_xyz[joint[1]][Y] -= end_xyz[Y]*joint_weight[0]/total_weight;
-                joint_movement_xyz[joint[1]][Z] -= end_xyz[Z]*joint_weight[0]/total_weight;
+                joint_movement_xyz[joint[1]][0] -= end_xyz[0]*joint_weight[0]/total_weight;
+                joint_movement_xyz[joint[1]][1] -= end_xyz[1]*joint_weight[0]/total_weight;
+                joint_movement_xyz[joint[1]][2] -= end_xyz[2]*joint_weight[0]/total_weight;
             }
         }
 
@@ -274,9 +285,9 @@ void render_fix_model_to_bone_length(unsigned char* data, unsigned short frame, 
         // Apply the movement for each joint...
         repeat(j, num_joint)
         {
-            *((float*) (frame_data + 11 + (num_bone*24) + (j*12))) += joint_movement_xyz[j][X]*0.50f;
-            *((float*) (frame_data + 11 + (num_bone*24) + 4 + (j*12))) += joint_movement_xyz[j][Y]*0.50f;
-            *((float*) (frame_data + 11 + (num_bone*24) + 8 + (j*12))) += joint_movement_xyz[j][Z]*0.50f;
+            *((float*) (frame_data + 11 + (num_bone*24) + (j*12))) += joint_movement_xyz[j][0]*0.50f;
+            *((float*) (frame_data + 11 + (num_bone*24) + 4 + (j*12))) += joint_movement_xyz[j][1]*0.50f;
+            *((float*) (frame_data + 11 + (num_bone*24) + 8 + (j*12))) += joint_movement_xyz[j][2]*0.50f;
         }
     }
 }
@@ -334,20 +345,20 @@ void render_crunch_bone(unsigned char* data, unsigned short frame, unsigned shor
         joint[1] = *((unsigned short*) (bone_data+3+(bone*9)));
 
 
-        start_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
-        start_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
-        start_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
 
 
-        end_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
-        end_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
-        end_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
+        end_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
+        end_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
+        end_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
 
 
         // Vector from bone start to bone end to find length...
-        end_xyz[X]-=start_xyz[X];
-        end_xyz[Y]-=start_xyz[Y];
-        end_xyz[Z]-=start_xyz[Z];
+        end_xyz[0]-=start_xyz[0];
+        end_xyz[1]-=start_xyz[1];
+        end_xyz[2]-=start_xyz[2];
         length = vector_length(end_xyz);
 
 //        log_message("INFO:   Bone %d, from joint %d to %d, is %f long", bone, joint[0], joint[1], length);
@@ -418,15 +429,15 @@ void render_crunch_vertex(unsigned char* data, unsigned short frame, unsigned sh
 
     // Skip ahead to the current vertex's data
     vertex_data = base_model_data + (vertex<<6);
-    point_xyz[X] = *((float*) (vertex_data));
-    point_xyz[Y] = *((float*) (vertex_data+4));
-    point_xyz[Z] = *((float*) (vertex_data+8));
+    point_xyz[0] = *((float*) (vertex_data));
+    point_xyz[1] = *((float*) (vertex_data+4));
+    point_xyz[2] = *((float*) (vertex_data+8));
     bone_binding[0] = *(vertex_data+12);
     bone_binding[1] = *(vertex_data+13);
 
 
 //log_message("INFO:   Point %d, Bone %d and %d", vertex, bone_binding[0], bone_binding[1]);
-//log_message("INFO:     Actual = (%f, %f, %f)", point_xyz[X], point_xyz[Y], point_xyz[Z]);
+//log_message("INFO:     Actual = (%f, %f, %f)", point_xyz[0], point_xyz[1], point_xyz[2]);
 
     // Crunch for each bone
     repeat(i, 2)
@@ -435,42 +446,42 @@ void render_crunch_vertex(unsigned char* data, unsigned short frame, unsigned sh
         joint[0] = *((unsigned short*) (bone_data+1+(bone_binding[i]*9)));
         joint[1] = *((unsigned short*) (bone_data+3+(bone_binding[i]*9)));
 //log_message("INFO:     Joint %d to %d", joint[0], joint[1]);
-        start_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
-        start_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
-        start_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[0]*12)));
+        start_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[0]*12)));
 
-//log_message("INFO:       StartPos = (%f, %f, %f)", start_xyz[X], start_xyz[Y], start_xyz[Z]);
-
-
-        end_xyz[X] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
-        end_xyz[Y] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
-        end_xyz[Z] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
-
-//log_message("INFO:       EndPos = (%f, %f, %f)", end_xyz[X], end_xyz[Y], end_xyz[Z]);
+//log_message("INFO:       StartPos = (%f, %f, %f)", start_xyz[0], start_xyz[1], start_xyz[2]);
 
 
-        front_xyz[X] = *((float*) (frame_data + 11 + (bone_binding[i]*24)));
-        front_xyz[Y] = *((float*) (frame_data + 11 + 4 + (bone_binding[i]*24)));
-        front_xyz[Z] = *((float*) (frame_data + 11 + 8 + (bone_binding[i]*24)));
+        end_xyz[0] = *((float*) (frame_data + 11 + (num_bone*24) + (joint[1]*12)));
+        end_xyz[1] = *((float*) (frame_data + 11 + 4 + (num_bone*24) + (joint[1]*12)));
+        end_xyz[2] = *((float*) (frame_data + 11 + 8 + (num_bone*24) + (joint[1]*12)));
 
-        side_xyz[X] = *((float*) (frame_data + 11 + 12 + (bone_binding[i]*24)));
-        side_xyz[Y] = *((float*) (frame_data + 11 + 16 + (bone_binding[i]*24)));
-        side_xyz[Z] = *((float*) (frame_data + 11 + 20 + (bone_binding[i]*24)));
+//log_message("INFO:       EndPos = (%f, %f, %f)", end_xyz[0], end_xyz[1], end_xyz[2]);
+
+
+        front_xyz[0] = *((float*) (frame_data + 11 + (bone_binding[i]*24)));
+        front_xyz[1] = *((float*) (frame_data + 11 + 4 + (bone_binding[i]*24)));
+        front_xyz[2] = *((float*) (frame_data + 11 + 8 + (bone_binding[i]*24)));
+
+        side_xyz[0] = *((float*) (frame_data + 11 + 12 + (bone_binding[i]*24)));
+        side_xyz[1] = *((float*) (frame_data + 11 + 16 + (bone_binding[i]*24)));
+        side_xyz[2] = *((float*) (frame_data + 11 + 20 + (bone_binding[i]*24)));
 
 
         // Vector from bone start to bone end
-        end_xyz[X]-=start_xyz[X];
-        end_xyz[Y]-=start_xyz[Y];
-        end_xyz[Z]-=start_xyz[Z];
+        end_xyz[0]-=start_xyz[0];
+        end_xyz[1]-=start_xyz[1];
+        end_xyz[2]-=start_xyz[2];
 
-//log_message("INFO:       AlongBone = (%f, %f, %f)", end_xyz[X], end_xyz[Y], end_xyz[Z]);
+//log_message("INFO:       AlongBone = (%f, %f, %f)", end_xyz[0], end_xyz[1], end_xyz[2]);
 
         // Vector from bone start to point
-        height_xyz[X] = point_xyz[X] - start_xyz[X];
-        height_xyz[Y] = point_xyz[Y] - start_xyz[Y];
-        height_xyz[Z] = point_xyz[Z] - start_xyz[Z];
+        height_xyz[0] = point_xyz[0] - start_xyz[0];
+        height_xyz[1] = point_xyz[1] - start_xyz[1];
+        height_xyz[2] = point_xyz[2] - start_xyz[2];
 
-//log_message("INFO:       BoneStartToPoint = (%f, %f, %f)", height_xyz[X], height_xyz[Y], height_xyz[Z]);
+//log_message("INFO:       BoneStartToPoint = (%f, %f, %f)", height_xyz[0], height_xyz[1], height_xyz[2]);
 
 
         // Calculate height value
@@ -499,27 +510,27 @@ void render_crunch_vertex(unsigned char* data, unsigned short frame, unsigned sh
 
 
         // Calculate the height position
-        height_xyz[X] = start_xyz[X] + (end_xyz[X]*height);
-        height_xyz[Y] = start_xyz[Y] + (end_xyz[Y]*height);
-        height_xyz[Z] = start_xyz[Z] + (end_xyz[Z]*height);
-//log_message("INFO:       HeightPos = (%f, %f, %f)", height_xyz[X], height_xyz[Y], height_xyz[Z]);
+        height_xyz[0] = start_xyz[0] + (end_xyz[0]*height);
+        height_xyz[1] = start_xyz[1] + (end_xyz[1]*height);
+        height_xyz[2] = start_xyz[2] + (end_xyz[2]*height);
+//log_message("INFO:       HeightPos = (%f, %f, %f)", height_xyz[0], height_xyz[1], height_xyz[2]);
 
 
 
         // Calculate vector from height position (along bone) to point
-        height_xyz[X] = point_xyz[X] - height_xyz[X];
-        height_xyz[Y] = point_xyz[Y] - height_xyz[Y];
-        height_xyz[Z] = point_xyz[Z] - height_xyz[Z];
-//log_message("INFO:       HeightPosToPoint = (%f, %f, %f)", height_xyz[X], height_xyz[Y], height_xyz[Z]);
+        height_xyz[0] = point_xyz[0] - height_xyz[0];
+        height_xyz[1] = point_xyz[1] - height_xyz[1];
+        height_xyz[2] = point_xyz[2] - height_xyz[2];
+//log_message("INFO:       HeightPosToPoint = (%f, %f, %f)", height_xyz[0], height_xyz[1], height_xyz[2]);
 
 
 
         // Calculate front and side values
         front = dot_product(front_xyz, height_xyz);
         side = dot_product(side_xyz, height_xyz);
-//log_message("INFO:       Front = (%f, %f, %f)", front_xyz[X], front_xyz[Y], front_xyz[Z]);
+//log_message("INFO:       Front = (%f, %f, %f)", front_xyz[0], front_xyz[1], front_xyz[2]);
 //log_message("INFO:       Front = %f", front);
-//log_message("INFO:       Side = (%f, %f, %f)", side_xyz[X], side_xyz[Y], side_xyz[Z]);
+//log_message("INFO:       Side = (%f, %f, %f)", side_xyz[0], side_xyz[1], side_xyz[2]);
 //log_message("INFO:       Side = %f", side);
 
         // Write the values for the current vertex/bone
@@ -527,10 +538,10 @@ void render_crunch_vertex(unsigned char* data, unsigned short frame, unsigned sh
         *((float*) (vertex_data+35+(i<<2))) = front;
         *((float*) (vertex_data+43+(i<<2))) = side;
 
-//end_xyz[X] = start_xyz[X] + (height*end_xyz[X]) + (front*front_xyz[X]) + (side*side_xyz[X]);
-//end_xyz[Y] = start_xyz[Y] + (height*end_xyz[Y]) + (front*front_xyz[Y]) + (side*side_xyz[Y]);
-//end_xyz[Z] = start_xyz[Z] + (height*end_xyz[Z]) + (front*front_xyz[Z]) + (side*side_xyz[Z]);
-//log_message("INFO:       Generd = (%f, %f, %f)", end_xyz[X], end_xyz[Y], end_xyz[Z]);
+//end_xyz[0] = start_xyz[0] + (height*end_xyz[0]) + (front*front_xyz[0]) + (side*side_xyz[0]);
+//end_xyz[1] = start_xyz[1] + (height*end_xyz[1]) + (front*front_xyz[1]) + (side*side_xyz[1]);
+//end_xyz[2] = start_xyz[2] + (height*end_xyz[2]) + (front*front_xyz[2]) + (side*side_xyz[2]);
+//log_message("INFO:       Generd = (%f, %f, %f)", end_xyz[0], end_xyz[1], end_xyz[2]);
     }
     if(recalc_weight)
     {
@@ -685,9 +696,9 @@ void select_add(unsigned short item, float* item_xyz)
     if(select_num < MAX_SELECT)
     {
         select_list[select_num] = item;
-        select_xyz[select_num][X] = item_xyz[X];
-        select_xyz[select_num][Y] = item_xyz[Y];
-        select_xyz[select_num][Z] = item_xyz[Z];
+        select_xyz[select_num][0] = item_xyz[0];
+        select_xyz[select_num][1] = item_xyz[1];
+        select_xyz[select_num][2] = item_xyz[2];
         select_data[select_num] = item_xyz;
         select_num++;
     }
@@ -717,9 +728,9 @@ void select_remove(unsigned short item)
         while(item < (select_num-1))
         {
             select_list[item] = select_list[item+1];
-            select_xyz[item][X] = select_xyz[item+1][X];
-            select_xyz[item][Y] = select_xyz[item+1][Y];
-            select_xyz[item][Z] = select_xyz[item+1][Z];
+            select_xyz[item][0] = select_xyz[item+1][0];
+            select_xyz[item][1] = select_xyz[item+1][1];
+            select_xyz[item][2] = select_xyz[item+1][2];
             select_data[item] = select_data[item+1];
             item++;
         }
@@ -732,9 +743,9 @@ void select_update_xyz(void)
     unsigned short i;
     repeat(i, select_num)
     {
-        select_xyz[i][X] = select_data[i][X];
-        select_xyz[i][Y] = select_data[i][Y];
-        select_xyz[i][Z] = select_data[i][Z];
+        select_xyz[i][0] = select_data[i][0];
+        select_xyz[i][1] = select_data[i][1];
+        select_xyz[i][2] = select_data[i][2];
     }
 }
 void select_update_xy(void)
@@ -743,8 +754,8 @@ void select_update_xy(void)
     unsigned short i;
     repeat(i, select_num)
     {
-        select_xyz[i][X] = select_data[i][X];
-        select_xyz[i][Y] = select_data[i][Y];
+        select_xyz[i][0] = select_data[i][0];
+        select_xyz[i][1] = select_data[i][1];
     }
 }
 #endif
@@ -853,24 +864,24 @@ void render_rotate_bones(unsigned char* data, unsigned short frame, signed char 
         repeat(i, num_bone)
         {
             // Save the old data for an undo...
-            old_front_xyz[i][X] = *((float*) frame_data);  frame_data+=4;
-            old_front_xyz[i][Y] = *((float*) frame_data);  frame_data+=4;
-            old_front_xyz[i][Z] = *((float*) frame_data);  frame_data+=4;
-            old_side_xyz[i][X] = *((float*) frame_data);  frame_data+=4;
-            old_side_xyz[i][Y] = *((float*) frame_data);  frame_data+=4;
-            old_side_xyz[i][Z] = *((float*) frame_data);  frame_data+=4;
+            old_front_xyz[i][0] = *((float*) frame_data);  frame_data+=4;
+            old_front_xyz[i][1] = *((float*) frame_data);  frame_data+=4;
+            old_front_xyz[i][2] = *((float*) frame_data);  frame_data+=4;
+            old_side_xyz[i][0] = *((float*) frame_data);  frame_data+=4;
+            old_side_xyz[i][1] = *((float*) frame_data);  frame_data+=4;
+            old_side_xyz[i][2] = *((float*) frame_data);  frame_data+=4;
 
             // Is this a selected bone?
             if(select_inlist(*((unsigned short*) (bone_data+1))) && select_inlist(*((unsigned short*) (bone_data+3))))
             {
                 // Generate new bone normals...
                 frame_data-=24;
-                *((float*) frame_data) = (old_front_xyz[i][X] * frotcos) + (old_side_xyz[i][X] * frotsin);  frame_data+=4;
-                *((float*) frame_data) = (old_front_xyz[i][Y] * frotcos) + (old_side_xyz[i][Y] * frotsin);  frame_data+=4;
-                *((float*) frame_data) = (old_front_xyz[i][Z] * frotcos) + (old_side_xyz[i][Z] * frotsin);  frame_data+=4;
-                *((float*) frame_data) = (-old_front_xyz[i][X] * frotsin) + (old_side_xyz[i][X] * frotcos);  frame_data+=4;
-                *((float*) frame_data) = (-old_front_xyz[i][Y] * frotsin) + (old_side_xyz[i][Y] * frotcos);  frame_data+=4;
-                *((float*) frame_data) = (-old_front_xyz[i][Z] * frotsin) + (old_side_xyz[i][Z] * frotcos);  frame_data+=4;
+                *((float*) frame_data) = (old_front_xyz[i][0] * frotcos) + (old_side_xyz[i][0] * frotsin);  frame_data+=4;
+                *((float*) frame_data) = (old_front_xyz[i][1] * frotcos) + (old_side_xyz[i][1] * frotsin);  frame_data+=4;
+                *((float*) frame_data) = (old_front_xyz[i][2] * frotcos) + (old_side_xyz[i][2] * frotsin);  frame_data+=4;
+                *((float*) frame_data) = (-old_front_xyz[i][0] * frotsin) + (old_side_xyz[i][0] * frotcos);  frame_data+=4;
+                *((float*) frame_data) = (-old_front_xyz[i][1] * frotsin) + (old_side_xyz[i][1] * frotcos);  frame_data+=4;
+                *((float*) frame_data) = (-old_front_xyz[i][2] * frotsin) + (old_side_xyz[i][2] * frotcos);  frame_data+=4;
             }
             bone_data += 9;
         }
@@ -881,12 +892,12 @@ void render_rotate_bones(unsigned char* data, unsigned short frame, signed char 
         repeat(i, num_bone)
         {
             // Save the old data for an undo...
-            *((float*) frame_data) = old_front_xyz[i][X];  frame_data+=4;
-            *((float*) frame_data) = old_front_xyz[i][Y];  frame_data+=4;
-            *((float*) frame_data) = old_front_xyz[i][Z];  frame_data+=4;
-            *((float*) frame_data) = old_side_xyz[i][X];  frame_data+=4;
-            *((float*) frame_data) = old_side_xyz[i][Y];  frame_data+=4;
-            *((float*) frame_data) = old_side_xyz[i][Z];  frame_data+=4;
+            *((float*) frame_data) = old_front_xyz[i][0];  frame_data+=4;
+            *((float*) frame_data) = old_front_xyz[i][1];  frame_data+=4;
+            *((float*) frame_data) = old_front_xyz[i][2];  frame_data+=4;
+            *((float*) frame_data) = old_side_xyz[i][0];  frame_data+=4;
+            *((float*) frame_data) = old_side_xyz[i][1];  frame_data+=4;
+            *((float*) frame_data) = old_side_xyz[i][2];  frame_data+=4;
         }
     }
 }
@@ -917,8 +928,8 @@ void render_box()
 
 
     // Check size...
-    clip(selection_box_min[X], selection_box_br[X], selection_box_max[X]);
-    clip(selection_box_min[Y], selection_box_br[Y], selection_box_max[Y]);
+    clip(selection_box_min[0], selection_box_br[0], selection_box_max[0]);
+    clip(selection_box_min[1], selection_box_br[1], selection_box_max[1]);
 
 
     // Draw it
@@ -926,23 +937,23 @@ void render_box()
     display_color(yellow);
 
     display_start_line();
-        display_vertex_xyz(selection_box_tl[X], selection_box_tl[Y], 0);
-        display_vertex_xyz(selection_box_br[X], selection_box_tl[Y], 0);
+        display_vertex_xyz(selection_box_tl[0], selection_box_tl[1], 0);
+        display_vertex_xyz(selection_box_br[0], selection_box_tl[1], 0);
     display_end();
 
     display_start_line();
-        display_vertex_xyz(selection_box_br[X], selection_box_tl[Y], 0);
-        display_vertex_xyz(selection_box_br[X], selection_box_br[Y], 0);
+        display_vertex_xyz(selection_box_br[0], selection_box_tl[1], 0);
+        display_vertex_xyz(selection_box_br[0], selection_box_br[1], 0);
     display_end();
 
     display_start_line();
-        display_vertex_xyz(selection_box_br[X], selection_box_br[Y], 0);
-        display_vertex_xyz(selection_box_tl[X], selection_box_br[Y], 0);
+        display_vertex_xyz(selection_box_br[0], selection_box_br[1], 0);
+        display_vertex_xyz(selection_box_tl[0], selection_box_br[1], 0);
     display_end();
 
     display_start_line();
-        display_vertex_xyz(selection_box_tl[X], selection_box_br[Y], 0);
-        display_vertex_xyz(selection_box_tl[X], selection_box_tl[Y], 0);
+        display_vertex_xyz(selection_box_tl[0], selection_box_br[1], 0);
+        display_vertex_xyz(selection_box_tl[0], selection_box_tl[1], 0);
     display_end();
 
     display_texture_on();
@@ -1073,9 +1084,9 @@ void render_model_move(void)
     if(selection_move == MOVE_MODE_ROTATE)
     {
         // Build the rotation matrix...
-        x = select_offset_xyz[X] - select_center_xyz[X];
-        y = select_offset_xyz[Y] - select_center_xyz[Y];
-        z = select_offset_xyz[Z] - select_center_xyz[Z];
+        x = select_offset_xyz[0] - select_center_xyz[0];
+        y = select_offset_xyz[1] - select_center_xyz[1];
+        z = select_offset_xyz[2] - select_center_xyz[2];
         if(rotation_view == VIEW_TOP_XY)         z = 0;
         else if(rotation_view == VIEW_FRONT_XZ)  y = 0;
         else if(rotation_view == VIEW_SIDE_YZ)   x = 0;
@@ -1120,63 +1131,63 @@ if(key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT])
 {
     if(rotation_view == VIEW_TOP_XY)
     {
-        select_offset_xyz[Y] = select_center_xyz[Y];
-sprintf(NAME_STRING, "Offset X == %f", select_offset_xyz[X] - select_center_xyz[X]);
+        select_offset_xyz[1] = select_center_xyz[1];
+sprintf(NAME_STRING, "Offset X == %f", select_offset_xyz[0] - select_center_xyz[0]);
     }
     else if(rotation_view == VIEW_FRONT_XZ)
     {
-        select_offset_xyz[X] = select_center_xyz[X];
-sprintf(NAME_STRING, "Offset Z == %f", select_offset_xyz[Z] - select_center_xyz[Z]);
+        select_offset_xyz[0] = select_center_xyz[0];
+sprintf(NAME_STRING, "Offset Z == %f", select_offset_xyz[2] - select_center_xyz[2]);
     }
     else if(rotation_view == VIEW_SIDE_YZ)
     {
-        select_offset_xyz[Z] = select_center_xyz[Z];
-sprintf(NAME_STRING, "Offset Y == %f", select_offset_xyz[Y] - select_center_xyz[Y]);
+        select_offset_xyz[2] = select_center_xyz[2];
+sprintf(NAME_STRING, "Offset Y == %f", select_offset_xyz[1] - select_center_xyz[1]);
     }
 }
 
     repeat(index, select_num)
     {
-        x = select_xyz[index][X];
-        y = select_xyz[index][Y];
-        z = select_xyz[index][Z];
+        x = select_xyz[index][0];
+        y = select_xyz[index][1];
+        z = select_xyz[index][2];
 
 
         if(selection_move == MOVE_MODE_MOVE)
         {
             // Translation
-            x += select_offset_xyz[X] - select_center_xyz[X];
-            y += select_offset_xyz[Y] - select_center_xyz[Y];
-            z += select_offset_xyz[Z] - select_center_xyz[Z];
+            x += select_offset_xyz[0] - select_center_xyz[0];
+            y += select_offset_xyz[1] - select_center_xyz[1];
+            z += select_offset_xyz[2] - select_center_xyz[2];
         }
         else if(selection_move == MOVE_MODE_SCALE)
         {
             // Scaling
-            x = ((x-select_center_xyz[X])*(1.0f + select_offset_xyz[X] - select_center_xyz[X])) + select_center_xyz[X];
-            y = ((y-select_center_xyz[Y])*(1.0f + select_offset_xyz[Y] - select_center_xyz[Y])) + select_center_xyz[Y];
-            z = ((z-select_center_xyz[Z])*(1.0f + select_offset_xyz[Z] - select_center_xyz[Z])) + select_center_xyz[Z];
+            x = ((x-select_center_xyz[0])*(1.0f + select_offset_xyz[0] - select_center_xyz[0])) + select_center_xyz[0];
+            y = ((y-select_center_xyz[1])*(1.0f + select_offset_xyz[1] - select_center_xyz[1])) + select_center_xyz[1];
+            z = ((z-select_center_xyz[2])*(1.0f + select_offset_xyz[2] - select_center_xyz[2])) + select_center_xyz[2];
         }
         else if(selection_move == MOVE_MODE_ROTATE)
         {
             // Rotation
-            x -= select_center_xyz[X];
-            y -= select_center_xyz[Y];
-            z -= select_center_xyz[Z];
-            select_data[index][X] = x*rotate_matrix[0] + y*rotate_matrix[3] + z*rotate_matrix[6];
-            select_data[index][Y] = x*rotate_matrix[1] + y*rotate_matrix[4] + z*rotate_matrix[7];
-            select_data[index][Z] = x*rotate_matrix[2] + y*rotate_matrix[5] + z*rotate_matrix[8];
-            x = select_data[index][X];
-            y = select_data[index][Y];
-            z = select_data[index][Z];
-            x += select_center_xyz[X];
-            y += select_center_xyz[Y];
-            z += select_center_xyz[Z];
+            x -= select_center_xyz[0];
+            y -= select_center_xyz[1];
+            z -= select_center_xyz[2];
+            select_data[index][0] = x*rotate_matrix[0] + y*rotate_matrix[3] + z*rotate_matrix[6];
+            select_data[index][1] = x*rotate_matrix[1] + y*rotate_matrix[4] + z*rotate_matrix[7];
+            select_data[index][2] = x*rotate_matrix[2] + y*rotate_matrix[5] + z*rotate_matrix[8];
+            x = select_data[index][0];
+            y = select_data[index][1];
+            z = select_data[index][2];
+            x += select_center_xyz[0];
+            y += select_center_xyz[1];
+            z += select_center_xyz[2];
         }
 
         // Save
-        select_data[index][X] = x;
-        select_data[index][Y] = y;
-        select_data[index][Z] = z;
+        select_data[index][0] = x;
+        select_data[index][1] = y;
+        select_data[index][2] = z;
     }
 }
 #endif
@@ -1196,8 +1207,8 @@ void render_tex_move(unsigned char limit)
     if(selection_move == MOVE_MODE_ROTATE)
     {
         // Build the rotation matrix...
-        x = select_offset_xyz[X] - select_center_xyz[X];
-        y = select_offset_xyz[Y] - select_center_xyz[Y];
+        x = select_offset_xyz[0] - select_center_xyz[0];
+        y = select_offset_xyz[1] - select_center_xyz[1];
         distance = (float) sqrt(x*x + y*y);
         if(distance > 0.0001f)
         {
@@ -1214,45 +1225,45 @@ void render_tex_move(unsigned char limit)
 
     repeat(index, select_num)
     {
-        x = select_xyz[index][X];
-        y = select_xyz[index][Y];
+        x = select_xyz[index][0];
+        y = select_xyz[index][1];
 
 
         if(selection_move == MOVE_MODE_MOVE)
         {
             // Translation
-            x += select_offset_xyz[X] - select_center_xyz[X];
-            y += select_offset_xyz[Y] - select_center_xyz[Y];
+            x += select_offset_xyz[0] - select_center_xyz[0];
+            y += select_offset_xyz[1] - select_center_xyz[1];
         }
         else if(selection_move == MOVE_MODE_SCALE)
         {
             // Scaling
-            x -= select_center_xyz[X];
-            y -= select_center_xyz[Y];
+            x -= select_center_xyz[0];
+            y -= select_center_xyz[1];
             if(limit)
             {
-                x *= (1.0f + ((select_offset_xyz[X] - select_center_xyz[X])*4.0f));
-                y *= (1.0f + ((select_offset_xyz[Y] - select_center_xyz[Y])*4.0f));
+                x *= (1.0f + ((select_offset_xyz[0] - select_center_xyz[0])*4.0f));
+                y *= (1.0f + ((select_offset_xyz[1] - select_center_xyz[1])*4.0f));
             }
             else
             {
-                x *= (1.0f + (select_offset_xyz[X] - select_center_xyz[X]));
-                y *= (1.0f + (select_offset_xyz[Y] - select_center_xyz[Y]));
+                x *= (1.0f + (select_offset_xyz[0] - select_center_xyz[0]));
+                y *= (1.0f + (select_offset_xyz[1] - select_center_xyz[1]));
             }
-            x += select_center_xyz[X];
-            y += select_center_xyz[Y];
+            x += select_center_xyz[0];
+            y += select_center_xyz[1];
         }
         else if(selection_move == MOVE_MODE_ROTATE)
         {
             // Rotation
-            x -= select_center_xyz[X];
-            y -= select_center_xyz[Y];
-            select_data[index][X] = x*rotate_matrix[0] + y*rotate_matrix[3];
-            select_data[index][Y] = x*rotate_matrix[1] + y*rotate_matrix[4];
-            x = select_data[index][X];
-            y = select_data[index][Y];
-            x += select_center_xyz[X];
-            y += select_center_xyz[Y];
+            x -= select_center_xyz[0];
+            y -= select_center_xyz[1];
+            select_data[index][0] = x*rotate_matrix[0] + y*rotate_matrix[3];
+            select_data[index][1] = x*rotate_matrix[1] + y*rotate_matrix[4];
+            x = select_data[index][0];
+            y = select_data[index][1];
+            x += select_center_xyz[0];
+            y += select_center_xyz[1];
         }
 
         // Save
@@ -1263,8 +1274,8 @@ void render_tex_move(unsigned char limit)
             if(y > 1.0f)  y = 1.0f;
             if(y < 0.0f)  y = 0.0f;
         }
-        select_data[index][X] = x;
-        select_data[index][Y] = y;
+        select_data[index][0] = x;
+        select_data[index][1] = y;
     }
 }
 #endif
@@ -1375,9 +1386,9 @@ void render_bone_frame(unsigned char* base_model_data, unsigned char* bone_data,
         bone_weight = *(base_model_data);  base_model_data++;
         normal_xyz = (float*) base_model_data;  base_model_data+=12;
 
-        vertex_xyz[X] = 0;
-        vertex_xyz[Y] = 0;
-        vertex_xyz[Z] = 0;
+        vertex_xyz[0] = 0;
+        vertex_xyz[1] = 0;
+        vertex_xyz[2] = 0;
         scalars = (float*) base_model_data;
 
 
@@ -1390,9 +1401,9 @@ void render_bone_frame(unsigned char* base_model_data, unsigned char* bone_data,
             // Anchor flag is set...  Do billboard style vertex coordinates...  !!!ANCHOR!!!
             bone_weight<<=1;  // Get rid of anchor flag...  !!!ANCHOR!!!
 
-            normal_xyz[X] = 1.0f;
-            normal_xyz[Y] = 0.0f;
-            normal_xyz[Z] = 0.0f;
+            normal_xyz[0] = 1.0f;
+            normal_xyz[1] = 0.0f;
+            normal_xyz[2] = 0.0f;
 
 //log_message("INFO:   Calc'in bill-vertex %d", i);
 
@@ -1402,9 +1413,9 @@ void render_bone_frame(unsigned char* base_model_data, unsigned char* bone_data,
                 start_xyz = (joint_data + (joint<<1) + joint);
                 joint = *((unsigned short*) (bone_data + (bone_binding[j]<<3) + bone_binding[j] + 3));
                 end_xyz = (joint_data + (joint<<1) + joint);
-                height_xyz[X] = end_xyz[X]-start_xyz[X];
-                height_xyz[Y] = end_xyz[Y]-start_xyz[Y];
-                height_xyz[Z] = end_xyz[Z]-start_xyz[Z];
+                height_xyz[0] = end_xyz[0]-start_xyz[0];
+                height_xyz[1] = end_xyz[1]-start_xyz[1];
+                height_xyz[2] = end_xyz[2]-start_xyz[2];
                 height = *scalars;
                 front = *(scalars+4);
 //log_message("INFO:     Front %d == %f", j, front);
@@ -1415,22 +1426,22 @@ void render_bone_frame(unsigned char* base_model_data, unsigned char* bone_data,
                 cross_product(camera_fore_xyz, height_xyz, cross_xyz);
                 side = *((float*) (bone_data + (bone_binding[j]<<3) + bone_binding[j] + 5));
 side = side-(0.5f*(dot_product(camera_fore_xyz, height_xyz)));
-                cross_xyz[X]/=side;
-                cross_xyz[Y]/=side;
-                cross_xyz[Z]/=side;
+                cross_xyz[0]/=side;
+                cross_xyz[1]/=side;
+                cross_xyz[2]/=side;
 
 
 
-                vertex_xyz[X] += (start_xyz[X] + (height_xyz[X] * height) + (cross_xyz[X] * front) ) * bone_weight;
-                vertex_xyz[Y] += (start_xyz[Y] + (height_xyz[Y] * height) + (cross_xyz[Y] * front) ) * bone_weight;
-                vertex_xyz[Z] += (start_xyz[Z] + (height_xyz[Z] * height) + (cross_xyz[Z] * front) ) * bone_weight;
+                vertex_xyz[0] += (start_xyz[0] + (height_xyz[0] * height) + (cross_xyz[0] * front) ) * bone_weight;
+                vertex_xyz[1] += (start_xyz[1] + (height_xyz[1] * height) + (cross_xyz[1] * front) ) * bone_weight;
+                vertex_xyz[2] += (start_xyz[2] + (height_xyz[2] * height) + (cross_xyz[2] * front) ) * bone_weight;
                 bone_weight = 255 - bone_weight;
             }
             // Divide by 255 to correct for bone_weight
-            vertex_xyz[X] = vertex_xyz[X] * DIVIDE_BY_255;
-            vertex_xyz[Y] = vertex_xyz[Y] * DIVIDE_BY_255;
-            vertex_xyz[Z] = vertex_xyz[Z] * DIVIDE_BY_255;
-//log_message("INFO:     Position == %f, %f, %f", vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z]);
+            vertex_xyz[0] = vertex_xyz[0] * DIVIDE_BY_255;
+            vertex_xyz[1] = vertex_xyz[1] * DIVIDE_BY_255;
+            vertex_xyz[2] = vertex_xyz[2] * DIVIDE_BY_255;
+//log_message("INFO:     Position == %f, %f, %f", vertex_xyz[0], vertex_xyz[1], vertex_xyz[2]);
             base_model_data+=37;
         }
         else
@@ -1447,31 +1458,31 @@ side = side-(0.5f*(dot_product(camera_fore_xyz, height_xyz)));
                 joint = *((unsigned short*) (bone_data + (bone_binding[j]<<3) + bone_binding[j] + 1));
                 start_xyz = (joint_data + (joint<<1) + joint);
 //log_message("INFO:       Joint 1 = %d", joint);
-//log_message("INFO:       Start = (%f, %f, %f)", start_xyz[X], start_xyz[Y], start_xyz[Z]);
+//log_message("INFO:       Start = (%f, %f, %f)", start_xyz[0], start_xyz[1], start_xyz[2]);
 
 
                 joint = *((unsigned short*) (bone_data + (bone_binding[j]<<3) + bone_binding[j] + 3));
                 end_xyz = (joint_data + (joint<<1) + joint);
 //log_message("INFO:       Joint 2 = %d", joint);
-//log_message("INFO:       End = (%f, %f, %f)", end_xyz[X], end_xyz[Y], end_xyz[Z]);
+//log_message("INFO:       End = (%f, %f, %f)", end_xyz[0], end_xyz[1], end_xyz[2]);
 
 
-                height_xyz[X] = end_xyz[X]-start_xyz[X];
-                height_xyz[Y] = end_xyz[Y]-start_xyz[Y];
-                height_xyz[Z] = end_xyz[Z]-start_xyz[Z];
-//log_message("INFO:       Height = (%f, %f, %f)", height_xyz[X], height_xyz[Y], height_xyz[Z]);
-//log_message("INFO:       Front = (%f, %f, %f)", front_xyz[X], front_xyz[Y], front_xyz[Z]);
-//log_message("INFO:       Side = (%f, %f, %f)", side_xyz[X], side_xyz[Y], side_xyz[Z]);
+                height_xyz[0] = end_xyz[0]-start_xyz[0];
+                height_xyz[1] = end_xyz[1]-start_xyz[1];
+                height_xyz[2] = end_xyz[2]-start_xyz[2];
+//log_message("INFO:       Height = (%f, %f, %f)", height_xyz[0], height_xyz[1], height_xyz[2]);
+//log_message("INFO:       Front = (%f, %f, %f)", front_xyz[0], front_xyz[1], front_xyz[2]);
+//log_message("INFO:       Side = (%f, %f, %f)", side_xyz[0], side_xyz[1], side_xyz[2]);
 
                 if(j == 0)
                 {
                     height = *(scalars+6);
                     front = *(scalars+7);
                     side = *(scalars+8);
-                    normal_xyz[X] = (height_xyz[X] * height) + (front_xyz[X] * front) + (side_xyz[X] * side);
-                    normal_xyz[Y] = (height_xyz[Y] * height) + (front_xyz[Y] * front) + (side_xyz[Y] * side);
-                    normal_xyz[Z] = (height_xyz[Z] * height) + (front_xyz[Z] * front) + (side_xyz[Z] * side);
-//log_message("INFO:       Generd = (%f, %f, %f)", normal_xyz[X], normal_xyz[Y], normal_xyz[Z]);
+                    normal_xyz[0] = (height_xyz[0] * height) + (front_xyz[0] * front) + (side_xyz[0] * side);
+                    normal_xyz[1] = (height_xyz[1] * height) + (front_xyz[1] * front) + (side_xyz[1] * side);
+                    normal_xyz[2] = (height_xyz[2] * height) + (front_xyz[2] * front) + (side_xyz[2] * side);
+//log_message("INFO:       Generd = (%f, %f, %f)", normal_xyz[0], normal_xyz[1], normal_xyz[2]);
                 }
 
 
@@ -1485,16 +1496,16 @@ side = side-(0.5f*(dot_product(camera_fore_xyz, height_xyz)));
 //log_message("INFO:       Front = %f", front);
 //log_message("INFO:       Side = %f", side);
 
-                vertex_xyz[X] += (start_xyz[X] + (height_xyz[X] * height) + (front_xyz[X] * front) + (side_xyz[X] * side)) * bone_weight;
-                vertex_xyz[Y] += (start_xyz[Y] + (height_xyz[Y] * height) + (front_xyz[Y] * front) + (side_xyz[Y] * side)) * bone_weight;
-                vertex_xyz[Z] += (start_xyz[Z] + (height_xyz[Z] * height) + (front_xyz[Z] * front) + (side_xyz[Z] * side)) * bone_weight;
+                vertex_xyz[0] += (start_xyz[0] + (height_xyz[0] * height) + (front_xyz[0] * front) + (side_xyz[0] * side)) * bone_weight;
+                vertex_xyz[1] += (start_xyz[1] + (height_xyz[1] * height) + (front_xyz[1] * front) + (side_xyz[1] * side)) * bone_weight;
+                vertex_xyz[2] += (start_xyz[2] + (height_xyz[2] * height) + (front_xyz[2] * front) + (side_xyz[2] * side)) * bone_weight;
                 bone_weight = 255 - bone_weight;
             }
             // Divide by 255 to correct for bone_weight
-            vertex_xyz[X] = vertex_xyz[X] * DIVIDE_BY_255;
-            vertex_xyz[Y] = vertex_xyz[Y] * DIVIDE_BY_255;
-            vertex_xyz[Z] = vertex_xyz[Z] * DIVIDE_BY_255;
-//log_message("INFO:       Vertex at (%f, %f, %f)", vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z]);
+            vertex_xyz[0] = vertex_xyz[0] * DIVIDE_BY_255;
+            vertex_xyz[1] = vertex_xyz[1] * DIVIDE_BY_255;
+            vertex_xyz[2] = vertex_xyz[2] * DIVIDE_BY_255;
+//log_message("INFO:       Vertex at (%f, %f, %f)", vertex_xyz[0], vertex_xyz[1], vertex_xyz[2]);
             base_model_data+=37;
         }
     }
@@ -1553,9 +1564,9 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
 
 
     // Make it not rotate in weird planes...
-//    keep[X] = (rotation_view == VIEW_SIDE_YZ);
-//    keep[Y] = (rotation_view == VIEW_FRONT_XZ);
-//    keep[Z] = (rotation_view == VIEW_TOP_XY);
+//    keep[0] = (rotation_view == VIEW_SIDE_YZ);
+//    keep[1] = (rotation_view == VIEW_FRONT_XZ);
+//    keep[2] = (rotation_view == VIEW_TOP_XY);
 // !!!BAD!!!
 // !!!BAD!!!
 // !!!BAD!!!  Should only keep for main bones being moved...  Others may float around...  Maybe???
@@ -1577,15 +1588,15 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
         bone_data+=9;
 //log_message("INFO:     Joint %d to %d", joint[0], joint[1]);
         joint_position_data = ((float*) (joint_position_data_start + (joint[1]<<3) + (joint[1]<<2)));
-        bone_xyz[X] = joint_position_data[X];
-        bone_xyz[Y] = joint_position_data[Y];
-        bone_xyz[Z] = joint_position_data[Z];
+        bone_xyz[0] = joint_position_data[0];
+        bone_xyz[1] = joint_position_data[1];
+        bone_xyz[2] = joint_position_data[2];
         joint_position_data = ((float*) (joint_position_data_start + (joint[0]<<3) + (joint[0]<<2)));
-//log_message("INFO:     Start = (%f, %f, %f)", joint_position_data[X], joint_position_data[Y], joint_position_data[Z]);
-//log_message("INFO:     End = (%f, %f, %f)", bone_xyz[X], bone_xyz[Y], bone_xyz[Z]);
-        bone_xyz[X] -= joint_position_data[X];
-        bone_xyz[Y] -= joint_position_data[Y];
-        bone_xyz[Z] -= joint_position_data[Z];
+//log_message("INFO:     Start = (%f, %f, %f)", joint_position_data[0], joint_position_data[1], joint_position_data[2]);
+//log_message("INFO:     End = (%f, %f, %f)", bone_xyz[0], bone_xyz[1], bone_xyz[2]);
+        bone_xyz[0] -= joint_position_data[0];
+        bone_xyz[1] -= joint_position_data[1];
+        bone_xyz[2] -= joint_position_data[2];
 
 
         // Calculate new front normal by crossing side and bone
@@ -1593,11 +1604,11 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
         distance = vector_length(new_front_xyz);
         if(distance > 0.00001f)
         {
-            new_front_xyz[X]/=distance;  new_front_xyz[Y]/=distance;  new_front_xyz[Z]/=distance;
+            new_front_xyz[0]/=distance;  new_front_xyz[1]/=distance;  new_front_xyz[2]/=distance;
         }
         else
         {
-            new_front_xyz[Y] = 1.0f;
+            new_front_xyz[1] = 1.0f;
         }
 
         // Calculate new side normal by crossing front and bone
@@ -1605,28 +1616,28 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
         distance = vector_length(new_side_xyz);
         if(distance > 0.00001f)
         {
-            new_side_xyz[X]/=distance;  new_side_xyz[Y]/=distance;  new_side_xyz[Z]/=distance;
+            new_side_xyz[0]/=distance;  new_side_xyz[1]/=distance;  new_side_xyz[2]/=distance;
         }
         else
         {
-            new_side_xyz[X] = 1.0f;
+            new_side_xyz[0] = 1.0f;
         }
 
         // Only apply changes if past a certain threshold...
-        distance = (float) fabs(side_xyz[X] - new_side_xyz[X]);
-        distance += (float) fabs(side_xyz[Y] - new_side_xyz[Y]);
-        distance += (float) fabs(side_xyz[Z] - new_side_xyz[Z]);
-        distance += (float) fabs(front_xyz[X] - new_front_xyz[X]);
-        distance += (float) fabs(front_xyz[Y] - new_front_xyz[Y]);
-        distance += (float) fabs(front_xyz[Z] - new_front_xyz[Z]);
+        distance = (float) fabs(side_xyz[0] - new_side_xyz[0]);
+        distance += (float) fabs(side_xyz[1] - new_side_xyz[1]);
+        distance += (float) fabs(side_xyz[2] - new_side_xyz[2]);
+        distance += (float) fabs(front_xyz[0] - new_front_xyz[0]);
+        distance += (float) fabs(front_xyz[1] - new_front_xyz[1]);
+        distance += (float) fabs(front_xyz[2] - new_front_xyz[2]);
         if(distance > 0.01f)
         {
-            side_xyz[X] = -new_side_xyz[X];
-            side_xyz[Y] = -new_side_xyz[Y];
-            side_xyz[Z] = -new_side_xyz[Z];
-            front_xyz[X] = new_front_xyz[X];
-            front_xyz[Y] = new_front_xyz[Y];
-            front_xyz[Z] = new_front_xyz[Z];
+            side_xyz[0] = -new_side_xyz[0];
+            side_xyz[1] = -new_side_xyz[1];
+            side_xyz[2] = -new_side_xyz[2];
+            front_xyz[0] = new_front_xyz[0];
+            front_xyz[1] = new_front_xyz[1];
+            front_xyz[2] = new_front_xyz[2];
         }
     }
 
@@ -1637,46 +1648,46 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
         distance = vector_length(bone_xyz);
         if(distance > 0.001f)
         {
-            bone_xyz[X]/=distance;
-            bone_xyz[Y]/=distance;
-            bone_xyz[Z]/=distance;
+            bone_xyz[0]/=distance;
+            bone_xyz[1]/=distance;
+            bone_xyz[2]/=distance;
 
 
             // Determine new front normal by pushing and pulling it until it is the correct distance from the bone vector...
             repeat(j, 20)
             {
-                spring_xyz[X] = front_xyz[X] - bone_xyz[X];
-                spring_xyz[Y] = front_xyz[Y] - bone_xyz[Y];
-                spring_xyz[Z] = front_xyz[Z] - bone_xyz[Z];
+                spring_xyz[0] = front_xyz[0] - bone_xyz[0];
+                spring_xyz[1] = front_xyz[1] - bone_xyz[1];
+                spring_xyz[2] = front_xyz[2] - bone_xyz[2];
                 distance = vector_length(spring_xyz);
                 if(distance > 0.001f)
                 {
                     distance = 1.4142135623730950488016887242097f / distance;
-                    front_xyz[X] = bone_xyz[X] + (spring_xyz[X] * distance);
-                    front_xyz[Y] = bone_xyz[Y] + (spring_xyz[Y] * distance);
-                    front_xyz[Z] = bone_xyz[Z] + (spring_xyz[Z] * distance);
+                    front_xyz[0] = bone_xyz[0] + (spring_xyz[0] * distance);
+                    front_xyz[1] = bone_xyz[1] + (spring_xyz[1] * distance);
+                    front_xyz[2] = bone_xyz[2] + (spring_xyz[2] * distance);
                     distance = vector_length(front_xyz);
                     if(distance > 0.001f)
                     {
-                        front_xyz[X]/=distance;
-                        front_xyz[Y]/=distance;
-                        front_xyz[Z]/=distance;
+                        front_xyz[0]/=distance;
+                        front_xyz[1]/=distance;
+                        front_xyz[2]/=distance;
                     }
                 }
 
 
                 // Try to keep the front normal from moving in the wrong plane...
-                if(keep[X])
+                if(keep[0])
                 {
-                    front_xyz[X] = old_front_xyz[X];
+                    front_xyz[0] = old_front_xyz[0];
                 }
-                if(keep[Y])
+                if(keep[1])
                 {
-                    front_xyz[Y] = old_front_xyz[Y];
+                    front_xyz[1] = old_front_xyz[1];
                 }
-                if(keep[Z])
+                if(keep[2])
                 {
-                    front_xyz[Z] = old_front_xyz[Z];
+                    front_xyz[2] = old_front_xyz[2];
                 }
             }
 
@@ -1687,9 +1698,9 @@ void render_generate_bone_normals(unsigned char* data, unsigned short frame)
             distance = vector_length(side_xyz);
             if(distance > 0.001f)
             {
-                side_xyz[X]/=distance;
-                side_xyz[Y]/=distance;
-                side_xyz[Z]/=distance;
+                side_xyz[0]/=distance;
+                side_xyz[1]/=distance;
+                side_xyz[2]/=distance;
             }
         }
     }
@@ -1752,8 +1763,8 @@ unsigned char render_insert_tex_vertex(unsigned char* data, unsigned short frame
         if(sdf_insert_data(tex_vertex_data+(num_tex_vertex<<3), NULL, 8))
         {
             // Added the tex vertex successfully...  Write coordinates
-            *((float*) (tex_vertex_data+(num_tex_vertex<<3))) = coordinates_xy[X];
-            *((float*) (tex_vertex_data+4+(num_tex_vertex<<3))) = coordinates_xy[Y];
+            *((float*) (tex_vertex_data+(num_tex_vertex<<3))) = coordinates_xy[0];
+            *((float*) (tex_vertex_data+4+(num_tex_vertex<<3))) = coordinates_xy[1];
 
 
             // Select the new vertex
@@ -1982,9 +1993,9 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
     repeat(i, num_vertex)
     {
         normal_xyz = ((float*) (vertex_data_start+15+(i<<6)));
-        normal_xyz[X] = 0.0f;
-        normal_xyz[Y] = 0.0f;
-        normal_xyz[Z] = 0.0f;
+        normal_xyz[0] = 0.0f;
+        normal_xyz[1] = 0.0f;
+        normal_xyz[2] = 0.0f;
 //        if(*(vertex_data_start+14+(i<<6)) < 128)
         if(((unsigned char) ((*(vertex_data_start+14+(i<<6)))<<1)) < 124)  // !!!ANCHOR!!!
         {
@@ -1997,15 +2008,15 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
             *(vertex_data_start+12+(i<<6)) = *(vertex_data_start+13+(i<<6));
             *(vertex_data_start+13+(i<<6)) = (unsigned char) k;
             // Swap the scalars
-            front_xyz[X] = *((float*) (vertex_data_start+27+(i<<6)));
-            front_xyz[Y] = *((float*) (vertex_data_start+35+(i<<6)));
-            front_xyz[Z] = *((float*) (vertex_data_start+43+(i<<6)));
+            front_xyz[0] = *((float*) (vertex_data_start+27+(i<<6)));
+            front_xyz[1] = *((float*) (vertex_data_start+35+(i<<6)));
+            front_xyz[2] = *((float*) (vertex_data_start+43+(i<<6)));
             *((float*) (vertex_data_start+27+(i<<6))) = *((float*) (vertex_data_start+31+(i<<6)));
             *((float*) (vertex_data_start+35+(i<<6))) = *((float*) (vertex_data_start+39+(i<<6)));
             *((float*) (vertex_data_start+43+(i<<6))) = *((float*) (vertex_data_start+47+(i<<6)));
-            *((float*) (vertex_data_start+31+(i<<6))) = front_xyz[X];
-            *((float*) (vertex_data_start+39+(i<<6))) = front_xyz[Y];
-            *((float*) (vertex_data_start+47+(i<<6))) = front_xyz[Z];
+            *((float*) (vertex_data_start+31+(i<<6))) = front_xyz[0];
+            *((float*) (vertex_data_start+39+(i<<6))) = front_xyz[1];
+            *((float*) (vertex_data_start+47+(i<<6))) = front_xyz[2];
         }
     }
 
@@ -2032,41 +2043,41 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
                     if(k > 1)
                     {
                         // We have a triangle...  Calculate its normal, then accumulate into each vertex...
-                        start_xyz[X] = *((float*) (vertex_data_start+(vertex[0]<<6)));
-                        start_xyz[Y] = *((float*) (vertex_data_start+4+(vertex[0]<<6)));
-                        start_xyz[Z] = *((float*) (vertex_data_start+8+(vertex[0]<<6)));
-                        end_xyz[X] = *((float*) (vertex_data_start+(vertex[1]<<6)));
-                        end_xyz[Y] = *((float*) (vertex_data_start+4+(vertex[1]<<6)));
-                        end_xyz[Z] = *((float*) (vertex_data_start+8+(vertex[1]<<6)));
-                        end_xyz[X]-=start_xyz[X];
-                        end_xyz[Y]-=start_xyz[Y];
-                        end_xyz[Z]-=start_xyz[Z];
-                        side_xyz[X]= *((float*) (vertex_data_start+(vertex[2]<<6)));
-                        side_xyz[Y]= *((float*) (vertex_data_start+4+(vertex[2]<<6)));
-                        side_xyz[Z]= *((float*) (vertex_data_start+8+(vertex[2]<<6)));
-                        side_xyz[X]-=start_xyz[X];
-                        side_xyz[Y]-=start_xyz[Y];
-                        side_xyz[Z]-=start_xyz[Z];
+                        start_xyz[0] = *((float*) (vertex_data_start+(vertex[0]<<6)));
+                        start_xyz[1] = *((float*) (vertex_data_start+4+(vertex[0]<<6)));
+                        start_xyz[2] = *((float*) (vertex_data_start+8+(vertex[0]<<6)));
+                        end_xyz[0] = *((float*) (vertex_data_start+(vertex[1]<<6)));
+                        end_xyz[1] = *((float*) (vertex_data_start+4+(vertex[1]<<6)));
+                        end_xyz[2] = *((float*) (vertex_data_start+8+(vertex[1]<<6)));
+                        end_xyz[0]-=start_xyz[0];
+                        end_xyz[1]-=start_xyz[1];
+                        end_xyz[2]-=start_xyz[2];
+                        side_xyz[0]= *((float*) (vertex_data_start+(vertex[2]<<6)));
+                        side_xyz[1]= *((float*) (vertex_data_start+4+(vertex[2]<<6)));
+                        side_xyz[2]= *((float*) (vertex_data_start+8+(vertex[2]<<6)));
+                        side_xyz[0]-=start_xyz[0];
+                        side_xyz[1]-=start_xyz[1];
+                        side_xyz[2]-=start_xyz[2];
                         cross_product(end_xyz, side_xyz, front_xyz);
                         if(k&1)
                         {
-                            front_xyz[X] = -front_xyz[X];
-                            front_xyz[Y] = -front_xyz[Y];
-                            front_xyz[Z] = -front_xyz[Z];
+                            front_xyz[0] = -front_xyz[0];
+                            front_xyz[1] = -front_xyz[1];
+                            front_xyz[2] = -front_xyz[2];
                         }
                         if(tex_alpha < 255)
                         {
                             // Make multipass textures not mess up cartoon lines...
-                            front_xyz[X] *= 0.125f;
-                            front_xyz[Y] *= 0.125f;
-                            front_xyz[Z] *= 0.125f;
+                            front_xyz[0] *= 0.125f;
+                            front_xyz[1] *= 0.125f;
+                            front_xyz[2] *= 0.125f;
                         }
                         repeat(m, 3)
                         {
                             normal_xyz = ((float*) (vertex_data_start+15+(vertex[m]<<6)));
-                            normal_xyz[X] += front_xyz[X];
-                            normal_xyz[Y] += front_xyz[Y];
-                            normal_xyz[Z] += front_xyz[Z];
+                            normal_xyz[0] += front_xyz[0];
+                            normal_xyz[1] += front_xyz[1];
+                            normal_xyz[2] += front_xyz[2];
                         }
                     }
                 }
@@ -2093,35 +2104,35 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
                     if(k > 1)
                     {
                         // We have a triangle...  Calculate its normal, then accumulate into each vertex...
-                        start_xyz[X] = *((float*) (vertex_data_start+(vertex[0]<<6)));
-                        start_xyz[Y] = *((float*) (vertex_data_start+4+(vertex[0]<<6)));
-                        start_xyz[Z] = *((float*) (vertex_data_start+8+(vertex[0]<<6)));
-                        end_xyz[X] = *((float*) (vertex_data_start+(vertex[1]<<6)));
-                        end_xyz[Y] = *((float*) (vertex_data_start+4+(vertex[1]<<6)));
-                        end_xyz[Z] = *((float*) (vertex_data_start+8+(vertex[1]<<6)));
-                        end_xyz[X]-=start_xyz[X];
-                        end_xyz[Y]-=start_xyz[Y];
-                        end_xyz[Z]-=start_xyz[Z];
-                        side_xyz[X]= *((float*) (vertex_data_start+(vertex[2]<<6)));
-                        side_xyz[Y]= *((float*) (vertex_data_start+4+(vertex[2]<<6)));
-                        side_xyz[Z]= *((float*) (vertex_data_start+8+(vertex[2]<<6)));
-                        side_xyz[X]-=start_xyz[X];
-                        side_xyz[Y]-=start_xyz[Y];
-                        side_xyz[Z]-=start_xyz[Z];
+                        start_xyz[0] = *((float*) (vertex_data_start+(vertex[0]<<6)));
+                        start_xyz[1] = *((float*) (vertex_data_start+4+(vertex[0]<<6)));
+                        start_xyz[2] = *((float*) (vertex_data_start+8+(vertex[0]<<6)));
+                        end_xyz[0] = *((float*) (vertex_data_start+(vertex[1]<<6)));
+                        end_xyz[1] = *((float*) (vertex_data_start+4+(vertex[1]<<6)));
+                        end_xyz[2] = *((float*) (vertex_data_start+8+(vertex[1]<<6)));
+                        end_xyz[0]-=start_xyz[0];
+                        end_xyz[1]-=start_xyz[1];
+                        end_xyz[2]-=start_xyz[2];
+                        side_xyz[0]= *((float*) (vertex_data_start+(vertex[2]<<6)));
+                        side_xyz[1]= *((float*) (vertex_data_start+4+(vertex[2]<<6)));
+                        side_xyz[2]= *((float*) (vertex_data_start+8+(vertex[2]<<6)));
+                        side_xyz[0]-=start_xyz[0];
+                        side_xyz[1]-=start_xyz[1];
+                        side_xyz[2]-=start_xyz[2];
                         cross_product(end_xyz, side_xyz, front_xyz);
                         if(tex_alpha < 255)
                         {
                             // Make multipass textures not mess up cartoon lines...
-                            front_xyz[X] *= 0.125f;
-                            front_xyz[Y] *= 0.125f;
-                            front_xyz[Z] *= 0.125f;
+                            front_xyz[0] *= 0.125f;
+                            front_xyz[1] *= 0.125f;
+                            front_xyz[2] *= 0.125f;
                         }
                         repeat(m, 3)
                         {
                             normal_xyz = ((float*) (vertex_data_start+15+(vertex[m]<<6)));
-                            normal_xyz[X] += front_xyz[X];
-                            normal_xyz[Y] += front_xyz[Y];
-                            normal_xyz[Z] += front_xyz[Z];
+                            normal_xyz[0] += front_xyz[0];
+                            normal_xyz[1] += front_xyz[1];
+                            normal_xyz[2] += front_xyz[2];
                         }
                     }
                 }
@@ -2140,9 +2151,9 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
         length = vector_length(normal_xyz);
         if(length > 0.01f)
         {
-            normal_xyz[X] /= length;
-            normal_xyz[Y] /= length;
-            normal_xyz[Z] /= length;
+            normal_xyz[0] /= length;
+            normal_xyz[1] /= length;
+            normal_xyz[2] /= length;
         }
         bone = *(vertex_data_start+12+(i<<6));
         joint[0] = *((unsigned short*)(bone_data_start+1+(bone*9)));
@@ -2150,35 +2161,35 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
 
 
         // Yucky stuff...  Similar to crunch_vertex...
-        start_xyz[X] = *(joint_data_start + (joint[0]*3));
-        start_xyz[Y] = *(joint_data_start + 1 + (joint[0]*3));
-        start_xyz[Z] = *(joint_data_start + 2 + (joint[0]*3));
+        start_xyz[0] = *(joint_data_start + (joint[0]*3));
+        start_xyz[1] = *(joint_data_start + 1 + (joint[0]*3));
+        start_xyz[2] = *(joint_data_start + 2 + (joint[0]*3));
 
-        end_xyz[X] = *(joint_data_start + (joint[1]*3));
-        end_xyz[Y] = *(joint_data_start + 1 + (joint[1]*3));
-        end_xyz[Z] = *(joint_data_start + 2 + (joint[1]*3));
+        end_xyz[0] = *(joint_data_start + (joint[1]*3));
+        end_xyz[1] = *(joint_data_start + 1 + (joint[1]*3));
+        end_xyz[2] = *(joint_data_start + 2 + (joint[1]*3));
 
-        front_xyz[X] = *((float*) (bone_normal_data_start + (bone*6)));
-        front_xyz[Y] = *((float*) (bone_normal_data_start + 1 + (bone*6)));
-        front_xyz[Z] = *((float*) (bone_normal_data_start + 2 + (bone*6)));
-        side_xyz[X] = *((float*) (bone_normal_data_start + 3 + (bone*6)));
-        side_xyz[Y] = *((float*) (bone_normal_data_start + 4 + (bone*6)));
-        side_xyz[Z] = *((float*) (bone_normal_data_start + 5 + (bone*6)));
+        front_xyz[0] = *((float*) (bone_normal_data_start + (bone*6)));
+        front_xyz[1] = *((float*) (bone_normal_data_start + 1 + (bone*6)));
+        front_xyz[2] = *((float*) (bone_normal_data_start + 2 + (bone*6)));
+        side_xyz[0] = *((float*) (bone_normal_data_start + 3 + (bone*6)));
+        side_xyz[1] = *((float*) (bone_normal_data_start + 4 + (bone*6)));
+        side_xyz[2] = *((float*) (bone_normal_data_start + 5 + (bone*6)));
 
         // Point to find scalars for...
-        point_xyz[X] = normal_xyz[X] + start_xyz[X];
-        point_xyz[Y] = normal_xyz[Y] + start_xyz[Y];
-        point_xyz[Z] = normal_xyz[Z] + start_xyz[Z];
+        point_xyz[0] = normal_xyz[0] + start_xyz[0];
+        point_xyz[1] = normal_xyz[1] + start_xyz[1];
+        point_xyz[2] = normal_xyz[2] + start_xyz[2];
 
         // Vector from bone start to bone end
-        end_xyz[X]-=start_xyz[X];
-        end_xyz[Y]-=start_xyz[Y];
-        end_xyz[Z]-=start_xyz[Z];
+        end_xyz[0]-=start_xyz[0];
+        end_xyz[1]-=start_xyz[1];
+        end_xyz[2]-=start_xyz[2];
 
         // Vector from bone start to point
-        height_xyz[X] = normal_xyz[X];
-        height_xyz[Y] = normal_xyz[Y];
-        height_xyz[Z] = normal_xyz[Z];
+        height_xyz[0] = normal_xyz[0];
+        height_xyz[1] = normal_xyz[1];
+        height_xyz[2] = normal_xyz[2];
 
         // Calculate height value
         length = dot_product(end_xyz, end_xyz);
@@ -2187,14 +2198,14 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
         else height = 0;
 
         // Calculate the height position
-        height_xyz[X] = start_xyz[X] + (end_xyz[X]*height);
-        height_xyz[Y] = start_xyz[Y] + (end_xyz[Y]*height);
-        height_xyz[Z] = start_xyz[Z] + (end_xyz[Z]*height);
+        height_xyz[0] = start_xyz[0] + (end_xyz[0]*height);
+        height_xyz[1] = start_xyz[1] + (end_xyz[1]*height);
+        height_xyz[2] = start_xyz[2] + (end_xyz[2]*height);
 
         // Calculate vector from height position (along bone) to point
-        height_xyz[X] = point_xyz[X] - height_xyz[X];
-        height_xyz[Y] = point_xyz[Y] - height_xyz[Y];
-        height_xyz[Z] = point_xyz[Z] - height_xyz[Z];
+        height_xyz[0] = point_xyz[0] - height_xyz[0];
+        height_xyz[1] = point_xyz[1] - height_xyz[1];
+        height_xyz[2] = point_xyz[2] - height_xyz[2];
 
         // Calculate front and side values
         front = dot_product(front_xyz, height_xyz);
@@ -2202,9 +2213,9 @@ unsigned char render_pregenerate_normals(unsigned char* data, unsigned short fra
 
         // Write the normal scalars
         normal_xyz = ((float*) (vertex_data_start+51+(i<<6)));
-        normal_xyz[X] = height;
-        normal_xyz[Y] = front;
-        normal_xyz[Z] = side;
+        normal_xyz[0] = height;
+        normal_xyz[1] = front;
+        normal_xyz[2] = side;
     }
     return TRUE;
 }
@@ -2343,11 +2354,11 @@ void render_attach_vertex_to_bone(unsigned char* data, unsigned short frame, uns
     }
 
     // Figure out coordinates of current vertex (assume that it has been updated recently...)
-    vertex_xyz[X] = *((float*) (base_model_data+(vertex<<6)));
-    vertex_xyz[Y] = *((float*) (base_model_data+4+(vertex<<6)));
-    vertex_xyz[Z] = *((float*) (base_model_data+8+(vertex<<6)));
+    vertex_xyz[0] = *((float*) (base_model_data+(vertex<<6)));
+    vertex_xyz[1] = *((float*) (base_model_data+4+(vertex<<6)));
+    vertex_xyz[2] = *((float*) (base_model_data+8+(vertex<<6)));
 log_message("INFO:   Attaching vertex...");
-log_message("INFO:     Prior Actual = (%f, %f, %f)", vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z]);
+log_message("INFO:     Prior Actual = (%f, %f, %f)", vertex_xyz[0], vertex_xyz[1], vertex_xyz[2]);
 
 
     // Make a list of joint distances, then order 'em nearest first...
@@ -2355,9 +2366,9 @@ log_message("INFO:     Prior Actual = (%f, %f, %f)", vertex_xyz[X], vertex_xyz[Y
     if(num_joint > MAX_JOINT)  num_joint = MAX_JOINT;
     repeat(i, num_joint)
     {
-        vector_xyz[X] = joint_xyz[X] - vertex_xyz[X];
-        vector_xyz[Y] = joint_xyz[Y] - vertex_xyz[Y];
-        vector_xyz[Z] = joint_xyz[Z] - vertex_xyz[Z];
+        vector_xyz[0] = joint_xyz[0] - vertex_xyz[0];
+        vector_xyz[1] = joint_xyz[1] - vertex_xyz[1];
+        vector_xyz[2] = joint_xyz[2] - vertex_xyz[2];
         joint_distance[i] = vector_length(vector_xyz);
         joint_xyz+=3;
     }
@@ -2591,9 +2602,9 @@ void render_gnomify_working_direction(unsigned char* data, unsigned short frame,
     float* joint_two_xyz;
 
     // Default to 0, 0, 0 if we fail...
-    global_gnomify_working_direction_xyz[X] = 0.0f;
-    global_gnomify_working_direction_xyz[Y] = 0.0f;
-    global_gnomify_working_direction_xyz[Z] = 0.0f;
+    global_gnomify_working_direction_xyz[0] = 0.0f;
+    global_gnomify_working_direction_xyz[1] = 0.0f;
+    global_gnomify_working_direction_xyz[2] = 0.0f;
 
     // Read the RDY file's header...
     data+=2;
@@ -2620,9 +2631,9 @@ void render_gnomify_working_direction(unsigned char* data, unsigned short frame,
     joint_two_xyz = (float*) (frame_data + (12*joint_two));
 
     // Find the vector...
-    global_gnomify_working_direction_xyz[X] = joint_two_xyz[X]-joint_one_xyz[X];
-    global_gnomify_working_direction_xyz[Y] = joint_two_xyz[Y]-joint_one_xyz[Y];
-    global_gnomify_working_direction_xyz[Z] = joint_two_xyz[Z]-joint_one_xyz[Z];
+    global_gnomify_working_direction_xyz[0] = joint_two_xyz[0]-joint_one_xyz[0];
+    global_gnomify_working_direction_xyz[1] = joint_two_xyz[1]-joint_one_xyz[1];
+    global_gnomify_working_direction_xyz[2] = joint_two_xyz[2]-joint_one_xyz[2];
 }
 #endif
 
@@ -2664,9 +2675,9 @@ void render_gnomify_affect_joint(unsigned char* data, unsigned short frame, unsi
 
     // Apply the vector...
     scale = percent * 0.01f;
-    joint_xyz[X] += global_gnomify_working_direction_xyz[X] * scale;
-    joint_xyz[Y] += global_gnomify_working_direction_xyz[Y] * scale;
-    joint_xyz[Z] += global_gnomify_working_direction_xyz[Z] * scale;
+    joint_xyz[0] += global_gnomify_working_direction_xyz[0] * scale;
+    joint_xyz[1] += global_gnomify_working_direction_xyz[1] * scale;
+    joint_xyz[2] += global_gnomify_working_direction_xyz[2] * scale;
 }
 #endif
 
@@ -2687,9 +2698,9 @@ void render_joint_from_vertex_location(unsigned char* data, unsigned short frame
     float* vertex_xyz;
 
     // Default to 0, 0, 0 if we fail...
-    global_gnomify_working_direction_xyz[X] = 0.0f;
-    global_gnomify_working_direction_xyz[Y] = 0.0f;
-    global_gnomify_working_direction_xyz[Z] = 0.0f;
+    global_gnomify_working_direction_xyz[0] = 0.0f;
+    global_gnomify_working_direction_xyz[1] = 0.0f;
+    global_gnomify_working_direction_xyz[2] = 0.0f;
 
     // Read the RDY file's header...
     data+=2;
@@ -2726,9 +2737,9 @@ void render_joint_from_vertex_location(unsigned char* data, unsigned short frame
 
 
         // Modify the joint location...
-        joint_xyz[X] = vertex_xyz[X];
-        joint_xyz[Y] = vertex_xyz[Y];
-        joint_xyz[Z] = vertex_xyz[Z];
+        joint_xyz[0] = vertex_xyz[0];
+        joint_xyz[1] = vertex_xyz[1];
+        joint_xyz[2] = vertex_xyz[2];
         joint++;
         vertex++;
     }
@@ -2830,10 +2841,10 @@ void render_rdy(unsigned char* data, unsigned short frame, unsigned char mode, u
 
     if(drawing_world)
     {
-        distance_xyz[X] = ((float*) onscreen_joint_character_data)[X]-camera_xyz[X];
-        distance_xyz[Y] = ((float*) onscreen_joint_character_data)[Y]-camera_xyz[Y];
-        distance_xyz[Z] = ((float*) onscreen_joint_character_data)[Z]+3.00f-camera_xyz[Z];
-        distance_to_camera = distance_xyz[X]*camera_fore_xyz[X] + distance_xyz[Y]*camera_fore_xyz[Y] + distance_xyz[Z]*camera_fore_xyz[Z];
+        distance_xyz[0] = ((float*) onscreen_joint_character_data)[0]-camera_xyz[0];
+        distance_xyz[1] = ((float*) onscreen_joint_character_data)[1]-camera_xyz[1];
+        distance_xyz[2] = ((float*) onscreen_joint_character_data)[2]+3.00f-camera_xyz[2];
+        distance_to_camera = distance_xyz[0]*camera_fore_xyz[0] + distance_xyz[1]*camera_fore_xyz[1] + distance_xyz[2]*camera_fore_xyz[2];
         if(distance_to_camera < 0.001f)
         {
             distance_to_camera = 0.001f;
@@ -2884,7 +2895,7 @@ void render_rdy(unsigned char* data, unsigned short frame, unsigned char mode, u
                 inworld_joint_xyz = (float*) (bone_frame_data + (num_bone<<4) + (num_bone<<3));
                 repeat(i, num_joint)
                 {
-                    display_solid_marker(dark_red, inworld_joint_xyz[X], inworld_joint_xyz[Y], inworld_joint_xyz[Z], *((float*) (joint_data+(i<<2))));
+                    display_solid_marker(dark_red, inworld_joint_xyz[0], inworld_joint_xyz[1], inworld_joint_xyz[2], *((float*) (joint_data+(i<<2))));
                     inworld_joint_xyz += 3;
                 }
             }
@@ -2915,14 +2926,14 @@ void render_rdy(unsigned char* data, unsigned short frame, unsigned char mode, u
         repeat(i, num_joint)
         {
             // Transform by the onscreen matrix...
-            onscreen_joint_xyss[X] = onscreen_matrix[0] * inworld_joint_xyz[X] + onscreen_matrix[4] * inworld_joint_xyz[Y] + onscreen_matrix[8]  * inworld_joint_xyz[Z] + onscreen_matrix[12];
-            onscreen_joint_xyss[Y] = onscreen_matrix[1] * inworld_joint_xyz[X] + onscreen_matrix[5] * inworld_joint_xyz[Y] + onscreen_matrix[9]  * inworld_joint_xyz[Z] + onscreen_matrix[13];
-            dot                    = onscreen_matrix[3] * inworld_joint_xyz[X] + onscreen_matrix[7] * inworld_joint_xyz[Y] + onscreen_matrix[11] * inworld_joint_xyz[Z] + onscreen_matrix[15];
+            onscreen_joint_xyss[0] = onscreen_matrix[0] * inworld_joint_xyz[0] + onscreen_matrix[4] * inworld_joint_xyz[1] + onscreen_matrix[8]  * inworld_joint_xyz[2] + onscreen_matrix[12];
+            onscreen_joint_xyss[1] = onscreen_matrix[1] * inworld_joint_xyz[0] + onscreen_matrix[5] * inworld_joint_xyz[1] + onscreen_matrix[9]  * inworld_joint_xyz[2] + onscreen_matrix[13];
+            dot                    = onscreen_matrix[3] * inworld_joint_xyz[0] + onscreen_matrix[7] * inworld_joint_xyz[1] + onscreen_matrix[11] * inworld_joint_xyz[2] + onscreen_matrix[15];
             if(dot != 0.0f)
             {
-                onscreen_joint_xyss[X]/=dot;      onscreen_joint_xyss[Y]/=dot;
-                onscreen_joint_xyss[X]*=200.0f;   onscreen_joint_xyss[X]+=200.0f;
-                onscreen_joint_xyss[Y]*=-150.0f;  onscreen_joint_xyss[Y]+=150.0f;
+                onscreen_joint_xyss[0]/=dot;      onscreen_joint_xyss[1]/=dot;
+                onscreen_joint_xyss[0]*=200.0f;   onscreen_joint_xyss[0]+=200.0f;
+                onscreen_joint_xyss[1]*=-150.0f;  onscreen_joint_xyss[1]+=150.0f;
                 num_onscreen_joint++;
                 dot = (ONSCREEN_CLICK_SCALE/dot);
                 onscreen_joint_xyss[2] = (*((float*) (joint_data+(i<<2)))) * dot;  // Joint size...
@@ -2938,9 +2949,9 @@ void render_rdy(unsigned char* data, unsigned short frame, unsigned char mode, u
         onscreen_joint_xyss = (float*) fourthbuffer;
         repeat(i, num_onscreen_joint)
         {
-            if(onscreen_joint_xyss[X] > -onscreen_joint_xyss[3] && onscreen_joint_xyss[Y] > -onscreen_joint_xyss[3] && onscreen_joint_xyss[3] > 0.0f)
+            if(onscreen_joint_xyss[0] > -onscreen_joint_xyss[3] && onscreen_joint_xyss[1] > -onscreen_joint_xyss[3] && onscreen_joint_xyss[3] > 0.0f)
             {
-                if(onscreen_joint_xyss[X] < (400.0f+onscreen_joint_xyss[3]) && onscreen_joint_xyss[Y] < (300.0f+onscreen_joint_xyss[3]))
+                if(onscreen_joint_xyss[0] < (400.0f+onscreen_joint_xyss[3]) && onscreen_joint_xyss[1] < (300.0f+onscreen_joint_xyss[3]))
                 {
                     we_have_to_draw_it = TRUE;
                     i = num_onscreen_joint;
@@ -2984,15 +2995,15 @@ onscreen_draw_count++;
             onscreen_joint_xyss = (float*) fourthbuffer;
             repeat(i, num_onscreen_joint)
             {
-                distance_xyz[X] = onscreen_joint_xyss[X] - mouse_x;
-                dot = onscreen_joint_xyss[Y] - mouse_y;
-                if((dot*dot + distance_xyz[X]*distance_xyz[X]) < (onscreen_joint_xyss[2]*onscreen_joint_xyss[2]))
+                distance_xyz[0] = onscreen_joint_xyss[0] - mouse_x;
+                dot = onscreen_joint_xyss[1] - mouse_y;
+                if((dot*dot + distance_xyz[0]*distance_xyz[0]) < (onscreen_joint_xyss[2]*onscreen_joint_xyss[2]))
                 {
                     // What distance are we at?
-                    distance_xyz[X] = ((float*) onscreen_joint_character_data)[X] - camera_xyz[X];
-                    distance_xyz[Y] = ((float*) onscreen_joint_character_data)[Y] - camera_xyz[Y];
-                    distance_xyz[Z] = ((float*) onscreen_joint_character_data)[Z] - camera_xyz[Z];
-                    dot = distance_xyz[X]*distance_xyz[X] + distance_xyz[Y]*distance_xyz[Y] + distance_xyz[Z]*distance_xyz[Z];
+                    distance_xyz[0] = ((float*) onscreen_joint_character_data)[0] - camera_xyz[0];
+                    distance_xyz[1] = ((float*) onscreen_joint_character_data)[1] - camera_xyz[1];
+                    distance_xyz[2] = ((float*) onscreen_joint_character_data)[2] - camera_xyz[2];
+                    dot = distance_xyz[0]*distance_xyz[0] + distance_xyz[1]*distance_xyz[1] + distance_xyz[2]*distance_xyz[2];
                     if(dot < mouse_character_distance)
                     {
                         // Remember that we're over it, but don't color line yet in case there's a better one...
@@ -3121,9 +3132,9 @@ onscreen_draw_count++;
                     if(!select_inlist(i) && *(data+63) == FALSE)
                     {
                         render_get_point_xy(*((float*) (data)), *((float*) (data+4)), *((float*) (data+8)), &x, &y);
-                        if(x > selection_box_tl[X] &&  x < selection_box_br[X])
+                        if(x > selection_box_tl[0] &&  x < selection_box_br[0])
                         {
-                            if(y > selection_box_tl[Y] &&  y < selection_box_br[Y])
+                            if(y > selection_box_tl[1] &&  y < selection_box_br[1])
                             {
                                 select_add(i, ((float*) data));
                             }
@@ -3136,35 +3147,35 @@ onscreen_draw_count++;
             {
                 if((mode & 15) != 1 && mode != 38)
                 {
-                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &select_center_xyz[Y], &select_center_xyz[Z]);
+                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &select_center_xyz[1], &select_center_xyz[2]);
                 }
                 else
                 {
                     if(selection_view == VIEW_TOP_XY)
                     {
-                        render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &select_center_xyz[Y], &dot);
+                        render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &select_center_xyz[1], &dot);
                     }
                     else if(selection_view == VIEW_FRONT_XZ)
                     {
-                        render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &dot, &select_center_xyz[Z]);
+                        render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &dot, &select_center_xyz[2]);
                     }
                     else
                     {
-                        render_get_point_xyz(mouse_x, mouse_y, &dot, &select_center_xyz[Y], &select_center_xyz[Z]);
+                        render_get_point_xyz(mouse_x, mouse_y, &dot, &select_center_xyz[1], &select_center_xyz[2]);
                     }
                     if(key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT])
                     {
                         // Snapped to nearest quarter foot...
-                        select_center_xyz[X] = ((int) (select_center_xyz[X]*4.0f)) * 0.25f;
-                        select_center_xyz[Y] = ((int) (select_center_xyz[Y]*4.0f)) * 0.25f;
-                        select_center_xyz[Z] = ((int) (select_center_xyz[Z]*4.0f)) * 0.25f;
+                        select_center_xyz[0] = ((int) (select_center_xyz[0]*4.0f)) * 0.25f;
+                        select_center_xyz[1] = ((int) (select_center_xyz[1]*4.0f)) * 0.25f;
+                        select_center_xyz[2] = ((int) (select_center_xyz[2]*4.0f)) * 0.25f;
                     }
                 }       
                 if((mode & 15) == 13)
                 {
                     // Movement offset mode...
-                    *((float*) (frame_data+3)) = select_center_xyz[X];
-                    *((float*) (frame_data+7)) = select_center_xyz[Y];
+                    *((float*) (frame_data+3)) = select_center_xyz[0];
+                    *((float*) (frame_data+7)) = select_center_xyz[1];
                     if(key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT])
                     {
                         // Snap to 0 on x axis...
@@ -3231,7 +3242,7 @@ onscreen_draw_count++;
             {
                 if(select_move_on)
                 {
-                    render_get_point_xyz(mouse_x, mouse_y, &select_offset_xyz[X], &select_offset_xyz[Y], &select_offset_xyz[Z]);
+                    render_get_point_xyz(mouse_x, mouse_y, &select_offset_xyz[0], &select_offset_xyz[1], &select_offset_xyz[2]);
                     render_model_move();
                     if((mode&15) == 8 && select_num > 0)
                     {
@@ -3240,7 +3251,7 @@ onscreen_draw_count++;
                 }
                 else
                 {
-                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &select_center_xyz[Y], &select_center_xyz[Z]);
+                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &select_center_xyz[1], &select_center_xyz[2]);
                     select_update_xyz();
                     if((mode&15) < 6)
                     {
@@ -3434,7 +3445,7 @@ if(do_anchor_swap)
             // Display the crosshairs...
             if(((mode & 15) >= 1 && (mode&15) <= 4) || (mode&15)==6)
             {
-                display_marker(white, select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z], 500.00f);
+                display_marker(white, select_center_xyz[0], select_center_xyz[1], select_center_xyz[2], 500.00f);
             }
             display_texture_on();
 
@@ -3590,9 +3601,9 @@ if(do_anchor_swap)
                     y = (y*script_window_scale*25.0f)+script_window_y;
                     if(!select_inlist(i))
                     {
-                        if(x > (selection_box_tl[X]-1.0f) &&  x < (selection_box_br[X]+1.0f))
+                        if(x > (selection_box_tl[0]-1.0f) &&  x < (selection_box_br[0]+1.0f))
                         {
-                            if(y > (selection_box_tl[Y]-1.0f) &&  y < (selection_box_br[Y]+1.0f))
+                            if(y > (selection_box_tl[1]-1.0f) &&  y < (selection_box_br[1]+1.0f))
                             {
                                 select_add(i, ((float*) data));
                             }
@@ -3720,22 +3731,22 @@ if(do_anchor_swap)
             {
                 if(select_move_on)
                 {
-                    select_offset_xyz[X] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
-                    select_offset_xyz[Y] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
+                    select_offset_xyz[0] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
+                    select_offset_xyz[1] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
                     render_tex_move(TRUE);
                 }
                 else
                 {
-                    select_center_xyz[X] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
-                    select_center_xyz[Y] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
+                    select_center_xyz[0] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
+                    select_center_xyz[1] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
                     select_update_xy();
                 }
                 selection_close_type = 0;
             }
             else if(selection_close_type == BORDER_CROSS_HAIRS)
             {
-                select_center_xyz[X] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
-                select_center_xyz[Y] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
+                select_center_xyz[0] = (mouse_x-script_window_x)/(25.0f*script_window_scale);
+                select_center_xyz[1] = (mouse_y-script_window_y)/(25.0f*script_window_scale);
                 selection_close_type = 0;
             }
 
@@ -3805,8 +3816,8 @@ if(do_anchor_swap)
             repeat(i, MAX_VERTEX)
             {
                 vertex_to_tex_vertex[i] = 65535;
-                tex_vertex_onscreen_xy[i][X] = 0.0f;
-                tex_vertex_onscreen_xy[i][Y] = 0.0f;
+                tex_vertex_onscreen_xy[i][0] = 0.0f;
+                tex_vertex_onscreen_xy[i][1] = 0.0f;
             }
             onscreen_min_x = 9999;
             onscreen_max_x = 0;
@@ -3853,28 +3864,28 @@ if(do_anchor_swap)
                                 {
                                     vertex = *((unsigned short*) texture_data);  texture_data+=4;
                                     data = vertex_data + (vertex<<6);
-                                    render_get_point_xy(*((float*) data), *((float*) (data+4)), *((float*) (data+8)), &triangle_xy[k][X], &triangle_xy[k][Y]);
-//log_message("INFO:       Point %d at (%f, %f)", k, triangle_xy[k][X], triangle_xy[k][Y]);
+                                    render_get_point_xy(*((float*) data), *((float*) (data+4)), *((float*) (data+8)), &triangle_xy[k][0], &triangle_xy[k][1]);
+//log_message("INFO:       Point %d at (%f, %f)", k, triangle_xy[k][0], triangle_xy[k][1]);
                                 }
                                 // First side of triangle...
-                                triangle_xy[1][X] -= triangle_xy[0][X];
-                                triangle_xy[1][Y] -= triangle_xy[0][Y];
+                                triangle_xy[1][0] -= triangle_xy[0][0];
+                                triangle_xy[1][1] -= triangle_xy[0][1];
                                 // Third side of triangle...
-                                triangle_xy[2][X] -= triangle_xy[0][X];
-                                triangle_xy[2][Y] -= triangle_xy[0][Y];
+                                triangle_xy[2][0] -= triangle_xy[0][0];
+                                triangle_xy[2][1] -= triangle_xy[0][1];
                                 // Perpenicular...
-                                x = triangle_xy[1][Y];
-                                y = -triangle_xy[1][X];
+                                x = triangle_xy[1][1];
+                                y = -triangle_xy[1][0];
                                 // Is third point left or right of the first side?  Dot perpendicular to figure...
-                                x = x*triangle_xy[2][X] + y*triangle_xy[2][Y];
+                                x = x*triangle_xy[2][0] + y*triangle_xy[2][1];
                                 if(x <= 0)
                                 {
 //log_message("INFO:     Triangle %d is visible too", j);
                                     // Reconstitute onscreen coordinates
-                                    triangle_xy[1][X] += triangle_xy[0][X];
-                                    triangle_xy[1][Y] += triangle_xy[0][Y];
-                                    triangle_xy[2][X] += triangle_xy[0][X];
-                                    triangle_xy[2][Y] += triangle_xy[0][Y];
+                                    triangle_xy[1][0] += triangle_xy[0][0];
+                                    triangle_xy[1][1] += triangle_xy[0][1];
+                                    triangle_xy[2][0] += triangle_xy[0][0];
+                                    triangle_xy[2][1] += triangle_xy[0][1];
 
 
                                     // Triangle is visible...  Pick tex vertices to use now...  Add to file at end...
@@ -3886,10 +3897,10 @@ if(do_anchor_swap)
                                         if(vertex_to_tex_vertex[vertex] == 65535)
                                         {
                                             vertex_to_tex_vertex[vertex] = tex_vertex_to_add+num_tex_vertex;
-                                            x = triangle_xy[k][X];
-                                            y = triangle_xy[k][Y];
-                                            tex_vertex_onscreen_xy[tex_vertex_to_add+num_tex_vertex][X] = x;
-                                            tex_vertex_onscreen_xy[tex_vertex_to_add+num_tex_vertex][Y] = y;
+                                            x = triangle_xy[k][0];
+                                            y = triangle_xy[k][1];
+                                            tex_vertex_onscreen_xy[tex_vertex_to_add+num_tex_vertex][0] = x;
+                                            tex_vertex_onscreen_xy[tex_vertex_to_add+num_tex_vertex][1] = y;
                                             if(x < onscreen_min_x)  onscreen_min_x = x;
                                             if(x > onscreen_max_x)  onscreen_max_x = x;
                                             if(y < onscreen_min_y)  onscreen_min_y = y;
@@ -3938,11 +3949,11 @@ if(do_anchor_swap)
                 onscreen_max_y -= onscreen_min_y;
                 repeat(i, tex_vertex_to_add)
                 {
-                    tex_vertex_onscreen_xy[i+num_tex_vertex][X] -= onscreen_min_x;
-                    tex_vertex_onscreen_xy[i+num_tex_vertex][Y] -= onscreen_min_y;
-                    tex_vertex_onscreen_xy[i+num_tex_vertex][X] /= onscreen_max_x;
-                    tex_vertex_onscreen_xy[i+num_tex_vertex][Y] /= onscreen_max_y;
-//log_message("INFO:     %d at (%f, %f)", i+num_tex_vertex, tex_vertex_onscreen_xy[i+num_tex_vertex][X], tex_vertex_onscreen_xy[i+num_tex_vertex][Y]);
+                    tex_vertex_onscreen_xy[i+num_tex_vertex][0] -= onscreen_min_x;
+                    tex_vertex_onscreen_xy[i+num_tex_vertex][1] -= onscreen_min_y;
+                    tex_vertex_onscreen_xy[i+num_tex_vertex][0] /= onscreen_max_x;
+                    tex_vertex_onscreen_xy[i+num_tex_vertex][1] /= onscreen_max_y;
+//log_message("INFO:     %d at (%f, %f)", i+num_tex_vertex, tex_vertex_onscreen_xy[i+num_tex_vertex][0], tex_vertex_onscreen_xy[i+num_tex_vertex][1]);
 
                     // Add the vertex to the file...
                     render_insert_tex_vertex(start_data, frame, tex_vertex_onscreen_xy[i+num_tex_vertex], 0, MAX_TEX_VERTEX);
@@ -3978,13 +3989,13 @@ if(do_anchor_swap)
                 repeat(i, num_vertex)
                 {
                     // Proper onscreen coordinate figurin'
-                    vertex_bxy[X] = onscreen_matrix[0] * ((float*) texture_data)[X] + onscreen_matrix[4] * ((float*) texture_data)[Y] + onscreen_matrix[8]  * ((float*) texture_data)[Z] + onscreen_matrix[12];
-                    vertex_bxy[Y] = onscreen_matrix[1] * ((float*) texture_data)[X] + onscreen_matrix[5] * ((float*) texture_data)[Y] + onscreen_matrix[9]  * ((float*) texture_data)[Z] + onscreen_matrix[13];
-                    dot           = onscreen_matrix[3] * ((float*) texture_data)[X] + onscreen_matrix[7] * ((float*) texture_data)[Y] + onscreen_matrix[11] * ((float*) texture_data)[Z] + onscreen_matrix[15];
+                    vertex_bxy[0] = onscreen_matrix[0] * ((float*) texture_data)[0] + onscreen_matrix[4] * ((float*) texture_data)[1] + onscreen_matrix[8]  * ((float*) texture_data)[2] + onscreen_matrix[12];
+                    vertex_bxy[1] = onscreen_matrix[1] * ((float*) texture_data)[0] + onscreen_matrix[5] * ((float*) texture_data)[1] + onscreen_matrix[9]  * ((float*) texture_data)[2] + onscreen_matrix[13];
+                    dot           = onscreen_matrix[3] * ((float*) texture_data)[0] + onscreen_matrix[7] * ((float*) texture_data)[1] + onscreen_matrix[11] * ((float*) texture_data)[2] + onscreen_matrix[15];
 
                     if(dot != 0.0f)
                     {
-                        vertex_bxy[X]/=dot; vertex_bxy[Y]/=dot;
+                        vertex_bxy[0]/=dot; vertex_bxy[1]/=dot;
                     }
                     texture_data+=64;
                     vertex_bxy+=2;
@@ -3998,29 +4009,29 @@ if(do_anchor_swap)
                 {
                     // Find a perpendicular to the draw line...
                     vertex = (*((unsigned short*) (texture_data)))<<1;
-                    perp_xy[Y] = -vertex_bxy[vertex];
+                    perp_xy[1] = -vertex_bxy[vertex];
                     vertex++;
-                    perp_xy[X] = vertex_bxy[vertex];
+                    perp_xy[0] = vertex_bxy[vertex];
                     vertex = (*((unsigned short*) (texture_data+2)))<<1;
-                    start_xy[X] = vertex_bxy[vertex];
-                    perp_xy[Y] += vertex_bxy[vertex];
+                    start_xy[0] = vertex_bxy[vertex];
+                    perp_xy[1] += vertex_bxy[vertex];
                     vertex++;
-                    start_xy[Y] = vertex_bxy[vertex];
-                    perp_xy[X] -= vertex_bxy[vertex];
+                    start_xy[1] = vertex_bxy[vertex];
+                    perp_xy[0] -= vertex_bxy[vertex];
 
 
                     // Check each check point's location against the perpendicular...
                     vertex = (*((unsigned short*) (texture_data+4)))<<1;
-                    texpos_xy[X] = vertex_bxy[vertex] - start_xy[X];
+                    texpos_xy[0] = vertex_bxy[vertex] - start_xy[0];
                     vertex++;
-                    texpos_xy[Y] = vertex_bxy[vertex] - start_xy[Y];
-                    dot = texpos_xy[X] * perp_xy[X] + texpos_xy[Y] * perp_xy[Y];
+                    texpos_xy[1] = vertex_bxy[vertex] - start_xy[1];
+                    dot = texpos_xy[0] * perp_xy[0] + texpos_xy[1] * perp_xy[1];
                     vertex = (*((unsigned short*) (texture_data+6)))<<1;
-                    texpos_xy[X] = vertex_bxy[vertex] - start_xy[X];
+                    texpos_xy[0] = vertex_bxy[vertex] - start_xy[0];
                     vertex++;
-                    texpos_xy[Y] = vertex_bxy[vertex] - start_xy[Y];
+                    texpos_xy[1] = vertex_bxy[vertex] - start_xy[1];
 
-                    dot *= (texpos_xy[X] * perp_xy[X] + texpos_xy[Y] * perp_xy[Y]);
+                    dot *= (texpos_xy[0] * perp_xy[0] + texpos_xy[1] * perp_xy[1]);
                     draw_cartoon_line[i] = (dot >= 0.0f);
 
                     texture_data+=8;
@@ -4049,28 +4060,28 @@ if(do_anchor_swap)
 
 
                         // First point...
-                        vertex_bxy[X] = ((float*) data)[X];
-                        vertex_bxy[Y] = ((float*) data)[Y];
-                        vertex_bxy[Z] = ((float*) data)[Z];
+                        vertex_bxy[0] = ((float*) data)[0];
+                        vertex_bxy[1] = ((float*) data)[1];
+                        vertex_bxy[2] = ((float*) data)[2];
                         display_vertex(vertex_bxy);
 
 
                         // Second point...
                         data+=15;
-                        vertex_bxy[X] += ((float*) data)[X]*FAT_LINE_SIZE;
-                        vertex_bxy[Y] += ((float*) data)[Y]*FAT_LINE_SIZE;
-                        vertex_bxy[Z] += ((float*) data)[Z]*FAT_LINE_SIZE;
+                        vertex_bxy[0] += ((float*) data)[0]*FAT_LINE_SIZE;
+                        vertex_bxy[1] += ((float*) data)[1]*FAT_LINE_SIZE;
+                        vertex_bxy[2] += ((float*) data)[2]*FAT_LINE_SIZE;
                         display_vertex(vertex_bxy);
 
 
                         // Third point...
-                        vertex_bxy[X] = ((float*) texture_data)[X];
-                        vertex_bxy[Y] = ((float*) texture_data)[Y];
-                        vertex_bxy[Z] = ((float*) texture_data)[Z];
+                        vertex_bxy[0] = ((float*) texture_data)[0];
+                        vertex_bxy[1] = ((float*) texture_data)[1];
+                        vertex_bxy[2] = ((float*) texture_data)[2];
                         texture_data+=15;
-                        vertex_bxy[X+3] = vertex_bxy[X] + ((((float*) texture_data)[X])*FAT_LINE_SIZE);
-                        vertex_bxy[Y+3] = vertex_bxy[Y] + ((((float*) texture_data)[Y])*FAT_LINE_SIZE);
-                        vertex_bxy[Z+3] = vertex_bxy[Z] + ((((float*) texture_data)[Z])*FAT_LINE_SIZE);
+                        vertex_bxy[X+3] = vertex_bxy[0] + ((((float*) texture_data)[0])*FAT_LINE_SIZE);
+                        vertex_bxy[Y+3] = vertex_bxy[1] + ((((float*) texture_data)[1])*FAT_LINE_SIZE);
+                        vertex_bxy[Z+3] = vertex_bxy[2] + ((((float*) texture_data)[2])*FAT_LINE_SIZE);
                         display_vertex(vertex_bxy+3);
 
                         // Fourth point
@@ -4246,14 +4257,14 @@ if(do_anchor_swap)
                         if(texture_flags & RENDER_CARTOON_FLAG)
                         {
                             // Pan around texture to simulate light direction...
-                            start_xy[X] = global_render_light_offset_xy[X];
-                            start_xy[Y] = global_render_light_offset_xy[Y];
+                            start_xy[0] = global_render_light_offset_xy[0];
+                            start_xy[1] = global_render_light_offset_xy[1];
                         }
                         else
                         {
                             // Simple texture map...
-                            start_xy[X] = 0.5f;
-                            start_xy[Y] = 0.5f;
+                            start_xy[0] = 0.5f;
+                            start_xy[1] = 0.5f;
                         }
 
 
@@ -4267,8 +4278,8 @@ if(do_anchor_swap)
                             {
                                 vertex = *((unsigned short*) texture_data);  texture_data+=4;
                                 data = vertex_data + (vertex<<6);
-                                texpos_xy[X] = (*((float*) (data+15)) * texture_matrix[0]) + (*((float*) (data+19)) * texture_matrix[1]) + (*((float*) (data+23)) * texture_matrix[2]) + start_xy[X];
-                                texpos_xy[Y] = (*((float*) (data+15)) * texture_matrix[3]) + (*((float*) (data+19)) * texture_matrix[4]) + (*((float*) (data+23)) * texture_matrix[5]) + start_xy[Y];
+                                texpos_xy[0] = (*((float*) (data+15)) * texture_matrix[0]) + (*((float*) (data+19)) * texture_matrix[1]) + (*((float*) (data+23)) * texture_matrix[2]) + start_xy[0];
+                                texpos_xy[1] = (*((float*) (data+15)) * texture_matrix[3]) + (*((float*) (data+19)) * texture_matrix[4]) + (*((float*) (data+23)) * texture_matrix[5]) + start_xy[1];
                                 display_texpos(texpos_xy);
                                 display_vertex((float*) data);
                             }
@@ -4286,8 +4297,8 @@ if(do_anchor_swap)
                             {
                                 vertex = *((unsigned short*) texture_data);  texture_data+=4;
                                 data = vertex_data + (vertex<<6);
-                                texpos_xy[X] = (*((float*) (data+15)) * texture_matrix[0]) + (*((float*) (data+19)) * texture_matrix[1]) + (*((float*) (data+23)) * texture_matrix[2]) + start_xy[X];
-                                texpos_xy[Y] = (*((float*) (data+15)) * texture_matrix[3]) + (*((float*) (data+19)) * texture_matrix[4]) + (*((float*) (data+23)) * texture_matrix[5]) + start_xy[Y];
+                                texpos_xy[0] = (*((float*) (data+15)) * texture_matrix[0]) + (*((float*) (data+19)) * texture_matrix[1]) + (*((float*) (data+23)) * texture_matrix[2]) + start_xy[0];
+                                texpos_xy[1] = (*((float*) (data+15)) * texture_matrix[3]) + (*((float*) (data+19)) * texture_matrix[4]) + (*((float*) (data+23)) * texture_matrix[5]) + start_xy[1];
                                 display_texpos(texpos_xy);
                                 display_vertex((float*) data);
                             }
@@ -4306,22 +4317,22 @@ if(do_anchor_swap)
                                 if(texture_flags & RENDER_NO_LINE_FLAG)
                                 {
                                     // Quick quads animation (for gears)...
-                                    start_xy[X] = eye_quad_xy[(eye_frame>>1)&3][X];
-                                    start_xy[Y] = eye_quad_xy[(eye_frame>>1)&3][Y];
+                                    start_xy[0] = eye_quad_xy[(eye_frame>>1)&3][0];
+                                    start_xy[1] = eye_quad_xy[(eye_frame>>1)&3][1];
                                 }
                                 else
                                 {
                                     // Smoothly scrolling texture...
-                                    start_xy[X] = 0.0f;
-                                    start_xy[Y] = eye_frame * 0.03125f;
+                                    start_xy[0] = 0.0f;
+                                    start_xy[1] = eye_frame * 0.03125f;
                                 }
                             }
                             else
                             {
                                 // Normal bounced animation...  0, 1, 2, 3, 2, 1...
                                 eye_frame&=31;
-                                start_xy[X] = eye_quad_xy[eye_frame_quad[eye_frame]][X];
-                                start_xy[Y] = eye_quad_xy[eye_frame_quad[eye_frame]][Y];
+                                start_xy[0] = eye_quad_xy[eye_frame_quad[eye_frame]][0];
+                                start_xy[1] = eye_quad_xy[eye_frame_quad[eye_frame]][1];
                             }
                             num_primitive = *((unsigned short*) texture_data);  texture_data+=2;
                             repeat(j, num_primitive)
@@ -4333,8 +4344,8 @@ if(do_anchor_swap)
                                     vertex = *((unsigned short*) texture_data);  texture_data+=2;
                                     tex_vertex = *((unsigned short*) texture_data);  texture_data+=2;
                                     data = tex_vertex_data + (tex_vertex<<3);
-                                    texpos_xy[X] = (*((float*) data)) + start_xy[X];  data+=4;
-                                    texpos_xy[Y] = (*((float*) data)) + start_xy[Y];  data+=4;
+                                    texpos_xy[0] = (*((float*) data)) + start_xy[0];  data+=4;
+                                    texpos_xy[1] = (*((float*) data)) + start_xy[1];  data+=4;
                                     display_texpos(texpos_xy);
                                     data = vertex_data + (vertex<<6);  display_vertex((float*) data);
                                 }
@@ -4353,8 +4364,8 @@ if(do_anchor_swap)
                                     vertex = *((unsigned short*) texture_data);  texture_data+=2;
                                     tex_vertex = *((unsigned short*) texture_data);  texture_data+=2;
                                     data = tex_vertex_data + (tex_vertex<<3);
-                                    texpos_xy[X] = (*((float*) data)) + start_xy[X];  data+=4;
-                                    texpos_xy[Y] = (*((float*) data)) + start_xy[Y];  data+=4;
+                                    texpos_xy[0] = (*((float*) data)) + start_xy[0];  data+=4;
+                                    texpos_xy[1] = (*((float*) data)) + start_xy[1];  data+=4;
                                     display_texpos(texpos_xy);
                                     data = vertex_data + (vertex<<6);  display_vertex((float*) data);
                                 }
@@ -4504,9 +4515,9 @@ if(do_anchor_swap)
                                 {
                                     vertex = *((unsigned short*) texture_data);  texture_data+=4;
                                     data = vertex_data + (vertex<<6);
-                                    distance_xyz[X] = ((float*) data)[X] + ((float*) (data+15))[X]*cartoon_line_size;
-                                    distance_xyz[Y] = ((float*) data)[Y] + ((float*) (data+15))[Y]*cartoon_line_size;
-                                    distance_xyz[Z] = ((float*) data)[Z] + ((float*) (data+15))[Z]*cartoon_line_size;
+                                    distance_xyz[0] = ((float*) data)[0] + ((float*) (data+15))[0]*cartoon_line_size;
+                                    distance_xyz[1] = ((float*) data)[1] + ((float*) (data+15))[1]*cartoon_line_size;
+                                    distance_xyz[2] = ((float*) data)[2] + ((float*) (data+15))[2]*cartoon_line_size;
                                     display_vertex(distance_xyz);
                                 }
                                 display_end();
@@ -4523,9 +4534,9 @@ if(do_anchor_swap)
                                 {
                                     vertex = *((unsigned short*) texture_data);  texture_data+=4;
                                     data = vertex_data + (vertex<<6);
-                                    distance_xyz[X] = ((float*) data)[X] + ((float*) (data+15))[X]*cartoon_line_size;
-                                    distance_xyz[Y] = ((float*) data)[Y] + ((float*) (data+15))[Y]*cartoon_line_size;
-                                    distance_xyz[Z] = ((float*) data)[Z] + ((float*) (data+15))[Z]*cartoon_line_size;
+                                    distance_xyz[0] = ((float*) data)[0] + ((float*) (data+15))[0]*cartoon_line_size;
+                                    distance_xyz[1] = ((float*) data)[1] + ((float*) (data+15))[1]*cartoon_line_size;
+                                    distance_xyz[2] = ((float*) data)[2] + ((float*) (data+15))[2]*cartoon_line_size;
                                     display_vertex(distance_xyz);
                                 }
                                 display_end();
@@ -4567,14 +4578,14 @@ if(do_anchor_swap)
                     repeat(i, num_vertex)
                     {
                         // Proper onscreen coordinate figurin'
-                        vertex_bxy[X] = onscreen_matrix[0] * ((float*) texture_data)[X] + onscreen_matrix[4] * ((float*) texture_data)[Y] + onscreen_matrix[8]  * ((float*) texture_data)[Z] + onscreen_matrix[12];
-                        vertex_bxy[Y] = onscreen_matrix[1] * ((float*) texture_data)[X] + onscreen_matrix[5] * ((float*) texture_data)[Y] + onscreen_matrix[9]  * ((float*) texture_data)[Z] + onscreen_matrix[13];
-                        dot           = onscreen_matrix[3] * ((float*) texture_data)[X] + onscreen_matrix[7] * ((float*) texture_data)[Y] + onscreen_matrix[11] * ((float*) texture_data)[Z] + onscreen_matrix[15];
+                        vertex_bxy[0] = onscreen_matrix[0] * ((float*) texture_data)[0] + onscreen_matrix[4] * ((float*) texture_data)[1] + onscreen_matrix[8]  * ((float*) texture_data)[2] + onscreen_matrix[12];
+                        vertex_bxy[1] = onscreen_matrix[1] * ((float*) texture_data)[0] + onscreen_matrix[5] * ((float*) texture_data)[1] + onscreen_matrix[9]  * ((float*) texture_data)[2] + onscreen_matrix[13];
+                        dot           = onscreen_matrix[3] * ((float*) texture_data)[0] + onscreen_matrix[7] * ((float*) texture_data)[1] + onscreen_matrix[11] * ((float*) texture_data)[2] + onscreen_matrix[15];
 
 
                         if(dot != 0.0f)
                         {
-                            vertex_bxy[X]/=dot; vertex_bxy[Y]/=dot;
+                            vertex_bxy[0]/=dot; vertex_bxy[1]/=dot;
                         }
                         texture_data+=64;
                         vertex_bxy+=2;
@@ -4588,29 +4599,29 @@ if(do_anchor_swap)
                     {
                         // Find a perpendicular to the draw line...
                         vertex = (*((unsigned short*) (texture_data)))<<1;
-                        perp_xy[Y] = -vertex_bxy[vertex];
+                        perp_xy[1] = -vertex_bxy[vertex];
                         vertex++;
-                        perp_xy[X] = vertex_bxy[vertex];
+                        perp_xy[0] = vertex_bxy[vertex];
                         vertex = (*((unsigned short*) (texture_data+2)))<<1;
-                        start_xy[X] = vertex_bxy[vertex];
-                        perp_xy[Y] += vertex_bxy[vertex];
+                        start_xy[0] = vertex_bxy[vertex];
+                        perp_xy[1] += vertex_bxy[vertex];
                         vertex++;
-                        start_xy[Y] = vertex_bxy[vertex];
-                        perp_xy[X] -= vertex_bxy[vertex];
+                        start_xy[1] = vertex_bxy[vertex];
+                        perp_xy[0] -= vertex_bxy[vertex];
 
 
                         // Check each check point's location against the perpendicular...
                         vertex = (*((unsigned short*) (texture_data+4)))<<1;
-                        texpos_xy[X] = vertex_bxy[vertex] - start_xy[X];
+                        texpos_xy[0] = vertex_bxy[vertex] - start_xy[0];
                         vertex++;
-                        texpos_xy[Y] = vertex_bxy[vertex] - start_xy[Y];
-                        dot = texpos_xy[X] * perp_xy[X] + texpos_xy[Y] * perp_xy[Y];
+                        texpos_xy[1] = vertex_bxy[vertex] - start_xy[1];
+                        dot = texpos_xy[0] * perp_xy[0] + texpos_xy[1] * perp_xy[1];
                         vertex = (*((unsigned short*) (texture_data+6)))<<1;
-                        texpos_xy[X] = vertex_bxy[vertex] - start_xy[X];
+                        texpos_xy[0] = vertex_bxy[vertex] - start_xy[0];
                         vertex++;
-                        texpos_xy[Y] = vertex_bxy[vertex] - start_xy[Y];
+                        texpos_xy[1] = vertex_bxy[vertex] - start_xy[1];
 
-                        dot *= (texpos_xy[X] * perp_xy[X] + texpos_xy[Y] * perp_xy[Y]);
+                        dot *= (texpos_xy[0] * perp_xy[0] + texpos_xy[1] * perp_xy[1]);
                         draw_cartoon_line[i] = (dot >= 0.0f);
 
                         texture_data+=8;
@@ -4639,28 +4650,28 @@ if(do_anchor_swap)
 
 
                             // First point...
-                            vertex_bxy[X] = ((float*) data)[X];
-                            vertex_bxy[Y] = ((float*) data)[Y];
-                            vertex_bxy[Z] = ((float*) data)[Z];
+                            vertex_bxy[0] = ((float*) data)[0];
+                            vertex_bxy[1] = ((float*) data)[1];
+                            vertex_bxy[2] = ((float*) data)[2];
                             display_vertex(vertex_bxy);
 
 
                             // Second point...
                             data+=15;
-                            vertex_bxy[X] += ((float*) data)[X]*cartoon_line_size;
-                            vertex_bxy[Y] += ((float*) data)[Y]*cartoon_line_size;
-                            vertex_bxy[Z] += ((float*) data)[Z]*cartoon_line_size;
+                            vertex_bxy[0] += ((float*) data)[0]*cartoon_line_size;
+                            vertex_bxy[1] += ((float*) data)[1]*cartoon_line_size;
+                            vertex_bxy[2] += ((float*) data)[2]*cartoon_line_size;
                             display_vertex(vertex_bxy);
 
 
                             // Third point...
-                            vertex_bxy[X] = ((float*) texture_data)[X];
-                            vertex_bxy[Y] = ((float*) texture_data)[Y];
-                            vertex_bxy[Z] = ((float*) texture_data)[Z];
+                            vertex_bxy[0] = ((float*) texture_data)[0];
+                            vertex_bxy[1] = ((float*) texture_data)[1];
+                            vertex_bxy[2] = ((float*) texture_data)[2];
                             texture_data+=15;
-                            vertex_bxy[X+3] = vertex_bxy[X] + ((((float*) texture_data)[X])*cartoon_line_size);
-                            vertex_bxy[Y+3] = vertex_bxy[Y] + ((((float*) texture_data)[Y])*cartoon_line_size);
-                            vertex_bxy[Z+3] = vertex_bxy[Z] + ((((float*) texture_data)[Z])*cartoon_line_size);
+                            vertex_bxy[X+3] = vertex_bxy[0] + ((((float*) texture_data)[0])*cartoon_line_size);
+                            vertex_bxy[Y+3] = vertex_bxy[1] + ((((float*) texture_data)[1])*cartoon_line_size);
+                            vertex_bxy[Z+3] = vertex_bxy[2] + ((((float*) texture_data)[2])*cartoon_line_size);
                             display_vertex(vertex_bxy+3);
 
                             // Fourth point
@@ -4733,8 +4744,8 @@ void render_shadow_setup(void)
     {
         repeat(x, SHADOW_MESH_SIZE)
         {
-            shadow_mesh_tex_xy[y][x][X] = ((float)x)/((float) (SHADOW_MESH_SIZE-1));
-            shadow_mesh_tex_xy[y][x][Y] = ((float)y)/((float) (SHADOW_MESH_SIZE-1));
+            shadow_mesh_tex_xy[y][x][0] = ((float)x)/((float) (SHADOW_MESH_SIZE-1));
+            shadow_mesh_tex_xy[y][x][1] = ((float)y)/((float) (SHADOW_MESH_SIZE-1));
         }
     }
 }
@@ -4762,7 +4773,7 @@ void render_rdy_character_shadow(unsigned char* data, unsigned char* character_d
 
     x = *((float*) (character_data));
     y = *((float*) (character_data+4));
-    vertex_xyz[Z] = z+SHADOW_Z_CORRECTION;
+    vertex_xyz[2] = z+SHADOW_Z_CORRECTION;
     main_alpha = ((main_alpha) * (*(character_data+79))) >> 8;  // Modulate by character alpha...
     frame = *((unsigned short*) (character_data + 178));
 
@@ -4804,26 +4815,26 @@ void render_rdy_character_shadow(unsigned char* data, unsigned char* character_d
             // Draw a simple flat shadow at the character's foot level...
             display_start_fan();
                 display_texpos_xy(0.0f, 0.0f);
-                vertex_xyz[X] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
-                vertex_xyz[Y] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
+                vertex_xyz[0] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
+                vertex_xyz[1] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(1.0f, 0.0f);
-                vertex_xyz[X] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
-                vertex_xyz[Y] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
+                vertex_xyz[0] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
+                vertex_xyz[1] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(1.0f, 1.0f);
-                vertex_xyz[X] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
-                vertex_xyz[Y] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
+                vertex_xyz[0] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
+                vertex_xyz[1] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(0.0f, 1.0f);
-                vertex_xyz[X] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
-                vertex_xyz[Y] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
+                vertex_xyz[0] = (((*((float*) (character_data+108)))*(*((float*) (data))) + (*((float*) (character_data+120)))*(*((float*) (data+4))))*scale) + x;
+                vertex_xyz[1] = (((*((float*) (character_data+112)))*(*((float*) (data))) + (*((float*) (character_data+124)))*(*((float*) (data+4))))*scale) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
             display_end();
@@ -4895,9 +4906,9 @@ void render_rdy_shadow(unsigned char* data, unsigned short frame, float x, float
                             if(!select_inlist(item))
                             {
                                 render_get_point_xy(*((float*) (data))+x, *((float*) (data+4))+y, 0.0f, &onscreen_x, &onscreen_y);
-                                if(onscreen_x > selection_box_tl[X] &&  onscreen_x < selection_box_br[X])
+                                if(onscreen_x > selection_box_tl[0] &&  onscreen_x < selection_box_br[0])
                                 {
-                                    if(onscreen_y > selection_box_tl[Y] &&  onscreen_y < selection_box_br[Y])
+                                    if(onscreen_y > selection_box_tl[1] &&  onscreen_y < selection_box_br[1])
                                     {
                                         select_add(item, ((float*) data));
                                     }
@@ -5000,19 +5011,19 @@ void render_rdy_shadow(unsigned char* data, unsigned short frame, float x, float
             {
                 if(select_move_on)
                 {
-                    render_get_point_xyz(mouse_x, mouse_y, &select_offset_xyz[X], &select_offset_xyz[Y], &onscreen_y);
+                    render_get_point_xyz(mouse_x, mouse_y, &select_offset_xyz[0], &select_offset_xyz[1], &onscreen_y);
                     render_tex_move(FALSE);
                 }
                 else
                 {
-                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &select_center_xyz[Y], &onscreen_y);
+                    render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &select_center_xyz[1], &onscreen_y);
                     select_update_xy();
                 }
                 selection_close_type = 0;
             }
             else if(selection_close_type == BORDER_CROSS_HAIRS)
             {
-                render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[X], &select_center_xyz[Y], &onscreen_y);
+                render_get_point_xyz(mouse_x, mouse_y, &select_center_xyz[0], &select_center_xyz[1], &onscreen_y);
                 selection_close_type = 0;
             }
 
@@ -5060,27 +5071,27 @@ void render_rdy_shadow(unsigned char* data, unsigned short frame, float x, float
             display_pick_texture(shadow_texture[texture_data[i]]);
             display_start_fan();
                 display_texpos_xy(0.0f, 0.0f);
-                vertex_xyz[X] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
-                vertex_xyz[Y] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
-                vertex_xyz[Z] = z;
+                vertex_xyz[0] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
+                vertex_xyz[1] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
+                vertex_xyz[2] = z;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(1.0f, 0.0f);
-                vertex_xyz[X] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
-                vertex_xyz[Y] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
+                vertex_xyz[0] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
+                vertex_xyz[1] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(1.0f, 1.0f);
-                vertex_xyz[X] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
-                vertex_xyz[Y] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
+                vertex_xyz[0] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
+                vertex_xyz[1] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
                 display_texpos_xy(0.0f, 1.0f);
-                vertex_xyz[X] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
-                vertex_xyz[Y] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
+                vertex_xyz[0] = (script_matrix[0])*(*((float*) (data))) + (script_matrix[3])*(*((float*) (data+4))) + x;
+                vertex_xyz[1] = (script_matrix[1])*(*((float*) (data))) + (script_matrix[4])*(*((float*) (data+4))) + y;
                 display_vertex(vertex_xyz);
                 data+=8;
 
@@ -5383,9 +5394,9 @@ unsigned char render_insert_vertex(unsigned char* data, unsigned short frame, fl
         {
             // Added the point successfully...  Write coordinates
             select_add(num_vertex, ((float*) (base_model_data+(num_vertex<<6))));
-            *((float*) (base_model_data+(num_vertex<<6))) = vertex_xyz[X];
-            *((float*) (base_model_data+4+(num_vertex<<6))) = vertex_xyz[Y];
-            *((float*) (base_model_data+8+(num_vertex<<6))) = vertex_xyz[Z];
+            *((float*) (base_model_data+(num_vertex<<6))) = vertex_xyz[0];
+            *((float*) (base_model_data+4+(num_vertex<<6))) = vertex_xyz[1];
+            *((float*) (base_model_data+8+(num_vertex<<6))) = vertex_xyz[2];
 
 
             // Default bone info
@@ -5621,9 +5632,9 @@ void render_copy_selected(unsigned char* data, unsigned short frame)
     // Save the selected vertex coordinates
     repeat(i, select_num)
     {
-        copy_vertex_xyz[i][X] = select_xyz[i][X];
-        copy_vertex_xyz[i][Y] = select_xyz[i][Y];
-        copy_vertex_xyz[i][Z] = select_xyz[i][Z];
+        copy_vertex_xyz[i][0] = select_xyz[i][0];
+        copy_vertex_xyz[i][1] = select_xyz[i][1];
+        copy_vertex_xyz[i][2] = select_xyz[i][2];
     }
     num_copy_vertex = select_num;
 
@@ -5671,8 +5682,8 @@ void render_copy_selected(unsigned char* data, unsigned short frame)
                     {
                         if(tex_vertex_new[k])
                         {
-                            copy_tex_vertex_xy[num_copy_tex_vertex][X] = *(tex_vertex_data + (tex_vertex[k]<<1));
-                            copy_tex_vertex_xy[num_copy_tex_vertex][Y] = *(tex_vertex_data + (tex_vertex[k]<<1) + 1);
+                            copy_tex_vertex_xy[num_copy_tex_vertex][0] = *(tex_vertex_data + (tex_vertex[k]<<1));
+                            copy_tex_vertex_xy[num_copy_tex_vertex][1] = *(tex_vertex_data + (tex_vertex[k]<<1) + 1);
                             copy_tex_vertex_number[num_copy_tex_vertex] = tex_vertex[k];
                             tex_vertex[k] = num_copy_tex_vertex;
                             num_copy_tex_vertex++;
@@ -6271,9 +6282,9 @@ log_message("INFO:   ");
                 if(sdf_insert_data(frame_data, NULL, 12))
                 {
                     // Put in the coordinate info...
-                    *((float*) (frame_data)) = joint_xyz[X];
-                    *((float*) (frame_data+4)) = joint_xyz[Y];
-                    *((float*) (frame_data+8)) = joint_xyz[Z];
+                    *((float*) (frame_data)) = joint_xyz[0];
+                    *((float*) (frame_data+4)) = joint_xyz[1];
+                    *((float*) (frame_data+8)) = joint_xyz[2];
 
 
                     // Update frame data pointers...
@@ -6452,9 +6463,9 @@ void scale_all_joints_and_vertices(unsigned char* data, float scale)
         repeat(i, num_vertex)
         {
             position_xyz = (float*) base_data;
-            position_xyz[X] *= scale;
-            position_xyz[Y] *= scale;
-            position_xyz[Z] *= scale;
+            position_xyz[0] *= scale;
+            position_xyz[1] *= scale;
+            position_xyz[2] *= scale;
             base_data+=64;
         }
 
@@ -6497,9 +6508,9 @@ void scale_all_joints_and_vertices(unsigned char* data, float scale)
         position_xyz = (float*) frame_data;
         repeat(i, num_joint)
         {
-            position_xyz[X] *= scale;
-            position_xyz[Y] *= scale;
-            position_xyz[Z] *= scale;
+            position_xyz[0] *= scale;
+            position_xyz[1] *= scale;
+            position_xyz[2] *= scale;
             position_xyz+=3;
         }
     }
@@ -6554,34 +6565,34 @@ void scale_selected_vertices_centrid(unsigned char* data, unsigned short frame, 
     }
 
     // Find the centrid...
-    centrid_xyz[X] = 0.0f;
-    centrid_xyz[Y] = 0.0f;
-    centrid_xyz[Z] = 0.0f;
+    centrid_xyz[0] = 0.0f;
+    centrid_xyz[1] = 0.0f;
+    centrid_xyz[2] = 0.0f;
     repeat(i, select_num)
     {
-        centrid_xyz[X] += select_xyz[i][X];
-        centrid_xyz[Y] += select_xyz[i][Y];
-        centrid_xyz[Z] += select_xyz[i][Z];
+        centrid_xyz[0] += select_xyz[i][0];
+        centrid_xyz[1] += select_xyz[i][1];
+        centrid_xyz[2] += select_xyz[i][2];
     }
-    centrid_xyz[X] /= select_num;
-    centrid_xyz[Y] /= select_num;
-    centrid_xyz[Z] /= select_num;
-//centrid_xyz[Z] = 0.125f;
+    centrid_xyz[0] /= select_num;
+    centrid_xyz[1] /= select_num;
+    centrid_xyz[2] /= select_num;
+//centrid_xyz[2] = 0.125f;
     inverse = 1.0f - scale;
-    centrid_xyz[X] *= inverse;
-    centrid_xyz[Y] *= inverse;
-    centrid_xyz[Z] *= inverse;
+    centrid_xyz[0] *= inverse;
+    centrid_xyz[1] *= inverse;
+    centrid_xyz[2] *= inverse;
 
 
     // Scale each of 'em...
     repeat(i, select_num)
     {
-        select_xyz[i][X] = (select_xyz[i][X]*scale) + centrid_xyz[X];
-        select_data[i][X] = (select_data[i][X]*scale) + centrid_xyz[X];
-        select_xyz[i][Y] = (select_xyz[i][Y]*scale) + centrid_xyz[Y];
-        select_data[i][Y] = (select_data[i][Y]*scale) + centrid_xyz[Y];
-        select_xyz[i][Z] = (select_xyz[i][Z]*scale) + centrid_xyz[Z];
-        select_data[i][Z] = (select_data[i][Z]*scale) + centrid_xyz[Z];
+        select_xyz[i][0] = (select_xyz[i][0]*scale) + centrid_xyz[0];
+        select_data[i][0] = (select_data[i][0]*scale) + centrid_xyz[0];
+        select_xyz[i][1] = (select_xyz[i][1]*scale) + centrid_xyz[1];
+        select_data[i][1] = (select_data[i][1]*scale) + centrid_xyz[1];
+        select_xyz[i][2] = (select_xyz[i][2]*scale) + centrid_xyz[2];
+        select_data[i][2] = (select_data[i][2]*scale) + centrid_xyz[2];
         // Recrunch the bone scalars too
         render_attach_vertex_to_bone(data, frame, select_list[i]);
         render_crunch_vertex(data, frame, select_list[i], TRUE, 0);
@@ -6724,21 +6735,21 @@ float z;
 //    }
     repeat(i, num_joint)
     {
-        velocity_xyz[X] = next_position_xyz[X] - last_position_xyz[X];
-        velocity_xyz[Y] = next_position_xyz[Y] - last_position_xyz[Y];
-        velocity_xyz[Z] = next_position_xyz[Z] - last_position_xyz[Z];
-        velocity_xyz[Z] -= 0.03f;
-        position_xyz[X] += velocity_xyz[X];
-        position_xyz[Y] += velocity_xyz[Y];
-        position_xyz[Z] += velocity_xyz[Z];
-        if(position_xyz[Z] < z)
+        velocity_xyz[0] = next_position_xyz[0] - last_position_xyz[0];
+        velocity_xyz[1] = next_position_xyz[1] - last_position_xyz[1];
+        velocity_xyz[2] = next_position_xyz[2] - last_position_xyz[2];
+        velocity_xyz[2] -= 0.03f;
+        position_xyz[0] += velocity_xyz[0];
+        position_xyz[1] += velocity_xyz[1];
+        position_xyz[2] += velocity_xyz[2];
+        if(position_xyz[2] < z)
         {
-            position_xyz[X] -= velocity_xyz[X]*0.25f;
-            position_xyz[Y] -= velocity_xyz[Y]*0.25f;
+            position_xyz[0] -= velocity_xyz[0]*0.25f;
+            position_xyz[1] -= velocity_xyz[1]*0.25f;
 
-            position_xyz[Z] = position_xyz[Z]-z;
-            position_xyz[Z] = position_xyz[Z]*-0.5f;
-            position_xyz[Z] = position_xyz[Z]+z;
+            position_xyz[2] = position_xyz[2]-z;
+            position_xyz[2] = position_xyz[2]*-0.5f;
+            position_xyz[2] = position_xyz[2]+z;
         }
         position_xyz+=3;
         last_position_xyz+=3;
@@ -6783,9 +6794,9 @@ void break_anim_selected_vertices(unsigned char* data, unsigned short frame)
         distance = vector_length(select_xyz[i]);
         if(distance < 0.001f)  { distance = 0.001f; }
         distance*=5.0f;
-        break_anim_velocity_xyz[i][X] = select_xyz[i][X]/distance;
-        break_anim_velocity_xyz[i][Y] = select_xyz[i][Y]/distance;
-        break_anim_velocity_xyz[i][Z] = 2.0f*select_xyz[i][Z]/distance;
+        break_anim_velocity_xyz[i][0] = select_xyz[i][0]/distance;
+        break_anim_velocity_xyz[i][1] = select_xyz[i][1]/distance;
+        break_anim_velocity_xyz[i][2] = 2.0f*select_xyz[i][2]/distance;
     }
 
 
@@ -6836,12 +6847,12 @@ void break_anim_selected_vertices(unsigned char* data, unsigned short frame)
                                 if(select_inlist(v3))
                                 {
                                     v3 = select_index;
-                                    velocity_xyz[X] = 0.33333f * (break_anim_velocity_xyz[v1][X] + break_anim_velocity_xyz[v2][X] + break_anim_velocity_xyz[v3][X]);
-                                    velocity_xyz[Y] = 0.33333f * (break_anim_velocity_xyz[v1][Y] + break_anim_velocity_xyz[v2][Y] + break_anim_velocity_xyz[v3][Y]);
-                                    velocity_xyz[Z] = 0.33333f * (break_anim_velocity_xyz[v1][Z] + break_anim_velocity_xyz[v2][Z] + break_anim_velocity_xyz[v3][Z]);
-                                    break_anim_velocity_xyz[v1][X] = velocity_xyz[X];  break_anim_velocity_xyz[v1][Y] = velocity_xyz[Y];  break_anim_velocity_xyz[v1][Z] = velocity_xyz[Z];
-                                    break_anim_velocity_xyz[v2][X] = velocity_xyz[X];  break_anim_velocity_xyz[v2][Y] = velocity_xyz[Y];  break_anim_velocity_xyz[v2][Z] = velocity_xyz[Z];
-                                    break_anim_velocity_xyz[v3][X] = velocity_xyz[X];  break_anim_velocity_xyz[v3][Y] = velocity_xyz[Y];  break_anim_velocity_xyz[v3][Z] = velocity_xyz[Z];
+                                    velocity_xyz[0] = 0.33333f * (break_anim_velocity_xyz[v1][0] + break_anim_velocity_xyz[v2][0] + break_anim_velocity_xyz[v3][0]);
+                                    velocity_xyz[1] = 0.33333f * (break_anim_velocity_xyz[v1][1] + break_anim_velocity_xyz[v2][1] + break_anim_velocity_xyz[v3][1]);
+                                    velocity_xyz[2] = 0.33333f * (break_anim_velocity_xyz[v1][2] + break_anim_velocity_xyz[v2][2] + break_anim_velocity_xyz[v3][2]);
+                                    break_anim_velocity_xyz[v1][0] = velocity_xyz[0];  break_anim_velocity_xyz[v1][1] = velocity_xyz[1];  break_anim_velocity_xyz[v1][2] = velocity_xyz[2];
+                                    break_anim_velocity_xyz[v2][0] = velocity_xyz[0];  break_anim_velocity_xyz[v2][1] = velocity_xyz[1];  break_anim_velocity_xyz[v2][2] = velocity_xyz[2];
+                                    break_anim_velocity_xyz[v3][0] = velocity_xyz[0];  break_anim_velocity_xyz[v3][1] = velocity_xyz[1];  break_anim_velocity_xyz[v3][2] = velocity_xyz[2];
                                 }
                             }
                         }
@@ -6911,21 +6922,21 @@ void break_anim_selected_vertices(unsigned char* data, unsigned short frame)
                                     if(select_inlist(v3))
                                     {
                                         v3 = select_index;
-                                        velocity_xyz[X] = 0.33333f * (select_xyz[v1][X] + select_xyz[v2][X] + select_xyz[v3][X]);
-                                        velocity_xyz[Y] = 0.33333f * (select_xyz[v1][Y] + select_xyz[v2][Y] + select_xyz[v3][Y]);
-                                        velocity_xyz[Z] = 0.33333f * (select_xyz[v1][Z] + select_xyz[v2][Z] + select_xyz[v3][Z]);
+                                        velocity_xyz[0] = 0.33333f * (select_xyz[v1][0] + select_xyz[v2][0] + select_xyz[v3][0]);
+                                        velocity_xyz[1] = 0.33333f * (select_xyz[v1][1] + select_xyz[v2][1] + select_xyz[v3][1]);
+                                        velocity_xyz[2] = 0.33333f * (select_xyz[v1][2] + select_xyz[v2][2] + select_xyz[v3][2]);
 
-                                        offset_xyz[X] = ((inverse*select_xyz[v1][X]) + (percent*velocity_xyz[X])) - select_xyz[v1][X];  offset_xyz[Y] = ((inverse*select_xyz[v1][Y]) + (percent*velocity_xyz[Y])) - select_xyz[v1][Y];  offset_xyz[Z] = ((inverse*select_xyz[v1][Z]) + (percent*velocity_xyz[Z])) - select_xyz[v1][Z];
-                                        select_xyz[v1][X] += offset_xyz[X];  select_xyz[v1][Y] += offset_xyz[Y];  select_xyz[v1][Z] += offset_xyz[Z];
-                                        select_data[v1][X] += offset_xyz[X];  select_data[v1][Y] += offset_xyz[Y];  select_data[v1][Z] += offset_xyz[Z];
+                                        offset_xyz[0] = ((inverse*select_xyz[v1][0]) + (percent*velocity_xyz[0])) - select_xyz[v1][0];  offset_xyz[1] = ((inverse*select_xyz[v1][1]) + (percent*velocity_xyz[1])) - select_xyz[v1][1];  offset_xyz[2] = ((inverse*select_xyz[v1][2]) + (percent*velocity_xyz[2])) - select_xyz[v1][2];
+                                        select_xyz[v1][0] += offset_xyz[0];  select_xyz[v1][1] += offset_xyz[1];  select_xyz[v1][2] += offset_xyz[2];
+                                        select_data[v1][0] += offset_xyz[0];  select_data[v1][1] += offset_xyz[1];  select_data[v1][2] += offset_xyz[2];
 
-                                        offset_xyz[X] = ((inverse*select_xyz[v2][X]) + (percent*velocity_xyz[X])) - select_xyz[v2][X];  offset_xyz[Y] = ((inverse*select_xyz[v2][Y]) + (percent*velocity_xyz[Y])) - select_xyz[v2][Y];  offset_xyz[Z] = ((inverse*select_xyz[v2][Z]) + (percent*velocity_xyz[Z])) - select_xyz[v2][Z];
-                                        select_xyz[v2][X] += offset_xyz[X];  select_xyz[v2][Y] += offset_xyz[Y];  select_xyz[v2][Z] += offset_xyz[Z];
-                                        select_data[v2][X] += offset_xyz[X];  select_data[v2][Y] += offset_xyz[Y];  select_data[v2][Z] += offset_xyz[Z];
+                                        offset_xyz[0] = ((inverse*select_xyz[v2][0]) + (percent*velocity_xyz[0])) - select_xyz[v2][0];  offset_xyz[1] = ((inverse*select_xyz[v2][1]) + (percent*velocity_xyz[1])) - select_xyz[v2][1];  offset_xyz[2] = ((inverse*select_xyz[v2][2]) + (percent*velocity_xyz[2])) - select_xyz[v2][2];
+                                        select_xyz[v2][0] += offset_xyz[0];  select_xyz[v2][1] += offset_xyz[1];  select_xyz[v2][2] += offset_xyz[2];
+                                        select_data[v2][0] += offset_xyz[0];  select_data[v2][1] += offset_xyz[1];  select_data[v2][2] += offset_xyz[2];
 
-                                        offset_xyz[X] = ((inverse*select_xyz[v3][X]) + (percent*velocity_xyz[X])) - select_xyz[v3][X];  offset_xyz[Y] = ((inverse*select_xyz[v3][Y]) + (percent*velocity_xyz[Y])) - select_xyz[v3][Y];  offset_xyz[Z] = ((inverse*select_xyz[v3][Z]) + (percent*velocity_xyz[Z])) - select_xyz[v3][Z];
-                                        select_xyz[v3][X] += offset_xyz[X];  select_xyz[v3][Y] += offset_xyz[Y];  select_xyz[v3][Z] += offset_xyz[Z];
-                                        select_data[v3][X] += offset_xyz[X];  select_data[v3][Y] += offset_xyz[Y];  select_data[v3][Z] += offset_xyz[Z];
+                                        offset_xyz[0] = ((inverse*select_xyz[v3][0]) + (percent*velocity_xyz[0])) - select_xyz[v3][0];  offset_xyz[1] = ((inverse*select_xyz[v3][1]) + (percent*velocity_xyz[1])) - select_xyz[v3][1];  offset_xyz[2] = ((inverse*select_xyz[v3][2]) + (percent*velocity_xyz[2])) - select_xyz[v3][2];
+                                        select_xyz[v3][0] += offset_xyz[0];  select_xyz[v3][1] += offset_xyz[1];  select_xyz[v3][2] += offset_xyz[2];
+                                        select_data[v3][0] += offset_xyz[0];  select_data[v3][1] += offset_xyz[1];  select_data[v3][2] += offset_xyz[2];
                                     }
                                 }
                             }
@@ -6950,27 +6961,27 @@ void break_anim_selected_vertices(unsigned char* data, unsigned short frame)
     {
         repeat(j, frame)
         {
-            select_xyz[i][X] += break_anim_velocity_xyz[i][X];
-            select_data[i][X] += break_anim_velocity_xyz[i][X];
-            select_xyz[i][Y] += break_anim_velocity_xyz[i][Y];
-            select_data[i][Y] += break_anim_velocity_xyz[i][Y];
-            select_xyz[i][Z] += break_anim_velocity_xyz[i][Z];
-            select_data[i][Z] += break_anim_velocity_xyz[i][Z];
-            if(select_xyz[i][Z] < 0.0f)
+            select_xyz[i][0] += break_anim_velocity_xyz[i][0];
+            select_data[i][0] += break_anim_velocity_xyz[i][0];
+            select_xyz[i][1] += break_anim_velocity_xyz[i][1];
+            select_data[i][1] += break_anim_velocity_xyz[i][1];
+            select_xyz[i][2] += break_anim_velocity_xyz[i][2];
+            select_data[i][2] += break_anim_velocity_xyz[i][2];
+            if(select_xyz[i][2] < 0.0f)
             {
-                select_xyz[i][Z] = 0.0f;
-                select_data[i][Z] = 0.0f;
-                break_anim_velocity_xyz[i][Z] = -0.5f*break_anim_velocity_xyz[i][Z];
-                break_anim_velocity_xyz[i][X] *= 0.75f;
-                break_anim_velocity_xyz[i][Y] *= 0.75f;
+                select_xyz[i][2] = 0.0f;
+                select_data[i][2] = 0.0f;
+                break_anim_velocity_xyz[i][2] = -0.5f*break_anim_velocity_xyz[i][2];
+                break_anim_velocity_xyz[i][0] *= 0.75f;
+                break_anim_velocity_xyz[i][1] *= 0.75f;
             }
 
 
             // Change velocity...
-            break_anim_velocity_xyz[i][X] *= 0.95f;
-            break_anim_velocity_xyz[i][Y] *= 0.95f;
-//            break_anim_velocity_xyz[i][Z] -= 0.05f;
-            break_anim_velocity_xyz[i][Z] -= 0.03f;
+            break_anim_velocity_xyz[i][0] *= 0.95f;
+            break_anim_velocity_xyz[i][1] *= 0.95f;
+//            break_anim_velocity_xyz[i][2] -= 0.05f;
+            break_anim_velocity_xyz[i][2] -= 0.03f;
 
 
         }
@@ -6998,12 +7009,12 @@ void tree_rotate_selected_vertices(unsigned char* data, unsigned short frame, fl
     cosine = (float) cos(angle*2.0f*PI/360.0f);
     repeat(i, select_num)
     {
-        x = select_xyz[i][X];
-        z = select_xyz[i][Z];
-        select_xyz[i][X] = (cosine*x)+(sine*z);
-        select_xyz[i][Z] = (cosine*z)-(sine*x);
-        select_data[i][X] = select_xyz[i][X];
-        select_data[i][Z] = select_xyz[i][Z];
+        x = select_xyz[i][0];
+        z = select_xyz[i][2];
+        select_xyz[i][0] = (cosine*x)+(sine*z);
+        select_xyz[i][2] = (cosine*z)-(sine*x);
+        select_data[i][0] = select_xyz[i][0];
+        select_data[i][2] = select_xyz[i][2];
         // Recrunch the bone scalars too
         render_attach_vertex_to_bone(data, frame, select_list[i]);
         render_crunch_vertex(data, frame, select_list[i], TRUE, 0);
@@ -7023,12 +7034,12 @@ void rotate_selected_vertices(unsigned char* data, unsigned short frame)
 
     repeat(i, select_num)
     {
-        x = select_xyz[i][X];
-        y = select_xyz[i][Y];
-        select_xyz[i][X] = -y;
-        select_xyz[i][Y] = x;
-        select_data[i][X] = -y;
-        select_data[i][Y] = x;
+        x = select_xyz[i][0];
+        y = select_xyz[i][1];
+        select_xyz[i][0] = -y;
+        select_xyz[i][1] = x;
+        select_data[i][0] = -y;
+        select_data[i][1] = x;
         // Recrunch the bone scalars too
         render_attach_vertex_to_bone(data, frame, select_list[i]);
         render_crunch_vertex(data, frame, select_list[i], TRUE, 0);
@@ -7266,9 +7277,9 @@ void weld_selected_vertices(unsigned char* data, unsigned short frame, unsigned 
                 if(select_flag[j] == MAX_VERTEX)
                 {
                     // Yup, so check how close they are...
-                    distance_xyz[X] = select_xyz[j][X]-select_xyz[i][X];
-                    distance_xyz[Y] = select_xyz[j][Y]-select_xyz[i][Y];
-                    distance_xyz[Z] = select_xyz[j][Z]-select_xyz[i][Z];
+                    distance_xyz[0] = select_xyz[j][0]-select_xyz[i][0];
+                    distance_xyz[1] = select_xyz[j][1]-select_xyz[i][1];
+                    distance_xyz[2] = select_xyz[j][2]-select_xyz[i][2];
                     distance = vector_length(distance_xyz);
                     if(distance < best_distance)
                     {
@@ -7288,12 +7299,12 @@ void weld_selected_vertices(unsigned char* data, unsigned short frame, unsigned 
             select_flag[i] = best_partner;
             select_flag[best_partner] = i;
             // Find the center of the points, and move both to that location
-            select_data[i][X] = (select_xyz[i][X] + select_xyz[best_partner][X]) * 0.5f;
-            select_data[i][Y] = (select_xyz[i][Y] + select_xyz[best_partner][Y]) * 0.5f;
-            select_data[i][Z] = (select_xyz[i][Z] + select_xyz[best_partner][Z]) * 0.5f;
-            select_data[best_partner][X] = select_data[i][X];
-            select_data[best_partner][Y] = select_data[i][Y];
-            select_data[best_partner][Z] = select_data[i][Z];
+            select_data[i][0] = (select_xyz[i][0] + select_xyz[best_partner][0]) * 0.5f;
+            select_data[i][1] = (select_xyz[i][1] + select_xyz[best_partner][1]) * 0.5f;
+            select_data[i][2] = (select_xyz[i][2] + select_xyz[best_partner][2]) * 0.5f;
+            select_data[best_partner][0] = select_data[i][0];
+            select_data[best_partner][1] = select_data[i][1];
+            select_data[best_partner][2] = select_data[i][2];
         }
     }
     select_update_xyz();
@@ -7391,9 +7402,9 @@ void weld_selected_tex_vertices(unsigned char* data, unsigned short frame)
                 if(select_flag[j] == MAX_TEX_VERTEX)
                 {
                     // Yup, so check how close they are...
-                    distance_xyz[X] = select_xyz[j][X]-select_xyz[i][X];
-                    distance_xyz[Y] = select_xyz[j][Y]-select_xyz[i][Y];
-                    distance_xyz[Z] = 0;
+                    distance_xyz[0] = select_xyz[j][0]-select_xyz[i][0];
+                    distance_xyz[1] = select_xyz[j][1]-select_xyz[i][1];
+                    distance_xyz[2] = 0;
                     distance = vector_length(distance_xyz);
                     if(distance < best_distance)
                     {
@@ -7413,10 +7424,10 @@ void weld_selected_tex_vertices(unsigned char* data, unsigned short frame)
             select_flag[i] = best_partner;
             select_flag[best_partner] = i;
             // Find the center of the points, and move both to that location
-            select_data[i][X] = (select_xyz[i][X] + select_xyz[best_partner][X]) * 0.5f;
-            select_data[i][Y] = (select_xyz[i][Y] + select_xyz[best_partner][Y]) * 0.5f;
-            select_data[best_partner][X] = select_data[i][X];
-            select_data[best_partner][Y] = select_data[i][Y];
+            select_data[i][0] = (select_xyz[i][0] + select_xyz[best_partner][0]) * 0.5f;
+            select_data[i][1] = (select_xyz[i][1] + select_xyz[best_partner][1]) * 0.5f;
+            select_data[best_partner][0] = select_data[i][0];
+            select_data[best_partner][1] = select_data[i][1];
         }
     }
     select_update_xy();
@@ -7467,8 +7478,8 @@ void scale_selected_tex_vertices(unsigned char* data, unsigned short frame, unsi
         // Really doing eye placement thing...  Lock vertices to nearest position...
         repeat(i, select_num)
         {
-            temp = (int) ((select_data[i][X]*2.0f) + 0.5f);  select_data[i][X] = (temp * 0.5f);
-            temp = (int) ((select_data[i][Y]*2.0f) + 0.5f);  select_data[i][Y] = (temp * 0.5f);
+            temp = (int) ((select_data[i][0]*2.0f) + 0.5f);  select_data[i][0] = (temp * 0.5f);
+            temp = (int) ((select_data[i][1]*2.0f) + 0.5f);  select_data[i][1] = (temp * 0.5f);
         }
     }
     select_update_xy();
@@ -8508,29 +8519,29 @@ void render_auto_shadow(unsigned char* data, unsigned short frame, unsigned char
 
 
     // Find the centrid (xy) for the selected vertices...
-    original_centrid_xy[X] = 0.0f;
-    original_centrid_xy[Y] = 0.0f;
+    original_centrid_xy[0] = 0.0f;
+    original_centrid_xy[1] = 0.0f;
     repeat(vertex, select_num)
     {
-        original_centrid_xy[X] += select_data[vertex][X];
-        original_centrid_xy[Y] += select_data[vertex][Y];
+        original_centrid_xy[0] += select_data[vertex][0];
+        original_centrid_xy[1] += select_data[vertex][1];
     }
-    original_centrid_xy[X]/=select_num;
-    original_centrid_xy[Y]/=select_num;
-log_message("INFO:   Original centrid at %f, %f", original_centrid_xy[X], original_centrid_xy[Y]);
+    original_centrid_xy[0]/=select_num;
+    original_centrid_xy[1]/=select_num;
+log_message("INFO:   Original centrid at %f, %f", original_centrid_xy[0], original_centrid_xy[1]);
 
 
 
     // Find the average distance (xy) from the centrid to each selected vertex...
     // Find the angle (topview) from the centrid to each selected vertex too...
     original_centrid_distance = 0.0f;
-    vector_xyz[Z] = 0.0f;
+    vector_xyz[2] = 0.0f;
     repeat(vertex, select_num)
     {
-        vector_xyz[X] = select_data[vertex][X] - original_centrid_xy[X];
-        vector_xyz[Y] = select_data[vertex][Y] - original_centrid_xy[Y];
+        vector_xyz[0] = select_data[vertex][0] - original_centrid_xy[0];
+        vector_xyz[1] = select_data[vertex][1] - original_centrid_xy[1];
         original_centrid_distance += vector_length(vector_xyz);
-        original_vertex_angle[vertex] = (unsigned short) (atan2(vector_xyz[Y], vector_xyz[X]) * 65536.0f / (2.0 * PI));
+        original_vertex_angle[vertex] = (unsigned short) (atan2(vector_xyz[1], vector_xyz[0]) * 65536.0f / (2.0 * PI));
     }
     original_centrid_distance/=select_num;
 log_message("INFO:   Original (frame %d) centrid distance is %f", frame, original_centrid_distance);
@@ -8559,10 +8570,10 @@ log_message("INFO:   Original (frame %d) centrid distance is %f", frame, origina
         // Remember the shadow coordinates for the original frame...
         repeat(j, 4)
         {
-            original_corner_xy[j][X] = *((float*) frame_data);  frame_data+=4;
-            original_corner_xy[j][Y] = *((float*) frame_data);  frame_data+=4;
-            original_corner_xy[j][X] -= original_centrid_xy[X];
-            original_corner_xy[j][Y] -= original_centrid_xy[Y];
+            original_corner_xy[j][0] = *((float*) frame_data);  frame_data+=4;
+            original_corner_xy[j][1] = *((float*) frame_data);  frame_data+=4;
+            original_corner_xy[j][0] -= original_centrid_xy[0];
+            original_corner_xy[j][1] -= original_centrid_xy[1];
         }
     }
     else
@@ -8596,29 +8607,29 @@ log_message("INFO:   Original (frame %d) centrid distance is %f", frame, origina
 
 
             // Find the centrid of the selected vertices (should now be in different locations from before)
-            current_centrid_xy[X] = 0.0f;
-            current_centrid_xy[Y] = 0.0f;
+            current_centrid_xy[0] = 0.0f;
+            current_centrid_xy[1] = 0.0f;
             repeat(vertex, select_num)
             {
-                current_centrid_xy[X] += select_data[vertex][X];
-                current_centrid_xy[Y] += select_data[vertex][Y];
+                current_centrid_xy[0] += select_data[vertex][0];
+                current_centrid_xy[1] += select_data[vertex][1];
             }
-            current_centrid_xy[X]/=select_num;
-            current_centrid_xy[Y]/=select_num;
-log_message("INFO:   Current (frame %d) centrid at %f, %f", i, current_centrid_xy[X], current_centrid_xy[Y]);
+            current_centrid_xy[0]/=select_num;
+            current_centrid_xy[1]/=select_num;
+log_message("INFO:   Current (frame %d) centrid at %f, %f", i, current_centrid_xy[0], current_centrid_xy[1]);
 
 
             // Find the new average distance from the centrid for each of the selected vertices...
             // Find the average difference in angle for each of the selected vertices too (as compared to the original)...
             current_centrid_distance = 0.0f;
-            vector_xyz[Z] = 0.0f;
+            vector_xyz[2] = 0.0f;
             average_vertex_angle_change = 0;
             repeat(vertex, select_num)
             {
-                vector_xyz[X] = select_data[vertex][X] - current_centrid_xy[X];
-                vector_xyz[Y] = select_data[vertex][Y] - current_centrid_xy[Y];
+                vector_xyz[0] = select_data[vertex][0] - current_centrid_xy[0];
+                vector_xyz[1] = select_data[vertex][1] - current_centrid_xy[1];
                 current_centrid_distance += vector_length(vector_xyz);
-                current_vertex_angle = (unsigned short) (atan2(vector_xyz[Y], vector_xyz[X]) * 65536.0f / (2.0 * PI));
+                current_vertex_angle = (unsigned short) (atan2(vector_xyz[1], vector_xyz[0]) * 65536.0f / (2.0 * PI));
 
                 current_vertex_angle_change = current_vertex_angle - original_vertex_angle[vertex];
                 average_vertex_angle_change -= current_vertex_angle_change;
@@ -8664,15 +8675,15 @@ log_message("INFO:   Average angle change is %f degrees", average_vertex_angle_c
                 {
                     if(j == global_autoshadow_vertex || global_autoshadow_vertex > 3)
                     {
-                        vector_xyz[X] = (sine*original_corner_xy[j][Y]) + (cosine*original_corner_xy[j][X]);
-                        vector_xyz[Y] = (-sine*original_corner_xy[j][X]) + (cosine*original_corner_xy[j][Y]);
-                        vector_xyz[X]*=scale;
-                        vector_xyz[Y]*=scale;
-                        vector_xyz[X]+=current_centrid_xy[X];
-                        vector_xyz[Y]+=current_centrid_xy[Y];
+                        vector_xyz[0] = (sine*original_corner_xy[j][1]) + (cosine*original_corner_xy[j][0]);
+                        vector_xyz[1] = (-sine*original_corner_xy[j][0]) + (cosine*original_corner_xy[j][1]);
+                        vector_xyz[0]*=scale;
+                        vector_xyz[1]*=scale;
+                        vector_xyz[0]+=current_centrid_xy[0];
+                        vector_xyz[1]+=current_centrid_xy[1];
 
-                        *((float*) frame_data) = vector_xyz[X];  frame_data+=4;
-                        *((float*) frame_data) = vector_xyz[Y];  frame_data+=4;
+                        *((float*) frame_data) = vector_xyz[0];  frame_data+=4;
+                        *((float*) frame_data) = vector_xyz[1];  frame_data+=4;
                     }
                     else
                     {

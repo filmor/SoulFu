@@ -1,39 +1,10 @@
-// <ZZ> This file contains functions to control the main data file (datafile.sdf).
-//  **  sdf_read_unsigned_int   - Reads a 4 byte big endian value from memory
-//                                (helper)
-//  **  sdf_write_unsigned_int  - Writes a 4 byte big endian value to memory (helper)
-//  **  sdf_read_unsigned_short - Reads a 2 byte big endian value from memory
-//                                (helper)
-//  **  sdf_write_unsigned_short- Writes a 2 byte big endian value to memory (helper)
-//  **  sdf_get_filename        - Gets the filename and type of a given file (helper)
-//  **  sdf_unload              - Frees memory, automatically called via atexit()
-//  **  sdf_load                - Loads datafile.sdf into memory
-//  **  sdf_fix_filename        - Turns "TROLL.JPG" into "TROLL" and SDF_FILE_IS_JPG
-//                                (helper)
-//  **  sdf_find_index          - Returns a pointer to a given file's index
-//                                information (helper)
-//  **  sdf_find_filetype       - Like find_index, but args are like "TROLL" and
-//                                SDF_FILE_IS_JPG
-//  **  sdf_delete_file         - Deletes a file from the memory version of
-//                                datafile.sdf
-//  **  sdf_add_file            - Adds a file into the memory version of datafile.sdf
-//  **  sdf_new_file            - Adds new a file into the memort version of
-//                                datafile.sdf
-//  **  sdf_save                - Saves the memory version of datafile.sdf to disk
-//  **  sdf_export_file         - Exports a given file to disk
-//  **  sdf_decode              - Decompresses all of the files in the datafile
-//  **  sdf_open                - Opens a .TXT file in the datafile for reading
-//  **  sdf_read_line           - Reads the next line of an open .TXT file
-//  **  sdf_insert_data         - Adds some data to a file, or removes some data
-//                                (if to_add < 0)
-//  **  sdf_flag_set            - Sets a given flag for a single file
-//  **  sdf_flag_clear          - Clears a given flag for all of the files
-//  **  sdf_checksum            - Generates a checksum for a piece of data
-//  **  sdf_delete_all_files    - Deletes all files of a given type
-//  **  sdf_find_index_by_data  - Looks for a file index, given a pointer to the
-//                                file's data start...
+#include "datafile.h"
 
-//----------------------------------------------------------------------------------
+#include "soulfu.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 unsigned char* sdf_index;       // The datafile index after it has been loaded into memory
 char* sdf_read_file = NULL;     // A pointer to the current read position for sdf_open
@@ -1761,7 +1732,7 @@ unsigned int sdf_checksum(unsigned char* data, int size)
     j = 0;
     while(i < size)
     {
-        checksum = checksum ^ (((unsigned int) random_table[*data]) << j);
+        // checksum = checksum ^ (((unsigned int) random_table[*data]) << j);
         data++;
         i++;
         j++;

@@ -154,6 +154,7 @@
 #define SRC_BUFFER_SIZE 65550
 
 extern signed char compiler_error;
+extern unsigned char token_buffer[SRC_MAX_TOKEN][SRC_MAX_TOKEN_SIZE];
 
 /* dcodesrc.c */
 void src_close_jumps(unsigned char indent, unsigned char last_indent);

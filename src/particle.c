@@ -1,8 +1,18 @@
-// <ZZ> This file contains functions for particles...
+#include "particle.h"
+
+#include "soulfu.h"
+#include "dcodeddd.h"
+#include "common.h"
+#include "object.h"
+#include "room.h"
+#include "display.h"
+
+#include <math.h>
+#include <stdlib.h>
+
 float texpos_corner_xy[4][2] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 float texpos_number_xy[4][2] = {{0.0f, 0.1875f}, {1.0f, 0.1875f}, {1.0f, 0.25f}, {0.0f, 0.25f}};
 
-//-----------------------------------------------------------------------------------------------
 #define ATTACHED_SCALAR_MAX  4.0f
 #define ATTACHED_SCALAR_MULTIPLY 16.0f
 #define ATTACHED_SCALAR_DIVIDE   0.0625f
@@ -85,16 +95,16 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
         if(PART_FLAGS & PART_SPIN_ON)
         {
             // Single point particle
-            midpoint_xyz[X] = particle_xyz[X];
-            midpoint_xyz[Y] = particle_xyz[Y];
-            midpoint_xyz[Z] = particle_xyz[Z];
+            midpoint_xyz[0] = particle_xyz[0];
+            midpoint_xyz[1] = particle_xyz[1];
+            midpoint_xyz[2] = particle_xyz[2];
         }
         else
         {
             // Double point particle
-            midpoint_xyz[X] = (particle_xyz[X] + particle_xyz[3]) * 0.5f;
-            midpoint_xyz[Y] = (particle_xyz[Y] + particle_xyz[4]) * 0.5f;
-            midpoint_xyz[Z] = (particle_xyz[Z] + particle_xyz[5]) * 0.5f;
+            midpoint_xyz[0] = (particle_xyz[0] + particle_xyz[3]) * 0.5f;
+            midpoint_xyz[1] = (particle_xyz[1] + particle_xyz[4]) * 0.5f;
+            midpoint_xyz[2] = (particle_xyz[2] + particle_xyz[5]) * 0.5f;
         }
 
 
@@ -138,9 +148,9 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
                     render_bone_frame(base_model_data, bone_data, frame_data);
                     repeat(i, num_vertex)
                     {
-                        distance_xyz[X] = (*((float*) vertex_data))     - midpoint_xyz[X];
-                        distance_xyz[Y] = (*((float*) (vertex_data+4))) - midpoint_xyz[Y];
-                        distance_xyz[Z] = (*((float*) (vertex_data+8))) - midpoint_xyz[Z];
+                        distance_xyz[0] = (*((float*) vertex_data))     - midpoint_xyz[0];
+                        distance_xyz[1] = (*((float*) (vertex_data+4))) - midpoint_xyz[1];
+                        distance_xyz[2] = (*((float*) (vertex_data+8))) - midpoint_xyz[2];
                         distance = vector_length(distance_xyz);
 
                         // See if it's the best vertex or not...
@@ -180,33 +190,33 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
             
                 // Front end (xyz) of particle...
                 binding = binding<<2;
-                scalars_xyz[X] = *((float*) (nearest_vertex_data+27+binding));  // Height
-                scalars_xyz[Y] = *((float*) (nearest_vertex_data+35+binding));  // Forward
-                scalars_xyz[Z] = *((float*) (nearest_vertex_data+43+binding));  // Side
-                if(scalars_xyz[X] > ATTACHED_SCALAR_MAX)  scalars_xyz[X] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[X] < -ATTACHED_SCALAR_MAX)  scalars_xyz[X] = -ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Y] > ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Y] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = -ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Z] > ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Z] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = -ATTACHED_SCALAR_MAX;
-                particle_data[68] = (unsigned char) ((scalars_xyz[X] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-                particle_data[69] = (unsigned char) ((scalars_xyz[Y] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-                particle_data[70] = (unsigned char) ((scalars_xyz[Z] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                scalars_xyz[0] = *((float*) (nearest_vertex_data+27+binding));  // Height
+                scalars_xyz[1] = *((float*) (nearest_vertex_data+35+binding));  // Forward
+                scalars_xyz[2] = *((float*) (nearest_vertex_data+43+binding));  // Side
+                if(scalars_xyz[0] > ATTACHED_SCALAR_MAX)  scalars_xyz[0] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[0] < -ATTACHED_SCALAR_MAX)  scalars_xyz[0] = -ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[1] > ATTACHED_SCALAR_MAX)  scalars_xyz[1] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[1] < -ATTACHED_SCALAR_MAX)  scalars_xyz[1] = -ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[2] > ATTACHED_SCALAR_MAX)  scalars_xyz[2] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[2] < -ATTACHED_SCALAR_MAX)  scalars_xyz[2] = -ATTACHED_SCALAR_MAX;
+                particle_data[68] = (unsigned char) ((scalars_xyz[0] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                particle_data[69] = (unsigned char) ((scalars_xyz[1] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                particle_data[70] = (unsigned char) ((scalars_xyz[2] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
 
 
                 // Back end (last_xyz) of particle...
-                scalars_xyz[X] *= (1.0f + *((float*) (particle_data+36)));
-                scalars_xyz[Y] *= (1.0f + *((float*) (particle_data+36)));
-                scalars_xyz[Z] *= (1.0f + *((float*) (particle_data+36)));
-                if(scalars_xyz[X] > ATTACHED_SCALAR_MAX)  scalars_xyz[X] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[X] < -ATTACHED_SCALAR_MAX)  scalars_xyz[X] = -ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Y] > ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Y] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = -ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Z] > ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = ATTACHED_SCALAR_MAX;
-                if(scalars_xyz[Z] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = -ATTACHED_SCALAR_MAX;
-                particle_data[71] = (unsigned char) ((scalars_xyz[X] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-                particle_data[72] = (unsigned char) ((scalars_xyz[Y] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-                particle_data[73] = (unsigned char) ((scalars_xyz[Z] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                scalars_xyz[0] *= (1.0f + *((float*) (particle_data+36)));
+                scalars_xyz[1] *= (1.0f + *((float*) (particle_data+36)));
+                scalars_xyz[2] *= (1.0f + *((float*) (particle_data+36)));
+                if(scalars_xyz[0] > ATTACHED_SCALAR_MAX)  scalars_xyz[0] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[0] < -ATTACHED_SCALAR_MAX)  scalars_xyz[0] = -ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[1] > ATTACHED_SCALAR_MAX)  scalars_xyz[1] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[1] < -ATTACHED_SCALAR_MAX)  scalars_xyz[1] = -ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[2] > ATTACHED_SCALAR_MAX)  scalars_xyz[2] = ATTACHED_SCALAR_MAX;
+                if(scalars_xyz[2] < -ATTACHED_SCALAR_MAX)  scalars_xyz[2] = -ATTACHED_SCALAR_MAX;
+                particle_data[71] = (unsigned char) ((scalars_xyz[0] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                particle_data[72] = (unsigned char) ((scalars_xyz[1] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+                particle_data[73] = (unsigned char) ((scalars_xyz[2] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
 
 
                 // Set the particle to be attached to the bone we found...
@@ -231,14 +241,14 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
                     joint[1]*=3;
 
                     // Find the bone's midpoint...
-                    distance_xyz[X] = (joint_data[joint[0]] + joint_data[joint[1]]) * 0.5f;
-                    distance_xyz[Y] = (joint_data[joint[0]+1] + joint_data[joint[1]+1]) * 0.5f;
-                    distance_xyz[Z] = (joint_data[joint[0]+2] + joint_data[joint[1]+2]) * 0.5f;
+                    distance_xyz[0] = (joint_data[joint[0]] + joint_data[joint[1]]) * 0.5f;
+                    distance_xyz[1] = (joint_data[joint[0]+1] + joint_data[joint[1]+1]) * 0.5f;
+                    distance_xyz[2] = (joint_data[joint[0]+2] + joint_data[joint[1]+2]) * 0.5f;
 
                     // Find the distance from midpoint to midpoint...
-                    distance_xyz[X] -= midpoint_xyz[X];
-                    distance_xyz[Y] -= midpoint_xyz[Y];
-                    distance_xyz[Z] -= midpoint_xyz[Z];
+                    distance_xyz[0] -= midpoint_xyz[0];
+                    distance_xyz[1] -= midpoint_xyz[1];
+                    distance_xyz[2] -= midpoint_xyz[2];
                     distance = vector_length(distance_xyz);
 
                     // See if it's the best bone or not...
@@ -266,27 +276,27 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
             joint[0]*=3;
             joint[1]*=3;
             frame_data += (nearest_bone*24);
-            direction_xyz[X] = (joint_data[joint[1]] - joint_data[joint[0]]);
-            direction_xyz[Y] = (joint_data[joint[1]+1] - joint_data[joint[0]+1]);
-            direction_xyz[Z] = (joint_data[joint[1]+2] - joint_data[joint[0]+2]);
-            distance_xyz[X] = particle_xyz[X] - joint_data[joint[0]];
-            distance_xyz[Y] = particle_xyz[Y] - joint_data[joint[0]+1];
-            distance_xyz[Z] = particle_xyz[Z] - joint_data[joint[0]+2];
+            direction_xyz[0] = (joint_data[joint[1]] - joint_data[joint[0]]);
+            direction_xyz[1] = (joint_data[joint[1]+1] - joint_data[joint[0]+1]);
+            direction_xyz[2] = (joint_data[joint[1]+2] - joint_data[joint[0]+2]);
+            distance_xyz[0] = particle_xyz[0] - joint_data[joint[0]];
+            distance_xyz[1] = particle_xyz[1] - joint_data[joint[0]+1];
+            distance_xyz[2] = particle_xyz[2] - joint_data[joint[0]+2];
             length = (*((float*) (bone_data+5)));
             if(length < 0.00001f)  length = 0.00001f;
             length = length*length;
-            scalars_xyz[X] = dot_product(direction_xyz, distance_xyz) / (length); // Height
-            scalars_xyz[Y] = dot_product(((float*) frame_data), distance_xyz); // Forward
-            scalars_xyz[Z] = dot_product(((float*) (frame_data+12)), distance_xyz); // Side
-            if(scalars_xyz[X] > ATTACHED_SCALAR_MAX)  scalars_xyz[X] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[X] < -ATTACHED_SCALAR_MAX)  scalars_xyz[X] = -ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Y] > ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Y] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = -ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Z] > ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Z] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = -ATTACHED_SCALAR_MAX;
-            particle_data[68] = (unsigned char) ((scalars_xyz[X] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-            particle_data[69] = (unsigned char) ((scalars_xyz[Y] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-            particle_data[70] = (unsigned char) ((scalars_xyz[Z] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            scalars_xyz[0] = dot_product(direction_xyz, distance_xyz) / (length); // Height
+            scalars_xyz[1] = dot_product(((float*) frame_data), distance_xyz); // Forward
+            scalars_xyz[2] = dot_product(((float*) (frame_data+12)), distance_xyz); // Side
+            if(scalars_xyz[0] > ATTACHED_SCALAR_MAX)  scalars_xyz[0] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[0] < -ATTACHED_SCALAR_MAX)  scalars_xyz[0] = -ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[1] > ATTACHED_SCALAR_MAX)  scalars_xyz[1] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[1] < -ATTACHED_SCALAR_MAX)  scalars_xyz[1] = -ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[2] > ATTACHED_SCALAR_MAX)  scalars_xyz[2] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[2] < -ATTACHED_SCALAR_MAX)  scalars_xyz[2] = -ATTACHED_SCALAR_MAX;
+            particle_data[68] = (unsigned char) ((scalars_xyz[0] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            particle_data[69] = (unsigned char) ((scalars_xyz[1] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            particle_data[70] = (unsigned char) ((scalars_xyz[2] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
 
 
 
@@ -294,24 +304,24 @@ unsigned char particle_attach_to_character(unsigned short particle, unsigned sho
 
             // Figger' the normal scalars for generating the particle's last position...
             particle_xyz = (float*) (particle_data+12);
-            direction_xyz[X] = (joint_data[joint[1]] - joint_data[joint[0]]);
-            direction_xyz[Y] = (joint_data[joint[1]+1] - joint_data[joint[0]+1]);
-            direction_xyz[Z] = (joint_data[joint[1]+2] - joint_data[joint[0]+2]);
-            distance_xyz[X] = particle_xyz[X] - joint_data[joint[0]];
-            distance_xyz[Y] = particle_xyz[Y] - joint_data[joint[0]+1];
-            distance_xyz[Z] = particle_xyz[Z] - joint_data[joint[0]+2];
-            scalars_xyz[X] = dot_product(direction_xyz, distance_xyz) / (length); // Height
-            scalars_xyz[Y] = dot_product(((float*) frame_data), distance_xyz); // Forward
-            scalars_xyz[Z] = dot_product(((float*) (frame_data+12)), distance_xyz); // Side
-            if(scalars_xyz[X] > ATTACHED_SCALAR_MAX)  scalars_xyz[X] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[X] < -ATTACHED_SCALAR_MAX)  scalars_xyz[X] = -ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Y] > ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Y] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Y] = -ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Z] > ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = ATTACHED_SCALAR_MAX;
-            if(scalars_xyz[Z] < -ATTACHED_SCALAR_MAX)  scalars_xyz[Z] = -ATTACHED_SCALAR_MAX;
-            particle_data[71] = (unsigned char) ((scalars_xyz[X] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-            particle_data[72] = (unsigned char) ((scalars_xyz[Y] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
-            particle_data[73] = (unsigned char) ((scalars_xyz[Z] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            direction_xyz[0] = (joint_data[joint[1]] - joint_data[joint[0]]);
+            direction_xyz[1] = (joint_data[joint[1]+1] - joint_data[joint[0]+1]);
+            direction_xyz[2] = (joint_data[joint[1]+2] - joint_data[joint[0]+2]);
+            distance_xyz[0] = particle_xyz[0] - joint_data[joint[0]];
+            distance_xyz[1] = particle_xyz[1] - joint_data[joint[0]+1];
+            distance_xyz[2] = particle_xyz[2] - joint_data[joint[0]+2];
+            scalars_xyz[0] = dot_product(direction_xyz, distance_xyz) / (length); // Height
+            scalars_xyz[1] = dot_product(((float*) frame_data), distance_xyz); // Forward
+            scalars_xyz[2] = dot_product(((float*) (frame_data+12)), distance_xyz); // Side
+            if(scalars_xyz[0] > ATTACHED_SCALAR_MAX)  scalars_xyz[0] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[0] < -ATTACHED_SCALAR_MAX)  scalars_xyz[0] = -ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[1] > ATTACHED_SCALAR_MAX)  scalars_xyz[1] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[1] < -ATTACHED_SCALAR_MAX)  scalars_xyz[1] = -ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[2] > ATTACHED_SCALAR_MAX)  scalars_xyz[2] = ATTACHED_SCALAR_MAX;
+            if(scalars_xyz[2] < -ATTACHED_SCALAR_MAX)  scalars_xyz[2] = -ATTACHED_SCALAR_MAX;
+            particle_data[71] = (unsigned char) ((scalars_xyz[0] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            particle_data[72] = (unsigned char) ((scalars_xyz[1] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
+            particle_data[73] = (unsigned char) ((scalars_xyz[2] * ATTACHED_SCALAR_MULTIPLY) + ATTACHED_SCALAR_ADD);
             return TRUE;
         }
     }
@@ -350,9 +360,9 @@ float bad_rotation;
     color[1] = particle_data[49];
     color[2] = particle_data[50];
     // Modify lighting for falling in pits...
-    if(((float*) particle_data)[Z] < ROOM_PIT_HIGH_LEVEL)
+    if(((float*) particle_data)[2] < ROOM_PIT_HIGH_LEVEL)
     {
-        if(((float*) particle_data)[Z] < ROOM_PIT_LOW_LEVEL)
+        if(((float*) particle_data)[2] < ROOM_PIT_LOW_LEVEL)
         {
             color[0] = 0;
             color[1] = 0;
@@ -360,7 +370,7 @@ float bad_rotation;
         }
         else
         {
-            number = ((unsigned char) 255) - ((unsigned char) ((16.0f * (ROOM_PIT_HIGH_LEVEL - ((float*) particle_data)[Z]))));
+            number = ((unsigned char) 255) - ((unsigned char) ((16.0f * (ROOM_PIT_HIGH_LEVEL - ((float*) particle_data)[2]))));
             color[0] = color[0]*number>>8;
             color[1] = color[1]*number>>8;
             color[2] = color[2]*number>>8;
@@ -383,82 +393,82 @@ float bad_rotation;
         if(flags & PART_FLAT_ON)
         {
             // Calculate the positions of the corners of the flat particle...
-            bad_rotation = *((unsigned short*)(particle_data+56)) * 2.0f * PI / 65536.0f;
+            bad_rotation = *((unsigned short*)(particle_data+56)) * 2.0f * M_PI / 65536.0f;
             cosine = ((float) cos(bad_rotation))*0.5f;
             sine = ((float) sin(bad_rotation))*0.5f;
 
 
             // Rotate according to spinny amount...
-            line_xyz[X] = sine;
-            line_xyz[Y] = cosine;
-            offset_xyz[X] = cosine;
-            offset_xyz[Y] = -sine;
+            line_xyz[0] = sine;
+            line_xyz[1] = cosine;
+            offset_xyz[0] = cosine;
+            offset_xyz[1] = -sine;
 
 
             // Scale by length & width...
-            line_xyz[X] *= (*((float*)(particle_data+36)));
-            line_xyz[Y] *= (*((float*)(particle_data+36)));
-            offset_xyz[X] *= (*((float*)(particle_data+40)));
-            offset_xyz[Y] *= (*((float*)(particle_data+40)));
+            line_xyz[0] *= (*((float*)(particle_data+36)));
+            line_xyz[1] *= (*((float*)(particle_data+36)));
+            offset_xyz[0] *= (*((float*)(particle_data+40)));
+            offset_xyz[1] *= (*((float*)(particle_data+40)));
 
 
             // Render the particle...
-            last_xyz[Z] = current_xyz[Z];
+            last_xyz[2] = current_xyz[2];
             display_start_fan();
-                last_xyz[X] = current_xyz[X] + line_xyz[X]-offset_xyz[X];
-                last_xyz[Y] = current_xyz[Y] + line_xyz[Y]-offset_xyz[Y];
+                last_xyz[0] = current_xyz[0] + line_xyz[0]-offset_xyz[0];
+                last_xyz[1] = current_xyz[1] + line_xyz[1]-offset_xyz[1];
                 display_texpos(texpos_corner_xy[0]);  display_vertex(last_xyz);
 
-                last_xyz[X] = current_xyz[X] + line_xyz[X]+offset_xyz[X];
-                last_xyz[Y] = current_xyz[Y] + line_xyz[Y]+offset_xyz[Y];
+                last_xyz[0] = current_xyz[0] + line_xyz[0]+offset_xyz[0];
+                last_xyz[1] = current_xyz[1] + line_xyz[1]+offset_xyz[1];
                 display_texpos(texpos_corner_xy[1]);  display_vertex(last_xyz);
 
-                last_xyz[X] = current_xyz[X] - line_xyz[X]+offset_xyz[X];
-                last_xyz[Y] = current_xyz[Y] - line_xyz[Y]+offset_xyz[Y];
+                last_xyz[0] = current_xyz[0] - line_xyz[0]+offset_xyz[0];
+                last_xyz[1] = current_xyz[1] - line_xyz[1]+offset_xyz[1];
                 display_texpos(texpos_corner_xy[2]);  display_vertex(last_xyz);
 
-                last_xyz[X] = current_xyz[X] - line_xyz[X]-offset_xyz[X];
-                last_xyz[Y] = current_xyz[Y] - line_xyz[Y]-offset_xyz[Y];
+                last_xyz[0] = current_xyz[0] - line_xyz[0]-offset_xyz[0];
+                last_xyz[1] = current_xyz[1] - line_xyz[1]-offset_xyz[1];
                 display_texpos(texpos_corner_xy[3]);  display_vertex(last_xyz);
             display_end();
         }
         else
         {
-            last_xyz[X] = rotate_camera_matrix[2]*0.5f;
-            last_xyz[Y] = rotate_camera_matrix[6]*0.5f;
-            last_xyz[Z] = rotate_camera_matrix[10]*0.5f;
+            last_xyz[0] = rotate_camera_matrix[2]*0.5f;
+            last_xyz[1] = rotate_camera_matrix[6]*0.5f;
+            last_xyz[2] = rotate_camera_matrix[10]*0.5f;
 
 
-            offset_xyz[X] = rotate_camera_matrix[0]*0.5f;
-            offset_xyz[Y] = rotate_camera_matrix[4]*0.5f;
-            offset_xyz[Z] = rotate_camera_matrix[8]*0.5f;
+            offset_xyz[0] = rotate_camera_matrix[0]*0.5f;
+            offset_xyz[1] = rotate_camera_matrix[4]*0.5f;
+            offset_xyz[2] = rotate_camera_matrix[8]*0.5f;
 
 
             // !!!BAD!!!
             // !!!BAD!!!  Need to redo for precomputed sin/cos
             // !!!BAD!!!
-            bad_rotation = *((unsigned short*)(particle_data+56)) * 2.0f * PI / 65536.0f;
+            bad_rotation = *((unsigned short*)(particle_data+56)) * 2.0f * M_PI / 65536.0f;
             cosine = (float) cos(bad_rotation);
             sine = (float) sin(bad_rotation);
 
 
             // Rotate according to spinny amount...
-            line_xyz[X] = sine*offset_xyz[X] + cosine*last_xyz[X];
-            line_xyz[Y] = sine*offset_xyz[Y] + cosine*last_xyz[Y];
-            line_xyz[Z] = sine*offset_xyz[Z] + cosine*last_xyz[Z];
+            line_xyz[0] = sine*offset_xyz[0] + cosine*last_xyz[0];
+            line_xyz[1] = sine*offset_xyz[1] + cosine*last_xyz[1];
+            line_xyz[2] = sine*offset_xyz[2] + cosine*last_xyz[2];
             sine = -sine;
-            offset_xyz[X] = sine*last_xyz[X] + cosine*offset_xyz[X];
-            offset_xyz[Y] = sine*last_xyz[Y] + cosine*offset_xyz[Y];
-            offset_xyz[Z] = sine*last_xyz[Z] + cosine*offset_xyz[Z];
+            offset_xyz[0] = sine*last_xyz[0] + cosine*offset_xyz[0];
+            offset_xyz[1] = sine*last_xyz[1] + cosine*offset_xyz[1];
+            offset_xyz[2] = sine*last_xyz[2] + cosine*offset_xyz[2];
 
 
             // Scale by length and width...
-            line_xyz[X] *= (*((float*)(particle_data+36)));
-            line_xyz[Y] *= (*((float*)(particle_data+36)));
-            line_xyz[Z] *= (*((float*)(particle_data+36)));
-            offset_xyz[X] *= (*((float*)(particle_data+40)));
-            offset_xyz[Y] *= (*((float*)(particle_data+40)));
-            offset_xyz[Z] *= (*((float*)(particle_data+40)));
+            line_xyz[0] *= (*((float*)(particle_data+36)));
+            line_xyz[1] *= (*((float*)(particle_data+36)));
+            line_xyz[2] *= (*((float*)(particle_data+36)));
+            offset_xyz[0] *= (*((float*)(particle_data+40)));
+            offset_xyz[1] *= (*((float*)(particle_data+40)));
+            offset_xyz[2] *= (*((float*)(particle_data+40)));
 
 
             if(*((unsigned short*)  (particle_data+60)) & PART_NUMBER_ON)
@@ -468,33 +478,33 @@ float bad_rotation;
                 if(number < 10)
                 {
                     // Single digit number...  Generate texture coordinates...  Y already filled in...
-                    texpos_number_xy[0][X] = number*0.0625f;
-                    texpos_number_xy[1][X] = (number+1)*0.0625f;
-                    texpos_number_xy[2][X] = texpos_number_xy[1][X];
-                    texpos_number_xy[3][X] = texpos_number_xy[0][X];
+                    texpos_number_xy[0][0] = number*0.0625f;
+                    texpos_number_xy[1][0] = (number+1)*0.0625f;
+                    texpos_number_xy[2][0] = texpos_number_xy[1][0];
+                    texpos_number_xy[3][0] = texpos_number_xy[0][0];
 
 
 
                     // Render the particle...
                     display_start_fan();
-                        last_xyz[X] = current_xyz[X] + line_xyz[X]-offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y]-offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z]-offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0]-offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1]-offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2]-offset_xyz[2];
                         display_texpos(texpos_number_xy[0]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] + line_xyz[X]+offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y]+offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z]+offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0]+offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1]+offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2]+offset_xyz[2];
                         display_texpos(texpos_number_xy[1]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X]+offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y]+offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z]+offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0]+offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1]+offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2]+offset_xyz[2];
                         display_texpos(texpos_number_xy[2]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X]-offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y]-offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z]-offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0]-offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1]-offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2]-offset_xyz[2];
                         display_texpos(texpos_number_xy[3]);  display_vertex(last_xyz);
                     display_end();
                 }
@@ -502,36 +512,36 @@ float bad_rotation;
                 {
                     // Double digit number (limit to 99)
                     if(number > 99) number = 99;
-                    offset_xyz[X] += offset_xyz[X];
-                    offset_xyz[Y] += offset_xyz[Y];
-                    offset_xyz[Z] += offset_xyz[Z];
+                    offset_xyz[0] += offset_xyz[0];
+                    offset_xyz[1] += offset_xyz[1];
+                    offset_xyz[2] += offset_xyz[2];
 
 
                     // Draw the high digit first...
                     digit = number/10;
-                    texpos_number_xy[0][X] = digit*0.0625f;
-                    texpos_number_xy[1][X] = (digit+1)*0.0625f;
-                    texpos_number_xy[2][X] = texpos_number_xy[1][X];
-                    texpos_number_xy[3][X] = texpos_number_xy[0][X];
+                    texpos_number_xy[0][0] = digit*0.0625f;
+                    texpos_number_xy[1][0] = (digit+1)*0.0625f;
+                    texpos_number_xy[2][0] = texpos_number_xy[1][0];
+                    texpos_number_xy[3][0] = texpos_number_xy[0][0];
                     display_start_fan();
-                        last_xyz[X] = current_xyz[X] + line_xyz[X]-offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y]-offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z]-offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0]-offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1]-offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2]-offset_xyz[2];
                         display_texpos(texpos_number_xy[0]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] + line_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2];
                         display_texpos(texpos_number_xy[1]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2];
                         display_texpos(texpos_number_xy[2]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X]-offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y]-offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z]-offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0]-offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1]-offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2]-offset_xyz[2];
                         display_texpos(texpos_number_xy[3]);  display_vertex(last_xyz);
                     display_end();
 
@@ -539,29 +549,29 @@ float bad_rotation;
 
                     // Draw the low digit second...
                     digit = number%10;
-                    texpos_number_xy[0][X] = digit*0.0625f;
-                    texpos_number_xy[1][X] = (digit+1)*0.0625f;
-                    texpos_number_xy[2][X] = texpos_number_xy[1][X];
-                    texpos_number_xy[3][X] = texpos_number_xy[0][X];
+                    texpos_number_xy[0][0] = digit*0.0625f;
+                    texpos_number_xy[1][0] = (digit+1)*0.0625f;
+                    texpos_number_xy[2][0] = texpos_number_xy[1][0];
+                    texpos_number_xy[3][0] = texpos_number_xy[0][0];
                     display_start_fan();
-                        last_xyz[X] = current_xyz[X] + line_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2];
                         display_texpos(texpos_number_xy[0]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] + line_xyz[X]+offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] + line_xyz[Y]+offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] + line_xyz[Z]+offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] + line_xyz[0]+offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] + line_xyz[1]+offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] + line_xyz[2]+offset_xyz[2];
                         display_texpos(texpos_number_xy[1]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X]+offset_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y]+offset_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z]+offset_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0]+offset_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1]+offset_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2]+offset_xyz[2];
                         display_texpos(texpos_number_xy[2]);  display_vertex(last_xyz);
 
-                        last_xyz[X] = current_xyz[X] - line_xyz[X];
-                        last_xyz[Y] = current_xyz[Y] - line_xyz[Y];
-                        last_xyz[Z] = current_xyz[Z] - line_xyz[Z];
+                        last_xyz[0] = current_xyz[0] - line_xyz[0];
+                        last_xyz[1] = current_xyz[1] - line_xyz[1];
+                        last_xyz[2] = current_xyz[2] - line_xyz[2];
                         display_texpos(texpos_number_xy[3]);  display_vertex(last_xyz);
                     display_end();
                 }
@@ -570,24 +580,24 @@ float bad_rotation;
             {
                 // Render the particle...
                 display_start_fan();
-                    last_xyz[X] = current_xyz[X] + line_xyz[X]-offset_xyz[X];
-                    last_xyz[Y] = current_xyz[Y] + line_xyz[Y]-offset_xyz[Y];
-                    last_xyz[Z] = current_xyz[Z] + line_xyz[Z]-offset_xyz[Z];
+                    last_xyz[0] = current_xyz[0] + line_xyz[0]-offset_xyz[0];
+                    last_xyz[1] = current_xyz[1] + line_xyz[1]-offset_xyz[1];
+                    last_xyz[2] = current_xyz[2] + line_xyz[2]-offset_xyz[2];
                     display_texpos(texpos_corner_xy[0]);  display_vertex(last_xyz);
 
-                    last_xyz[X] = current_xyz[X] + line_xyz[X]+offset_xyz[X];
-                    last_xyz[Y] = current_xyz[Y] + line_xyz[Y]+offset_xyz[Y];
-                    last_xyz[Z] = current_xyz[Z] + line_xyz[Z]+offset_xyz[Z];
+                    last_xyz[0] = current_xyz[0] + line_xyz[0]+offset_xyz[0];
+                    last_xyz[1] = current_xyz[1] + line_xyz[1]+offset_xyz[1];
+                    last_xyz[2] = current_xyz[2] + line_xyz[2]+offset_xyz[2];
                     display_texpos(texpos_corner_xy[1]);  display_vertex(last_xyz);
 
-                    last_xyz[X] = current_xyz[X] - line_xyz[X]+offset_xyz[X];
-                    last_xyz[Y] = current_xyz[Y] - line_xyz[Y]+offset_xyz[Y];
-                    last_xyz[Z] = current_xyz[Z] - line_xyz[Z]+offset_xyz[Z];
+                    last_xyz[0] = current_xyz[0] - line_xyz[0]+offset_xyz[0];
+                    last_xyz[1] = current_xyz[1] - line_xyz[1]+offset_xyz[1];
+                    last_xyz[2] = current_xyz[2] - line_xyz[2]+offset_xyz[2];
                     display_texpos(texpos_corner_xy[2]);  display_vertex(last_xyz);
 
-                    last_xyz[X] = current_xyz[X] - line_xyz[X]-offset_xyz[X];
-                    last_xyz[Y] = current_xyz[Y] - line_xyz[Y]-offset_xyz[Y];
-                    last_xyz[Z] = current_xyz[Z] - line_xyz[Z]-offset_xyz[Z];
+                    last_xyz[0] = current_xyz[0] - line_xyz[0]-offset_xyz[0];
+                    last_xyz[1] = current_xyz[1] - line_xyz[1]-offset_xyz[1];
+                    last_xyz[2] = current_xyz[2] - line_xyz[2]-offset_xyz[2];
                     display_texpos(texpos_corner_xy[3]);  display_vertex(last_xyz);
                 display_end();
             }
@@ -596,13 +606,13 @@ float bad_rotation;
     else
     {
         // Two point rendering...
-        last_xyz[X] = *((float*) (particle_data+12));
-        last_xyz[Y] = *((float*) (particle_data+16));
-        last_xyz[Z] = *((float*) (particle_data+20));
+        last_xyz[0] = *((float*) (particle_data+12));
+        last_xyz[1] = *((float*) (particle_data+16));
+        last_xyz[2] = *((float*) (particle_data+20));
 
-        line_xyz[X] = current_xyz[X] - last_xyz[X];
-        line_xyz[Y] = current_xyz[Y] - last_xyz[Y];
-        line_xyz[Z] = current_xyz[Z] - last_xyz[Z];
+        line_xyz[0] = current_xyz[0] - last_xyz[0];
+        line_xyz[1] = current_xyz[1] - last_xyz[1];
+        line_xyz[2] = current_xyz[2] - last_xyz[2];
 
         // Change last xyz if fit to length flag is set...
         if(flags & PART_FIT_LENGTH_ON)
@@ -612,12 +622,12 @@ float bad_rotation;
             if(height > 0.00001f)
             {
                 height /= *((float*)(particle_data+36));
-                line_xyz[X] /= height;
-                line_xyz[Y] /= height;
-                line_xyz[Z] /= height;
-                last_xyz[X] = current_xyz[X] - line_xyz[X];
-                last_xyz[Y] = current_xyz[Y] - line_xyz[Y];
-                last_xyz[Z] = current_xyz[Z] - line_xyz[Z];
+                line_xyz[0] /= height;
+                line_xyz[1] /= height;
+                line_xyz[2] /= height;
+                last_xyz[0] = current_xyz[0] - line_xyz[0];
+                last_xyz[1] = current_xyz[1] - line_xyz[1];
+                last_xyz[2] = current_xyz[2] - line_xyz[2];
             }
         }
         else
@@ -625,12 +635,12 @@ float bad_rotation;
             height = *((float*)(particle_data+36));
             if(height > 1.001f)
             {
-                line_xyz[X] *= height;
-                line_xyz[Y] *= height;
-                line_xyz[Z] *= height;
-                last_xyz[X] = current_xyz[X] - line_xyz[X];
-                last_xyz[Y] = current_xyz[Y] - line_xyz[Y];
-                last_xyz[Z] = current_xyz[Z] - line_xyz[Z];
+                line_xyz[0] *= height;
+                line_xyz[1] *= height;
+                line_xyz[2] *= height;
+                last_xyz[0] = current_xyz[0] - line_xyz[0];
+                last_xyz[1] = current_xyz[1] - line_xyz[1];
+                last_xyz[2] = current_xyz[2] - line_xyz[2];
             }
         }
 
@@ -650,30 +660,30 @@ float bad_rotation;
             height*=2.0f;
             // Scale by width...
             height /= *((float*)(particle_data+40));
-            offset_xyz[X] /= height;
-            offset_xyz[Y] /= height;
-            offset_xyz[Z] /= height;
+            offset_xyz[0] /= height;
+            offset_xyz[1] /= height;
+            offset_xyz[2] /= height;
 
 
             display_start_fan();
-                line_xyz[X] = current_xyz[X] - offset_xyz[X];
-                line_xyz[Y] = current_xyz[Y] - offset_xyz[Y];
-                line_xyz[Z] = current_xyz[Z] - offset_xyz[Z];
+                line_xyz[0] = current_xyz[0] - offset_xyz[0];
+                line_xyz[1] = current_xyz[1] - offset_xyz[1];
+                line_xyz[2] = current_xyz[2] - offset_xyz[2];
                 display_texpos(texpos_corner_xy[0]);  display_vertex(line_xyz);
 
-                line_xyz[X] = current_xyz[X] + offset_xyz[X];
-                line_xyz[Y] = current_xyz[Y] + offset_xyz[Y];
-                line_xyz[Z] = current_xyz[Z] + offset_xyz[Z];
+                line_xyz[0] = current_xyz[0] + offset_xyz[0];
+                line_xyz[1] = current_xyz[1] + offset_xyz[1];
+                line_xyz[2] = current_xyz[2] + offset_xyz[2];
                 display_texpos(texpos_corner_xy[1]);  display_vertex(line_xyz);
 
-                line_xyz[X] = last_xyz[X] + offset_xyz[X];
-                line_xyz[Y] = last_xyz[Y] + offset_xyz[Y];
-                line_xyz[Z] = last_xyz[Z] + offset_xyz[Z];
+                line_xyz[0] = last_xyz[0] + offset_xyz[0];
+                line_xyz[1] = last_xyz[1] + offset_xyz[1];
+                line_xyz[2] = last_xyz[2] + offset_xyz[2];
                 display_texpos(texpos_corner_xy[2]);  display_vertex(line_xyz);
 
-                line_xyz[X] = last_xyz[X] - offset_xyz[X];
-                line_xyz[Y] = last_xyz[Y] - offset_xyz[Y];
-                line_xyz[Z] = last_xyz[Z] - offset_xyz[Z];
+                line_xyz[0] = last_xyz[0] - offset_xyz[0];
+                line_xyz[1] = last_xyz[1] - offset_xyz[1];
+                line_xyz[2] = last_xyz[2] - offset_xyz[2];
                 display_texpos(texpos_corner_xy[3]);  display_vertex(line_xyz);
             display_end();
         }
@@ -903,21 +913,21 @@ void particle_update_all()
 
 
                         // Find the particle position...  Not too complicated...
-                        scalar_xyz[X] = (((signed short) particle_data[68]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        scalar_xyz[Y] = (((signed short) particle_data[69]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        scalar_xyz[Z] = (((signed short) particle_data[70]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        *((float*) (particle_data)) = joint_data[joint[0]] + (((joint_data[joint[1]] - joint_data[joint[0]])) * scalar_xyz[X]) + ((*((float*) (frame_data))) * scalar_xyz[Y]) + ((*((float*) (frame_data+12))) * scalar_xyz[Z]);
-                        *((float*) (particle_data+4)) = joint_data[joint[0]+1] + (((joint_data[joint[1]+1] - joint_data[joint[0]+1])) * scalar_xyz[X]) + ((*((float*) (frame_data+4))) * scalar_xyz[Y]) + ((*((float*) (frame_data+16))) * scalar_xyz[Z]);
-                        *((float*) (particle_data+8)) = joint_data[joint[0]+2] + (((joint_data[joint[1]+2] - joint_data[joint[0]+2])) * scalar_xyz[X]) + ((*((float*) (frame_data+8))) * scalar_xyz[Y]) + ((*((float*) (frame_data+20))) * scalar_xyz[Z]);
+                        scalar_xyz[0] = (((signed short) particle_data[68]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        scalar_xyz[1] = (((signed short) particle_data[69]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        scalar_xyz[2] = (((signed short) particle_data[70]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        *((float*) (particle_data)) = joint_data[joint[0]] + (((joint_data[joint[1]] - joint_data[joint[0]])) * scalar_xyz[0]) + ((*((float*) (frame_data))) * scalar_xyz[1]) + ((*((float*) (frame_data+12))) * scalar_xyz[2]);
+                        *((float*) (particle_data+4)) = joint_data[joint[0]+1] + (((joint_data[joint[1]+1] - joint_data[joint[0]+1])) * scalar_xyz[0]) + ((*((float*) (frame_data+4))) * scalar_xyz[1]) + ((*((float*) (frame_data+16))) * scalar_xyz[2]);
+                        *((float*) (particle_data+8)) = joint_data[joint[0]+2] + (((joint_data[joint[1]+2] - joint_data[joint[0]+2])) * scalar_xyz[0]) + ((*((float*) (frame_data+8))) * scalar_xyz[1]) + ((*((float*) (frame_data+20))) * scalar_xyz[2]);
 
 
                         // Find the last particle position...  Not too complicated...
-                        scalar_xyz[X] = (((signed short) particle_data[71]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        scalar_xyz[Y] = (((signed short) particle_data[72]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        scalar_xyz[Z] = (((signed short) particle_data[73]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
-                        *((float*) (particle_data+12)) = joint_data[joint[0]] + (((joint_data[joint[1]] - joint_data[joint[0]])) * scalar_xyz[X]) + ((*((float*) (frame_data))) * scalar_xyz[Y]) + ((*((float*) (frame_data+12))) * scalar_xyz[Z]);
-                        *((float*) (particle_data+16)) = joint_data[joint[0]+1] + (((joint_data[joint[1]+1] - joint_data[joint[0]+1])) * scalar_xyz[X]) + ((*((float*) (frame_data+4))) * scalar_xyz[Y]) + ((*((float*) (frame_data+16))) * scalar_xyz[Z]);
-                        *((float*) (particle_data+20)) = joint_data[joint[0]+2] + (((joint_data[joint[1]+2] - joint_data[joint[0]+2])) * scalar_xyz[X]) + ((*((float*) (frame_data+8))) * scalar_xyz[Y]) + ((*((float*) (frame_data+20))) * scalar_xyz[Z]);
+                        scalar_xyz[0] = (((signed short) particle_data[71]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        scalar_xyz[1] = (((signed short) particle_data[72]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        scalar_xyz[2] = (((signed short) particle_data[73]) - ATTACHED_SCALAR_ADD) * ATTACHED_SCALAR_DIVIDE;
+                        *((float*) (particle_data+12)) = joint_data[joint[0]] + (((joint_data[joint[1]] - joint_data[joint[0]])) * scalar_xyz[0]) + ((*((float*) (frame_data))) * scalar_xyz[1]) + ((*((float*) (frame_data+12))) * scalar_xyz[2]);
+                        *((float*) (particle_data+16)) = joint_data[joint[0]+1] + (((joint_data[joint[1]+1] - joint_data[joint[0]+1])) * scalar_xyz[0]) + ((*((float*) (frame_data+4))) * scalar_xyz[1]) + ((*((float*) (frame_data+16))) * scalar_xyz[2]);
+                        *((float*) (particle_data+20)) = joint_data[joint[0]+2] + (((joint_data[joint[1]+2] - joint_data[joint[0]+2])) * scalar_xyz[0]) + ((*((float*) (frame_data+8))) * scalar_xyz[1]) + ((*((float*) (frame_data+20))) * scalar_xyz[2]);
                     }
                 }
                 else
@@ -1185,19 +1195,19 @@ void particle_update_all()
                                             // stuckto and target_data here refers to the attacker (who's weapon the particle is stuck to)...
                                             stuckto = (*((unsigned short*) (particle_data+86))) & (MAX_CHARACTER-1);
                                             target_data = main_character_data[stuckto];
-                                            scalar_xyz[X] = *((float*) (target_data+120));
-                                            scalar_xyz[Y] = *((float*) (target_data+124));
-                                            scalar_xyz[Z] = *((float*) (target_data+128));
+                                            scalar_xyz[0] = *((float*) (target_data+120));
+                                            scalar_xyz[1] = *((float*) (target_data+124));
+                                            scalar_xyz[2] = *((float*) (target_data+128));
                                         }
                                         else
                                         {
                                             // Use particle velocity for it's direction...
-                                            scalar_xyz[X] = *((float*) (particle_data+24));
-                                            scalar_xyz[Y] = *((float*) (particle_data+28));
-                                            scalar_xyz[Z] = *((float*) (particle_data+32));
+                                            scalar_xyz[0] = *((float*) (particle_data+24));
+                                            scalar_xyz[1] = *((float*) (particle_data+28));
+                                            scalar_xyz[2] = *((float*) (particle_data+32));
                                         }
-//log_message("INFO:     Block...  Part vel xyz == %f, %f, %f", scalar_xyz[X], scalar_xyz[Y], scalar_xyz[Z]);
-//log_message("INFO:     Block...  Character facing == %f, %f, %f", ((float*) (character_data+120))[X], ((float*) (character_data+120))[Y], ((float*) (character_data+120))[Z]);
+//log_message("INFO:     Block...  Part vel xyz == %f, %f, %f", scalar_xyz[0], scalar_xyz[1], scalar_xyz[2]);
+//log_message("INFO:     Block...  Character facing == %f, %f, %f", ((float*) (character_data+120))[0], ((float*) (character_data+120))[1], ((float*) (character_data+120))[2]);
                                         distance = dot_product(scalar_xyz, joint_data);
 //log_message("INFO:     Block...  Dot == %f", distance);
                                         if(distance < 0.0f)

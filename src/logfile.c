@@ -1,3 +1,10 @@
+#include "logfile.h"
+
+#include "soulfu.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
 FILE* logfile;
 int log_error_count;
 

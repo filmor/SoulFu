@@ -29,10 +29,12 @@
 #endif
 
 #define MAX_LOCAL_PLAYER 4              // Total players on local machine...
-unsigned char update_performed=FALSE;   // Do any files need decompressing?
+extern unsigned char update_performed; // =FALSE;   // Do any files need decompressing?
 
 // Stops player input from keyboard...
-unsigned short global_block_keyboard_timer = 0;
+extern unsigned short global_block_keyboard_timer; // = 0
+
+extern unsigned short onscreen_draw_count;
 
 // For Window3D
 float script_matrix[12];
@@ -59,14 +61,14 @@ float script_matrix[12];
 
 
 #define MAX_PLAYER_DEVICE_BUTTON 9              // 9 needed for keyboard...
-unsigned char player_device_type[MAX_LOCAL_PLAYER];  // None, Keyboard, Joystick 1, Joystick 2, Joystick 3, Joystick 4...
+extern unsigned char player_device_type[MAX_LOCAL_PLAYER];  // None, Keyboard, Joystick 1, Joystick 2, Joystick 3, Joystick 4...
 #define PLAYER_DEVICE_NONE 0
 #define PLAYER_DEVICE_KEYBOARD 1
 #define PLAYER_DEVICE_JOYSTICK_1 2
 #define PLAYER_DEVICE_JOYSTICK_2 3
 #define PLAYER_DEVICE_JOYSTICK_3 4
 #define PLAYER_DEVICE_JOYSTICK_4 5
-unsigned short player_device_button[MAX_LOCAL_PLAYER][MAX_PLAYER_DEVICE_BUTTON];  // Either keyboard scan codes or joystick button numbers...
+extern unsigned short player_device_button[MAX_LOCAL_PLAYER][MAX_PLAYER_DEVICE_BUTTON];  // Either keyboard scan codes or joystick button numbers...
 #define PLAYER_DEVICE_TYPE -1
 #define PLAYER_DEVICE_BUTTON_LEFT 0
 #define PLAYER_DEVICE_BUTTON_RIGHT 1
@@ -78,22 +80,22 @@ unsigned short player_device_button[MAX_LOCAL_PLAYER][MAX_PLAYER_DEVICE_BUTTON];
 #define PLAYER_DEVICE_BUTTON_MOVE_LEFT 7
 #define PLAYER_DEVICE_BUTTON_MOVE_RIGHT 8
 #define PLAYER_DEVICE_BUTTON_ITEMS_DOWN 9
-unsigned char player_device_button_pressed[MAX_LOCAL_PLAYER][4];  // One if button was just pressed, zero if not...
-unsigned char player_device_button_unpressed[MAX_LOCAL_PLAYER][4];  // One if button was just let up, zero if not...
-unsigned char player_device_button_pressed_copy[MAX_LOCAL_PLAYER][4];
-unsigned char player_device_inventory_toggle[MAX_LOCAL_PLAYER];  // TRUE if player pressed the inventory button (and script should toggle the gem)...
-unsigned char player_device_inventory_down[MAX_LOCAL_PLAYER];   // TRUE if player is holding the inventory button...
-unsigned char player_device_controls_active[MAX_LOCAL_PLAYER];  // FALSE if player controls don't actually move character...  But script can still read 'em...  Used to access inventory...
-float player_device_xy[MAX_LOCAL_PLAYER][2];
+extern unsigned char player_device_button_pressed[MAX_LOCAL_PLAYER][4];  // One if button was just pressed, zero if not...
+extern unsigned char player_device_button_unpressed[MAX_LOCAL_PLAYER][4];  // One if button was just let up, zero if not...
+extern unsigned char player_device_button_pressed_copy[MAX_LOCAL_PLAYER][4];
+extern unsigned char player_device_inventory_toggle[MAX_LOCAL_PLAYER];  // TRUE if player pressed the inventory button (and script should toggle the gem)...
+extern unsigned char player_device_inventory_down[MAX_LOCAL_PLAYER];   // TRUE if player is holding the inventory button...
+extern unsigned char player_device_controls_active[MAX_LOCAL_PLAYER];  // FALSE if player controls don't actually move character...  But script can still read 'em...  Used to access inventory...
+extern float player_device_xy[MAX_LOCAL_PLAYER][2];
 
 
 
 // Stuff for the enchantment targeting cursor thing...
-unsigned char enchant_cursor_active = FALSE;
-unsigned short enchant_cursor_character;
-unsigned short enchant_cursor_itemindex;
-unsigned short enchant_cursor_target;
-unsigned char enchant_cursor_target_item;
+extern unsigned char enchant_cursor_active = FALSE;
+extern unsigned short enchant_cursor_character;
+extern unsigned short enchant_cursor_itemindex;
+extern unsigned short enchant_cursor_target;
+extern unsigned char enchant_cursor_target_item;
 
 
 // Stuff for SYS_ENCHANT_CURSOR...
@@ -113,8 +115,8 @@ unsigned char enchant_cursor_target_item;
 #define RENDER_PAPER_FLAG      128
 
 
-unsigned char global_render_light_color_rgb[3];
-float global_render_light_offset_xy[2];
+extern unsigned char global_render_light_color_rgb[3];
+extern float global_render_light_offset_xy[2];
 
 
 // For makin' TIL generation easier...
@@ -123,8 +125,7 @@ float global_render_light_offset_xy[2];
 
 
 // Ex. Player 2 is character 1023...    MAX_CHARACTER means invalid...
-unsigned short local_player_character[MAX_LOCAL_PLAYER];
-
+extern unsigned short local_player_character[MAX_LOCAL_PLAYER];
 
 // Teams
 #define TEAM_NEUTRAL   0	// Default team

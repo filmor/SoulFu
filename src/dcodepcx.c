@@ -1,6 +1,10 @@
-// <ZZ> This file contains functions to convert PCX files to RGB
-//  **  decode_pcx              - The main function to do a PCX conversion
+#include "dcodepcx.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+
+#include <string.h>
+#include <stdlib.h>
 
 unsigned char pcx_palette[256*3];   // Palette data in 24-bit format
 //unsigned char pcx_palette[256*2];   // Palette data in 555 format

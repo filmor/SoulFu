@@ -1,4 +1,10 @@
+#include "map.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+#include "display.h"
+
+#include <math.h>
 
 unsigned short num_map_room = 0;
 unsigned char map_room_data[MAX_MAP_ROOM][40];
@@ -58,28 +64,28 @@ unsigned char map_doors_overlap(unsigned short room_a, unsigned char room_a_wall
 
 
     // Find the endpoints of the hallway...
-    room_a_xyz[X] = ((*((unsigned short*) (map_room_data[room_a]+4)))-32768.0f)*10.0f;
-    room_a_xyz[Y] = ((*((unsigned short*) (map_room_data[room_a]+6)))-32768.0f)*10.0f;
-    room_a_xyz[Z] = 0.0f;
+    room_a_xyz[0] = ((*((unsigned short*) (map_room_data[room_a]+4)))-32768.0f)*10.0f;
+    room_a_xyz[1] = ((*((unsigned short*) (map_room_data[room_a]+6)))-32768.0f)*10.0f;
+    room_a_xyz[2] = 0.0f;
     room_a_srf = *((unsigned char**) (map_room_data[room_a]+0));
     room_a_rotation = *((unsigned short*) (map_room_data[room_a]+8));
     room_find_wall_center(room_a_srf, room_a_rotation, room_a_wall, room_a_door_xyz, room_a_xyz, 0.0f);
 
-    room_b_xyz[X] = ((*((unsigned short*) (map_room_data[room_b]+4)))-32768.0f)*10.0f;
-    room_b_xyz[Y] = ((*((unsigned short*) (map_room_data[room_b]+6)))-32768.0f)*10.0f;
-    room_b_xyz[Z] = 0.0f;
+    room_b_xyz[0] = ((*((unsigned short*) (map_room_data[room_b]+4)))-32768.0f)*10.0f;
+    room_b_xyz[1] = ((*((unsigned short*) (map_room_data[room_b]+6)))-32768.0f)*10.0f;
+    room_b_xyz[2] = 0.0f;
     room_b_srf = *((unsigned char**) (map_room_data[room_b]+0));
     room_b_rotation = *((unsigned short*) (map_room_data[room_b]+8));
     room_find_wall_center(room_b_srf, room_b_rotation, room_b_wall, room_b_door_xyz, room_b_xyz, 0.0f);
 
 
     // Find 3 points along the line to check...
-    check_vertex_xy[0][X] = room_a_door_xyz[X]*0.75f + room_b_door_xyz[X]*0.25f;
-    check_vertex_xy[0][Y] = room_a_door_xyz[Y]*0.75f + room_b_door_xyz[Y]*0.25f;
-    check_vertex_xy[1][X] = room_a_door_xyz[X]*0.50f + room_b_door_xyz[X]*0.50f;
-    check_vertex_xy[1][Y] = room_a_door_xyz[Y]*0.50f + room_b_door_xyz[Y]*0.50f;
-    check_vertex_xy[2][X] = room_a_door_xyz[X]*0.25f + room_b_door_xyz[X]*0.75f;
-    check_vertex_xy[2][Y] = room_a_door_xyz[Y]*0.25f + room_b_door_xyz[Y]*0.75f;
+    check_vertex_xy[0][0] = room_a_door_xyz[0]*0.75f + room_b_door_xyz[0]*0.25f;
+    check_vertex_xy[0][1] = room_a_door_xyz[1]*0.75f + room_b_door_xyz[1]*0.25f;
+    check_vertex_xy[1][0] = room_a_door_xyz[0]*0.50f + room_b_door_xyz[0]*0.50f;
+    check_vertex_xy[1][1] = room_a_door_xyz[1]*0.50f + room_b_door_xyz[1]*0.50f;
+    check_vertex_xy[2][0] = room_a_door_xyz[0]*0.25f + room_b_door_xyz[0]*0.75f;
+    check_vertex_xy[2][1] = room_a_door_xyz[1]*0.25f + room_b_door_xyz[1]*0.75f;
 
 
     // Now check our hallway against every other room...
@@ -94,7 +100,7 @@ unsigned char map_doors_overlap(unsigned short room_a, unsigned char room_a_wall
             {
                 room_c_srf = *((unsigned char**) (map_room_data[room_c]+0));
                 room_c_rotation = *((unsigned short*) (map_room_data[room_c]+8));
-                angle = room_c_rotation * (2.0f * PI / 65536.0f);
+                angle = room_c_rotation * (2.0f * M_PI / 65536.0f);
                 sine = (float) sin(angle);
                 cosine = (float) cos(angle);
                 x = ((*((unsigned short*) (map_room_data[room_c]+4)))-32768.0f)*10.0f;
@@ -112,8 +118,8 @@ unsigned char map_doors_overlap(unsigned short room_a, unsigned char room_a_wall
                 // Go through each of our check vertices....
                 repeat(i, 3)
                 {
-                    check_xy[X] = check_vertex_xy[i][X];
-                    check_xy[Y] = check_vertex_xy[i][Y];
+                    check_xy[0] = check_vertex_xy[i][0];
+                    check_xy[1] = check_vertex_xy[i][1];
 
 
                     // Go through each minimap triangle of room_c
@@ -126,8 +132,8 @@ unsigned char map_doors_overlap(unsigned short room_a, unsigned char room_a_wall
                         {
                             m = sdf_read_unsigned_short(data);  data+=2;
                             room_draw_srf_vertex_helper(m);
-                            triangle_vertex_xy[k][X] = vertex_xyz[X];
-                            triangle_vertex_xy[k][Y] = vertex_xyz[Y];
+                            triangle_vertex_xy[k][0] = vertex_xyz[0];
+                            triangle_vertex_xy[k][1] = vertex_xyz[1];
                         }
 
 
@@ -135,17 +141,17 @@ unsigned char map_doors_overlap(unsigned short room_a, unsigned char room_a_wall
                         repeat(k, 3)
                         {
                             m = (k+1)%3;
-                            triangle_normal_xy[k][X] = -(triangle_vertex_xy[m][Y] - triangle_vertex_xy[k][Y]);
-                            triangle_normal_xy[k][Y] = triangle_vertex_xy[m][X] - triangle_vertex_xy[k][X];
+                            triangle_normal_xy[k][0] = -(triangle_vertex_xy[m][1] - triangle_vertex_xy[k][1]);
+                            triangle_normal_xy[k][1] = triangle_vertex_xy[m][0] - triangle_vertex_xy[k][0];
                         }
 
                         // Now check the check vertex against each edge normal...
                         positive_count = 0;
                         repeat(k, 3)
                         {
-                            dis_xy[X] = check_xy[X] - triangle_vertex_xy[k][X];
-                            dis_xy[Y] = check_xy[Y] - triangle_vertex_xy[k][Y];
-                            dot = (dis_xy[X]*triangle_normal_xy[k][X]) + (dis_xy[Y]*triangle_normal_xy[k][Y]);
+                            dis_xy[0] = check_xy[0] - triangle_vertex_xy[k][0];
+                            dis_xy[1] = check_xy[1] - triangle_vertex_xy[k][1];
+                            dot = (dis_xy[0]*triangle_normal_xy[k][0]) + (dis_xy[1]*triangle_normal_xy[k][1]);
                             if(dot > 0.0f)
                             {
                                 positive_count++;
@@ -204,21 +210,21 @@ unsigned char map_connect_rooms(unsigned short room_a, unsigned short room_b)
             // Find the best wall for each room (wall normal must be pointing in general direction of
             // other room & be flagged as doorable & be unused)...
             room_a_srf_file = *((unsigned char**) (map_room_data[room_a]+0));
-            room_a_xy[X] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
-            room_a_xy[Y] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
+            room_a_xy[0] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
+            room_a_xy[1] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
             room_a_rotation = *((unsigned short*) (map_room_data[room_a]+8));
             room_b_srf_file = *((unsigned char**) (map_room_data[room_b]+0));
-            room_b_xy[X] = ((*((unsigned short*) (map_room_data[room_b]+4))) - 32768.0f) * 10.0f;
-            room_b_xy[Y] = ((*((unsigned short*) (map_room_data[room_b]+6))) - 32768.0f) * 10.0f;
+            room_b_xy[0] = ((*((unsigned short*) (map_room_data[room_b]+4))) - 32768.0f) * 10.0f;
+            room_b_xy[1] = ((*((unsigned short*) (map_room_data[room_b]+6))) - 32768.0f) * 10.0f;
             room_b_rotation = *((unsigned short*) (map_room_data[room_b]+8));
-            vector_xy[X] = room_b_xy[X] - room_a_xy[X];
-            vector_xy[Y] = room_b_xy[Y] - room_a_xy[Y];
-            dis = ((float) sqrt(vector_xy[X]*vector_xy[X] + vector_xy[Y]*vector_xy[Y])) + 0.0001f;
+            vector_xy[0] = room_b_xy[0] - room_a_xy[0];
+            vector_xy[1] = room_b_xy[1] - room_a_xy[1];
+            dis = ((float) sqrt(vector_xy[0]*vector_xy[0] + vector_xy[1]*vector_xy[1])) + 0.0001f;
 
 
 
-            vector_xy[X]/=dis;
-            vector_xy[Y]/=dis;
+            vector_xy[0]/=dis;
+            vector_xy[1]/=dis;
             allow_bottom_doors = TRUE;
             if(map_room_data[room_a][13] & MAP_ROOM_FLAG_DUAL_LEVEL)
             {
@@ -232,8 +238,8 @@ unsigned char map_connect_rooms(unsigned short room_a, unsigned short room_b)
 
 
 
-            vector_xy[X] = -vector_xy[X];
-            vector_xy[Y] = -vector_xy[Y];
+            vector_xy[0] = -vector_xy[0];
+            vector_xy[1] = -vector_xy[1];
             allow_bottom_doors = TRUE;
             if(map_room_data[room_b][13] & MAP_ROOM_FLAG_DUAL_LEVEL)
             {
@@ -295,10 +301,10 @@ unsigned char map_rooms_overlap_elaborate(unsigned char* room_a_srf, float* room
     unsigned short i, j, k, m;
     unsigned char positive_count;
 
-    angle = room_a_rotation * (2.0f * PI / 65536.0f);
+    angle = room_a_rotation * (2.0f * M_PI / 65536.0f);
     room_a_sine = (float) sin(angle);
     room_a_cosine = (float) cos(angle);
-    angle = room_b_rotation * (2.0f * PI / 65536.0f);
+    angle = room_b_rotation * (2.0f * M_PI / 65536.0f);
     room_b_sine = (float) sin(angle);
     room_b_cosine = (float) cos(angle);
     z = 0.0f;
@@ -320,20 +326,20 @@ unsigned char map_rooms_overlap_elaborate(unsigned char* room_a_srf, float* room
         vertex_data = room_a_vertex_data;
         sine = room_a_sine;
         cosine = room_a_cosine;
-        x = room_a_xy[X];
-        y = room_a_xy[Y];
+        x = room_a_xy[0];
+        y = room_a_xy[1];
         m = sdf_read_unsigned_short(room_a_exterior_wall_data);  room_a_exterior_wall_data+=3;
         room_draw_srf_vertex_helper(m);
-        check_xy[X] = vertex_xyz[X];
-        check_xy[Y] = vertex_xyz[Y];
+        check_xy[0] = vertex_xyz[0];
+        check_xy[1] = vertex_xyz[1];
 
 
         // Go through each minimap triangle of room_b
         vertex_data = room_b_vertex_data;
         sine = room_b_sine;
         cosine = room_b_cosine;
-        x = room_b_xy[X];
-        y = room_b_xy[Y];
+        x = room_b_xy[0];
+        y = room_b_xy[1];
         data = room_b_minimap_data;
         repeat(j, room_b_num_minimap_triangle)
         {
@@ -342,8 +348,8 @@ unsigned char map_rooms_overlap_elaborate(unsigned char* room_a_srf, float* room
             {
                 m = sdf_read_unsigned_short(data);  data+=2;
                 room_draw_srf_vertex_helper(m);
-                triangle_vertex_xy[k][X] = vertex_xyz[X];
-                triangle_vertex_xy[k][Y] = vertex_xyz[Y];
+                triangle_vertex_xy[k][0] = vertex_xyz[0];
+                triangle_vertex_xy[k][1] = vertex_xyz[1];
             }
 
 
@@ -351,17 +357,17 @@ unsigned char map_rooms_overlap_elaborate(unsigned char* room_a_srf, float* room
             repeat(k, 3)
             {
                 m = (k+1)%3;
-                triangle_normal_xy[k][X] = -(triangle_vertex_xy[m][Y] - triangle_vertex_xy[k][Y]);
-                triangle_normal_xy[k][Y] = triangle_vertex_xy[m][X] - triangle_vertex_xy[k][X];
+                triangle_normal_xy[k][0] = -(triangle_vertex_xy[m][1] - triangle_vertex_xy[k][1]);
+                triangle_normal_xy[k][1] = triangle_vertex_xy[m][0] - triangle_vertex_xy[k][0];
             }
 
             // Now check the check vertex against each edge normal...
             positive_count = 0;
             repeat(k, 3)
             {
-                dis_xy[X] = check_xy[X] - triangle_vertex_xy[k][X];
-                dis_xy[Y] = check_xy[Y] - triangle_vertex_xy[k][Y];
-                dot = (dis_xy[X]*triangle_normal_xy[k][X]) + (dis_xy[Y]*triangle_normal_xy[k][Y]);
+                dis_xy[0] = check_xy[0] - triangle_vertex_xy[k][0];
+                dis_xy[1] = check_xy[1] - triangle_vertex_xy[k][1];
+                dot = (dis_xy[0]*triangle_normal_xy[k][0]) + (dis_xy[1]*triangle_normal_xy[k][1]);
                 if(dot > 0.0f)
                 {
                     positive_count++;
@@ -415,12 +421,12 @@ unsigned char map_rooms_overlap(unsigned short room_a, unsigned short room_b)
         if(room_a_level == room_b_level || ((room_a_level+1) == room_b_level && (room_a_flags & MAP_ROOM_FLAG_DUAL_LEVEL)) || ((room_b_level+1) == room_a_level && (room_b_flags & MAP_ROOM_FLAG_DUAL_LEVEL)))
         {
             // They are...  But are they anywhere near one another?
-            room_a_xy[X] = ((*((unsigned short*) (map_room_data[room_a]+4)))-32768.0f)*10.0f;
-            room_a_xy[Y] = ((*((unsigned short*) (map_room_data[room_a]+6)))-32768.0f)*10.0f;
-            room_b_xy[X] = ((*((unsigned short*) (map_room_data[room_b]+4)))-32768.0f)*10.0f;
-            room_b_xy[Y] = ((*((unsigned short*) (map_room_data[room_b]+6)))-32768.0f)*10.0f;
-            x = room_a_xy[X] - room_b_xy[X];
-            y = room_a_xy[Y] - room_b_xy[Y];
+            room_a_xy[0] = ((*((unsigned short*) (map_room_data[room_a]+4)))-32768.0f)*10.0f;
+            room_a_xy[1] = ((*((unsigned short*) (map_room_data[room_a]+6)))-32768.0f)*10.0f;
+            room_b_xy[0] = ((*((unsigned short*) (map_room_data[room_b]+4)))-32768.0f)*10.0f;
+            room_b_xy[1] = ((*((unsigned short*) (map_room_data[room_b]+6)))-32768.0f)*10.0f;
+            x = room_a_xy[0] - room_b_xy[0];
+            y = room_a_xy[1] - room_b_xy[1];
             dis = x*x + y*y;
             if(dis < OVERLAP_DISTANCE_SQUARED)
             {
@@ -640,9 +646,9 @@ void map_automap_draw()
     {
         room_a = automap_room_list[i];
         room_a_srf_file = *((unsigned char**) (map_room_data[room_a]+0));
-        room_a_xyz[X] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
-        room_a_xyz[Y] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
-        room_a_xyz[Z] = 0.0f;
+        room_a_xyz[0] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
+        room_a_xyz[1] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
+        room_a_xyz[2] = 0.0f;
         room_a_rotation = *((unsigned short*) (map_room_data[room_a]+8));
         repeat(j, 5)
         {
@@ -652,16 +658,16 @@ void map_automap_draw()
                 if(room_b < room_a || (map_room_data[room_a][12]!=map_room_data[room_b][12]) || !(map_room_data[room_b][13]&MAP_ROOM_FLAG_FOUND))
                 {
                     room_b_srf_file = *((unsigned char**) (map_room_data[room_b]+0));
-                    room_b_xyz[X] = ((*((unsigned short*) (map_room_data[room_b]+4))) - 32768.0f) * 10.0f;
-                    room_b_xyz[Y] = ((*((unsigned short*) (map_room_data[room_b]+6))) - 32768.0f) * 10.0f;
-                    room_b_xyz[Z] = 0.0f;
+                    room_b_xyz[0] = ((*((unsigned short*) (map_room_data[room_b]+4))) - 32768.0f) * 10.0f;
+                    room_b_xyz[1] = ((*((unsigned short*) (map_room_data[room_b]+6))) - 32768.0f) * 10.0f;
+                    room_b_xyz[2] = 0.0f;
                     room_b_rotation = *((unsigned short*) (map_room_data[room_b]+8));
 
 
                     // Find the center of the door wall for room_a...
                     room_a_wall = (unsigned short) map_room_data[room_a][24+j];
                     room_find_wall_center(room_a_srf_file, room_a_rotation, room_a_wall, room_a_door_xyz, room_a_xyz, 0.0f);
-                    room_a_door_xyz[Z] = 0.0f;
+                    room_a_door_xyz[2] = 0.0f;
 
 
                     // Now find which wall is used for this door in room_b (which one connects to room_a?)
@@ -678,29 +684,29 @@ void map_automap_draw()
 
                     // And find the center of the door wall for room_b...
                     room_find_wall_center(room_b_srf_file, room_b_rotation, room_b_wall, room_b_door_xyz, room_b_xyz, 0.0f);
-                    room_b_door_xyz[Z] = 0.0f;
+                    room_b_door_xyz[2] = 0.0f;
 
 
                     // We want to draw the door line as a fat line, and we want to use triangles
                     // to do it (since line drawing runs slow on some cards & we want to keep the
                     // scaling consistant)...  So we'll need to find the corners of the rectangle...
-                    side_xy[X] = -(room_b_door_xyz[Y] - room_a_door_xyz[Y]);
-                    side_xy[Y] = room_b_door_xyz[X] - room_a_door_xyz[X];
-                    distance = 0.15f * (((float) sqrt(side_xy[X]*side_xy[X] + side_xy[Y]*side_xy[Y])) + 0.0000001f);
-                    side_xy[X]/=distance;
-                    side_xy[Y]/=distance;
+                    side_xy[0] = -(room_b_door_xyz[1] - room_a_door_xyz[1]);
+                    side_xy[1] = room_b_door_xyz[0] - room_a_door_xyz[0];
+                    distance = 0.15f * (((float) sqrt(side_xy[0]*side_xy[0] + side_xy[1]*side_xy[1])) + 0.0000001f);
+                    side_xy[0]/=distance;
+                    side_xy[1]/=distance;
 
-                    vertex_xy[0][X] = room_a_door_xyz[X] - side_xy[X] - side_xy[Y];
-                    vertex_xy[0][Y] = room_a_door_xyz[Y] - side_xy[Y] + side_xy[X];
+                    vertex_xy[0][0] = room_a_door_xyz[0] - side_xy[0] - side_xy[1];
+                    vertex_xy[0][1] = room_a_door_xyz[1] - side_xy[1] + side_xy[0];
 
-                    vertex_xy[1][X] = room_b_door_xyz[X] - side_xy[X] + side_xy[Y];
-                    vertex_xy[1][Y] = room_b_door_xyz[Y] - side_xy[Y] - side_xy[X];
+                    vertex_xy[1][0] = room_b_door_xyz[0] - side_xy[0] + side_xy[1];
+                    vertex_xy[1][1] = room_b_door_xyz[1] - side_xy[1] - side_xy[0];
 
-                    vertex_xy[2][X] = room_b_door_xyz[X] + side_xy[X] + side_xy[Y];
-                    vertex_xy[2][Y] = room_b_door_xyz[Y] + side_xy[Y] - side_xy[X];
+                    vertex_xy[2][0] = room_b_door_xyz[0] + side_xy[0] + side_xy[1];
+                    vertex_xy[2][1] = room_b_door_xyz[1] + side_xy[1] - side_xy[0];
 
-                    vertex_xy[3][X] = room_a_door_xyz[X] + side_xy[X] - side_xy[Y];
-                    vertex_xy[3][Y] = room_a_door_xyz[Y] + side_xy[Y] + side_xy[X];
+                    vertex_xy[3][0] = room_a_door_xyz[0] + side_xy[0] - side_xy[1];
+                    vertex_xy[3][1] = room_a_door_xyz[1] + side_xy[1] + side_xy[0];
 
 
 
@@ -732,18 +738,18 @@ void map_automap_draw()
     {
         room_a = automap_room_list[i];
         room_a_srf_file = *((unsigned char**) (map_room_data[room_a]+0));
-        room_a_xyz[X] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
-        room_a_xyz[Y] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
+        room_a_xyz[0] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
+        room_a_xyz[1] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
         room_a_rotation = *((unsigned short*) (map_room_data[room_a]+8));
 
         // Current room is drawn as bright yellow...
         if(room_a == map_current_room)
         {
-            room_draw_srf(room_a_xyz[X], room_a_xyz[Y], 0.0f, room_a_srf_file, yellow, room_a_rotation, ROOM_MODE_MINIMAP);
+            room_draw_srf(room_a_xyz[0], room_a_xyz[1], 0.0f, room_a_srf_file, yellow, room_a_rotation, ROOM_MODE_MINIMAP);
         }
         else
         {
-            room_draw_srf(room_a_xyz[X], room_a_xyz[Y], 0.0f, room_a_srf_file, dark_yellow, room_a_rotation, ROOM_MODE_MINIMAP);
+            room_draw_srf(room_a_xyz[0], room_a_xyz[1], 0.0f, room_a_srf_file, dark_yellow, room_a_rotation, ROOM_MODE_MINIMAP);
         }
     }
 
@@ -757,22 +763,22 @@ void map_automap_draw()
         room_a = automap_room_list[i];
         if(map_room_data[room_a][13] & (MAP_ROOM_FLAG_DUAL_LEVEL | MAP_ROOM_FLAG_TOWN | MAP_ROOM_FLAG_BOSS | MAP_ROOM_FLAG_VIRTUE))
         {
-            room_a_xyz[X] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
-            room_a_xyz[Y] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
-            side_xy[X] = -map_side_xy[Y]*50.0f;
-            side_xy[Y] = map_side_xy[X]*50.0f;
+            room_a_xyz[0] = ((*((unsigned short*) (map_room_data[room_a]+4))) - 32768.0f) * 10.0f;
+            room_a_xyz[1] = ((*((unsigned short*) (map_room_data[room_a]+6))) - 32768.0f) * 10.0f;
+            side_xy[0] = -map_side_xy[1]*50.0f;
+            side_xy[1] = map_side_xy[0]*50.0f;
 
-            vertex_xy[0][X] = room_a_xyz[X] - side_xy[X] - side_xy[Y];
-            vertex_xy[0][Y] = room_a_xyz[Y] - side_xy[Y] + side_xy[X];
+            vertex_xy[0][0] = room_a_xyz[0] - side_xy[0] - side_xy[1];
+            vertex_xy[0][1] = room_a_xyz[1] - side_xy[1] + side_xy[0];
 
-            vertex_xy[1][X] = room_a_xyz[X] - side_xy[X] + side_xy[Y];
-            vertex_xy[1][Y] = room_a_xyz[Y] - side_xy[Y] - side_xy[X];
+            vertex_xy[1][0] = room_a_xyz[0] - side_xy[0] + side_xy[1];
+            vertex_xy[1][1] = room_a_xyz[1] - side_xy[1] - side_xy[0];
 
-            vertex_xy[2][X] = room_a_xyz[X] + side_xy[X] + side_xy[Y];
-            vertex_xy[2][Y] = room_a_xyz[Y] + side_xy[Y] - side_xy[X];
+            vertex_xy[2][0] = room_a_xyz[0] + side_xy[0] + side_xy[1];
+            vertex_xy[2][1] = room_a_xyz[1] + side_xy[1] - side_xy[0];
 
-            vertex_xy[3][X] = room_a_xyz[X] + side_xy[X] - side_xy[Y];
-            vertex_xy[3][Y] = room_a_xyz[Y] + side_xy[Y] + side_xy[X];
+            vertex_xy[3][0] = room_a_xyz[0] + side_xy[0] - side_xy[1];
+            vertex_xy[3][1] = room_a_xyz[1] + side_xy[1] + side_xy[0];
 
 
             if(map_room_data[room_a][13] & MAP_ROOM_FLAG_DUAL_LEVEL)

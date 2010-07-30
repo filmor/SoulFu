@@ -1,6 +1,12 @@
 #ifndef SOULFU_DCODEDDD_H
 #define SOULFU_DCODEDDD_H
 
+// <ZZ> This file contains functions to convert DDD files to RDY
+//      decode_ddd              - The main function to do a DDD conversion
+
+#define USED_PERMANENT 1
+#define USED_TEMPORARY 2
+
 /* dcodeddd.c */
 void ddd_generate_model_action_list(unsigned char *data);
 void ddd_remove_data(unsigned char *data_block_start, unsigned int data_size, unsigned char *data_to_remove, unsigned short bytes_to_remove);

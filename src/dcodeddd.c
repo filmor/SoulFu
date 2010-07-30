@@ -1,5 +1,12 @@
-// <ZZ> This file contains functions to convert DDD files to RDY
-//      decode_ddd              - The main function to do a DDD conversion
+#include "dcodeddd.h"
+
+#include "soulfu.h"
+#include "datafile.h"
+#include "common.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 #define NO_LINE_FLAG  64
 
@@ -163,17 +170,17 @@ void ddd_simplify_two_vertices(unsigned short* num_vertex_spot, unsigned short* 
     // Average the positions of the points...
     first_xyz = (float*) (data+(vertex_to_keep<<5));
     second_xyz = (float*) (data+(vertex_to_remove<<5));
-    first_xyz[X] = (first_xyz[X] + second_xyz[X]) * 0.5f;
-    first_xyz[Y] = (first_xyz[Y] + second_xyz[Y]) * 0.5f;
-    first_xyz[Z] = (first_xyz[Z] + second_xyz[Z]) * 0.5f;
+    first_xyz[0] = (first_xyz[0] + second_xyz[0]) * 0.5f;
+    first_xyz[1] = (first_xyz[1] + second_xyz[1]) * 0.5f;
+    first_xyz[2] = (first_xyz[2] + second_xyz[2]) * 0.5f;
     // Increase the weight, making it harder to remove in the future...
     first_xyz[6] += 0.5f;
     if(tex_vertex_to_keep != tex_vertex_to_remove)
     {
         first_xyz = (float*) (data+(num_vertex_spot[0]<<5)+(tex_vertex_to_keep<<3));
         second_xyz = (float*) (data+(num_vertex_spot[0]<<5)+(tex_vertex_to_remove<<3));
-        first_xyz[X] = (first_xyz[X] + second_xyz[X]) * 0.5f;
-        first_xyz[Y] = (first_xyz[Y] + second_xyz[Y]) * 0.5f;
+        first_xyz[0] = (first_xyz[0] + second_xyz[0]) * 0.5f;
+        first_xyz[1] = (first_xyz[1] + second_xyz[1]) * 0.5f;
     }
 
 
@@ -227,10 +234,10 @@ unsigned char ddd_simplify_once(unsigned short* num_vertex_spot, unsigned short*
                 vertexb_xyz = (float*) (data + (triangle_vertex[1]<<5));
                 vertexc_xyz = (float*) (data + (triangle_vertex[2]<<5));
                 // Find the shortest edge of triangle...  Side AB
-                side_xyz[X] = vertexb_xyz[X] - vertexa_xyz[X];
-                side_xyz[Y] = vertexb_xyz[Y] - vertexa_xyz[Y];
-                side_xyz[Z] = vertexb_xyz[Z] - vertexa_xyz[Z];
-                size = (side_xyz[X]*side_xyz[X])+(side_xyz[Y]*side_xyz[Y])+(side_xyz[Z]*side_xyz[Z]);
+                side_xyz[0] = vertexb_xyz[0] - vertexa_xyz[0];
+                side_xyz[1] = vertexb_xyz[1] - vertexa_xyz[1];
+                side_xyz[2] = vertexb_xyz[2] - vertexa_xyz[2];
+                size = (side_xyz[0]*side_xyz[0])+(side_xyz[1]*side_xyz[1])+(side_xyz[2]*side_xyz[2]);
                 size = size * (vertexb_xyz[6] + vertexa_xyz[6]);  // Factor vertex weight into it...
                 if(size < best_size)
                 {
@@ -241,10 +248,10 @@ unsigned char ddd_simplify_once(unsigned short* num_vertex_spot, unsigned short*
                     best_size = size;
                 }
                 // Find the shortest edge of triangle...  Side BC
-                side_xyz[X] = vertexc_xyz[X] - vertexb_xyz[X];
-                side_xyz[Y] = vertexc_xyz[Y] - vertexb_xyz[Y];
-                side_xyz[Z] = vertexc_xyz[Z] - vertexb_xyz[Z];
-                size = (side_xyz[X]*side_xyz[X])+(side_xyz[Y]*side_xyz[Y])+(side_xyz[Z]*side_xyz[Z]);
+                side_xyz[0] = vertexc_xyz[0] - vertexb_xyz[0];
+                side_xyz[1] = vertexc_xyz[1] - vertexb_xyz[1];
+                side_xyz[2] = vertexc_xyz[2] - vertexb_xyz[2];
+                size = (side_xyz[0]*side_xyz[0])+(side_xyz[1]*side_xyz[1])+(side_xyz[2]*side_xyz[2]);
                 size = size * (vertexc_xyz[6] + vertexb_xyz[6]);  // Factor vertex weight into it...
                 if(size < best_size)
                 {
@@ -255,10 +262,10 @@ unsigned char ddd_simplify_once(unsigned short* num_vertex_spot, unsigned short*
                     best_size = size;
                 }
                 // Find the shortest edge of triangle...  Side CA
-                side_xyz[X] = vertexa_xyz[X] - vertexc_xyz[X];
-                side_xyz[Y] = vertexa_xyz[Y] - vertexc_xyz[Y];
-                side_xyz[Z] = vertexa_xyz[Z] - vertexc_xyz[Z];
-                size = (side_xyz[X]*side_xyz[X])+(side_xyz[Y]*side_xyz[Y])+(side_xyz[Z]*side_xyz[Z]);
+                side_xyz[0] = vertexa_xyz[0] - vertexc_xyz[0];
+                side_xyz[1] = vertexa_xyz[1] - vertexc_xyz[1];
+                side_xyz[2] = vertexa_xyz[2] - vertexc_xyz[2];
+                size = (side_xyz[0]*side_xyz[0])+(side_xyz[1]*side_xyz[1])+(side_xyz[2]*side_xyz[2]);
                 size = size * (vertexa_xyz[6] + vertexc_xyz[6]);  // Factor vertex weight into it...
                 if(size < best_size)
                 {
@@ -339,36 +346,36 @@ void ddd_simplify_geometry(unsigned short* num_vertex_spot, unsigned short* num_
                     *((unsigned short*) (vertex_data+28+(triangle_vertex[k]<<5)))+=1;
                 }
                 // Figure out the normal of the triangle
-                start_xyz[X] = *((float*) (vertex_data+(triangle_vertex[0]<<6)));
-                start_xyz[Y] = *((float*) (vertex_data+4+(triangle_vertex[0]<<6)));
-                start_xyz[Z] = *((float*) (vertex_data+8+(triangle_vertex[0]<<6)));
-                end_xyz[X] = *((float*) (vertex_data+(triangle_vertex[1]<<6)));
-                end_xyz[Y] = *((float*) (vertex_data+4+(triangle_vertex[1]<<6)));
-                end_xyz[Z] = *((float*) (vertex_data+8+(triangle_vertex[1]<<6)));
-                end_xyz[X]-=start_xyz[X];
-                end_xyz[Y]-=start_xyz[Y];
-                end_xyz[Z]-=start_xyz[Z];
-                side_xyz[X]= *((float*) (vertex_data+(triangle_vertex[2]<<6)));
-                side_xyz[Y]= *((float*) (vertex_data+4+(triangle_vertex[2]<<6)));
-                side_xyz[Z]= *((float*) (vertex_data+8+(triangle_vertex[2]<<6)));
-                side_xyz[X]-=start_xyz[X];
-                side_xyz[Y]-=start_xyz[Y];
-                side_xyz[Z]-=start_xyz[Z];
+                start_xyz[0] = *((float*) (vertex_data+(triangle_vertex[0]<<6)));
+                start_xyz[1] = *((float*) (vertex_data+4+(triangle_vertex[0]<<6)));
+                start_xyz[2] = *((float*) (vertex_data+8+(triangle_vertex[0]<<6)));
+                end_xyz[0] = *((float*) (vertex_data+(triangle_vertex[1]<<6)));
+                end_xyz[1] = *((float*) (vertex_data+4+(triangle_vertex[1]<<6)));
+                end_xyz[2] = *((float*) (vertex_data+8+(triangle_vertex[1]<<6)));
+                end_xyz[0]-=start_xyz[0];
+                end_xyz[1]-=start_xyz[1];
+                end_xyz[2]-=start_xyz[2];
+                side_xyz[0]= *((float*) (vertex_data+(triangle_vertex[2]<<6)));
+                side_xyz[1]= *((float*) (vertex_data+4+(triangle_vertex[2]<<6)));
+                side_xyz[2]= *((float*) (vertex_data+8+(triangle_vertex[2]<<6)));
+                side_xyz[0]-=start_xyz[0];
+                side_xyz[1]-=start_xyz[1];
+                side_xyz[2]-=start_xyz[2];
                 cross_product(end_xyz, side_xyz, front_xyz);
                 // Normalize the normal
                 length = vector_length(front_xyz);
                 if(length > 0.01f)
                 {
-                    front_xyz[X]/=length;
-                    front_xyz[Y]/=length;
-                    front_xyz[Z]/=length;
+                    front_xyz[0]/=length;
+                    front_xyz[1]/=length;
+                    front_xyz[2]/=length;
                 }
                 // Add the normal to each of the vertices
                 repeat(k, 3)
                 {
-                    *((float*) (vertex_data+12+(triangle_vertex[k]<<5)))+=front_xyz[X];
-                    *((float*) (vertex_data+16+(triangle_vertex[k]<<5)))+=front_xyz[Y];
-                    *((float*) (vertex_data+20+(triangle_vertex[k]<<5)))+=front_xyz[Z];
+                    *((float*) (vertex_data+12+(triangle_vertex[k]<<5)))+=front_xyz[0];
+                    *((float*) (vertex_data+16+(triangle_vertex[k]<<5)))+=front_xyz[1];
+                    *((float*) (vertex_data+20+(triangle_vertex[k]<<5)))+=front_xyz[2];
                 }
             }
             triangle_data+=2;  // Skip number of fans
@@ -527,11 +534,6 @@ void remove_cartoon_lines(unsigned short* cartoon_data)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
-#define USED_TEMPORARY 2
-#define USED_PERMANENT 1
-
-//-----------------------------------------------------------------------------------------------
 unsigned char* ddd_create_strip(unsigned char* helper_data, unsigned char* new_data, unsigned short main_triangle, unsigned short num_triangle)
 {
     // <ZZ> This function adds a strip for the strip_fan_geometry function...  Returns next primitive
@@ -1664,20 +1666,20 @@ void ddd_decode_bone_frame(unsigned char** olddata_spot, unsigned char** newdata
         *((float*) newdata) = x;  newdata+=4;
         *((float*) newdata) = y;  newdata+=4;
         *((float*) newdata) = z;  newdata+=4;
-        front_xyz[X] = x;
-        front_xyz[Y] = y;
-        front_xyz[Z] = z;
+        front_xyz[0] = x;
+        front_xyz[1] = y;
+        front_xyz[2] = z;
 
 
         // Bone vector
         joint = *((unsigned short*) (bone_data + (i*9) + 3));
-        bone_xyz[X] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6)))) * scale;
-        bone_xyz[Y] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 2))) * scale;
-        bone_xyz[Z] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 4))) * scale;
+        bone_xyz[0] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6)))) * scale;
+        bone_xyz[1] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 2))) * scale;
+        bone_xyz[2] = ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 4))) * scale;
         joint = *((unsigned short*) (bone_data + (i*9) + 1));
-        bone_xyz[X] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6)))) * scale;
-        bone_xyz[Y] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 2))) * scale;
-        bone_xyz[Z] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 4))) * scale;
+        bone_xyz[0] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6)))) * scale;
+        bone_xyz[1] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 2))) * scale;
+        bone_xyz[2] -= ((float) ((signed short) sdf_read_unsigned_short(joint_position_data + (joint*6) + 4))) * scale;
 
 
         // Calculate side normal
@@ -1685,7 +1687,7 @@ void ddd_decode_bone_frame(unsigned char** olddata_spot, unsigned char** newdata
         distance = vector_length(side_xyz);
         if(distance > 0.001f)
         {
-            x = side_xyz[X]/distance;  y = side_xyz[Y]/distance;  z = side_xyz[Z]/distance;
+            x = side_xyz[0]/distance;  y = side_xyz[1]/distance;  z = side_xyz[2]/distance;
         }
         else
         {

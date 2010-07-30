@@ -1,5 +1,18 @@
 #include "room.h"
 
+#include "soulfu.h"
+#include "display.h"
+#include "common.h"
+#include "datafile.h"
+#include "random.h"
+#include "object.h"
+#include "dcodeddd.h"
+#include "volume.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 unsigned short global_num_vertex = 0;
 unsigned short global_num_tex_vertex = 0;
 unsigned short global_num_triangle = 0;
@@ -41,15 +54,15 @@ void room_select_add(unsigned short item, unsigned char* item_xyz, unsigned char
         room_select_list[room_select_num] = item;
         if(axes > 0)
         {
-            room_select_xyz[room_select_num][X] = ((signed short) sdf_read_unsigned_short(item_xyz)) * ONE_OVER_256;
+            room_select_xyz[room_select_num][0] = ((signed short) sdf_read_unsigned_short(item_xyz)) * ONE_OVER_256;
         }
         if(axes > 1)
         {
-            room_select_xyz[room_select_num][Y] = ((signed short) sdf_read_unsigned_short(item_xyz+2)) * ONE_OVER_256;
+            room_select_xyz[room_select_num][1] = ((signed short) sdf_read_unsigned_short(item_xyz+2)) * ONE_OVER_256;
         }
         if(axes > 2)
         {
-            room_select_xyz[room_select_num][Z] = ((signed short) sdf_read_unsigned_short(item_xyz+4)) * ONE_OVER_256;
+            room_select_xyz[room_select_num][2] = ((signed short) sdf_read_unsigned_short(item_xyz+4)) * ONE_OVER_256;
         }
         room_select_data[room_select_num] = item_xyz;
         room_select_axes[room_select_num] = axes;
@@ -82,9 +95,9 @@ void room_select_remove(unsigned short item)
         while(item < (room_select_num-1))
         {
             room_select_list[item] = room_select_list[item+1];
-            room_select_xyz[item][X] = room_select_xyz[item+1][X];
-            room_select_xyz[item][Y] = room_select_xyz[item+1][Y];
-            room_select_xyz[item][Z] = room_select_xyz[item+1][Z];
+            room_select_xyz[item][0] = room_select_xyz[item+1][0];
+            room_select_xyz[item][1] = room_select_xyz[item+1][1];
+            room_select_xyz[item][2] = room_select_xyz[item+1][2];
             room_select_data[item] = room_select_data[item+1];
             room_select_axes[item] = room_select_axes[item+1];
             room_select_flag[item] = room_select_flag[item+1];
@@ -103,15 +116,15 @@ void room_select_update_xyz(void)
         axes = room_select_axes[i];
         if(axes > 0)
         {
-            room_select_xyz[i][X] = ((signed short) sdf_read_unsigned_short(room_select_data[i])) * ONE_OVER_256;
+            room_select_xyz[i][0] = ((signed short) sdf_read_unsigned_short(room_select_data[i])) * ONE_OVER_256;
         }
         if(axes > 1)
         {
-            room_select_xyz[i][Y] = ((signed short) sdf_read_unsigned_short(room_select_data[i]+2)) * ONE_OVER_256;
+            room_select_xyz[i][1] = ((signed short) sdf_read_unsigned_short(room_select_data[i]+2)) * ONE_OVER_256;
         }
         if(axes > 2)
         {
-            room_select_xyz[i][Z] = ((signed short) sdf_read_unsigned_short(room_select_data[i]+4)) * ONE_OVER_256;
+            room_select_xyz[i][2] = ((signed short) sdf_read_unsigned_short(room_select_data[i]+4)) * ONE_OVER_256;
         }
     }
 }
@@ -186,19 +199,19 @@ void intersect_xy_lines(float* info_a, float* info_b, float* write_xy)
     float percent;
 
 //log_message("INFO:   Trying to intersect two lines...");
-//log_message("INFO:     Line A from   (%f, %f)", info_a[X], info_a[Y]);
+//log_message("INFO:     Line A from   (%f, %f)", info_a[0], info_a[1]);
 //log_message("INFO:     Line A vector (%f, %f)", info_a[2], info_a[3]);
-//log_message("INFO:     Line B from   (%f, %f)", info_b[X], info_b[Y]);
+//log_message("INFO:     Line B from   (%f, %f)", info_b[0], info_b[1]);
 //log_message("INFO:     Line B vector (%f, %f)", info_b[2], info_b[3]);
 
 
-//    normal_xy[X] = (-info_a[3]);
-//    normal_xy[Y] = (info_a[2]);
-//    offset_xy[X] = (info_a[X] - (info_b[X] + (info_b[2]*percent)));
-//    offset_xy[Y] = (info_a[Y] - (info_b[Y] + (info_b[3]*percent)));
+//    normal_xy[0] = (-info_a[3]);
+//    normal_xy[1] = (info_a[2]);
+//    offset_xy[0] = (info_a[0] - (info_b[0] + (info_b[2]*percent)));
+//    offset_xy[1] = (info_a[1] - (info_b[1] + (info_b[3]*percent)));
 //    find percent where....
-//        (offset_xy[X] * normal_xy[X]) + (offset_xy[Y] * normal_xy[Y]) == 0
-//    percent = (-info_a[X]*info_a[3]+info_b[X]*info_a[3]+info_a[Y]*info_a[2]-info_b[Y]*info_a[2]) / (info_b[3]*info_a[2] - info_b[2]*info_a[3])
+//        (offset_xy[0] * normal_xy[0]) + (offset_xy[1] * normal_xy[1]) == 0
+//    percent = (-info_a[0]*info_a[3]+info_b[0]*info_a[3]+info_a[1]*info_a[2]-info_b[1]*info_a[2]) / (info_b[3]*info_a[2] - info_b[2]*info_a[3])
 
 
 
@@ -207,10 +220,10 @@ void intersect_xy_lines(float* info_a, float* info_b, float* write_xy)
     if(denominator != 0.0f)
     {
         // Lines are not parallel...
-        percent = (-info_a[X]*info_a[3]+info_b[X]*info_a[3]+info_a[Y]*info_a[2]-info_b[Y]*info_a[2]) / denominator; 
-        write_xy[X] = info_b[X] + (info_b[2]*percent);
-        write_xy[Y] = info_b[Y] + (info_b[3]*percent);
-//log_message("INFO:     Intersection found at (%f, %f)", write_xy[X], write_xy[Y]);
+        percent = (-info_a[0]*info_a[3]+info_b[0]*info_a[3]+info_a[1]*info_a[2]-info_b[1]*info_a[2]) / denominator; 
+        write_xy[0] = info_b[0] + (info_b[2]*percent);
+        write_xy[1] = info_b[1] + (info_b[3]*percent);
+//log_message("INFO:     Intersection found at (%f, %f)", write_xy[0], write_xy[1]);
     }
 }
 
@@ -314,12 +327,12 @@ unsigned char* room_ddd_plop_function(unsigned char function, unsigned char* wri
 
 
             // Then do the rotation...
-            room_rotate_macro(x, y, (-fore_xy[X]), fore_xy[Y], temp);
+            room_rotate_macro(x, y, (-fore_xy[0]), fore_xy[1], temp);
 
 
             // Offset translation...
-            x += position_xyz[X];
-            y += position_xyz[Y];
+            x += position_xyz[0];
+            y += position_xyz[1];
             if(pillar_stretch && z > 8.0f)
             {
                 // Do thing for pillars to make 'em reach ceiling...
@@ -328,7 +341,7 @@ unsigned char* room_ddd_plop_function(unsigned char function, unsigned char* wri
             else
             {
                 // Normal z offset...
-                z += position_xyz[Z];
+                z += position_xyz[2];
             }
 
 
@@ -465,12 +478,12 @@ unsigned char* room_ddd_plop_function(unsigned char function, unsigned char* wri
 //      object group data), sine, and cosine are all setup correctly...
 #define room_draw_srf_object_helper()                   \
 {                                                       \
-    temp_xyz[X] = (((signed short) sdf_read_unsigned_short(object_group_data+16)) * ONE_OVER_256);  \
-    temp_xyz[Y] = (((signed short) sdf_read_unsigned_short(object_group_data+18)) * ONE_OVER_256);  \
-    temp_xyz[Z] = (((signed short) sdf_read_unsigned_short(object_group_data+20)) * ONE_OVER_256);  \
-    vertex_xyz[X] = (cosine*temp_xyz[X]) - (sine*temp_xyz[Y]) + x; \
-    vertex_xyz[Y] = (sine*temp_xyz[X]) + (cosine*temp_xyz[Y]) + y; \
-    vertex_xyz[Z] = temp_xyz[Z] + z; \
+    temp_xyz[0] = (((signed short) sdf_read_unsigned_short(object_group_data+16)) * ONE_OVER_256);  \
+    temp_xyz[1] = (((signed short) sdf_read_unsigned_short(object_group_data+18)) * ONE_OVER_256);  \
+    temp_xyz[2] = (((signed short) sdf_read_unsigned_short(object_group_data+20)) * ONE_OVER_256);  \
+    vertex_xyz[0] = (cosine*temp_xyz[0]) - (sine*temp_xyz[1]) + x; \
+    vertex_xyz[1] = (sine*temp_xyz[0]) + (cosine*temp_xyz[1]) + y; \
+    vertex_xyz[2] = temp_xyz[2] + z; \
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -532,67 +545,67 @@ log_message("INFO:   Room_plop_all...  Have %d wall pillars...", num_exterior_wa
     {
         vertex = i;
         vertex = sdf_read_unsigned_short(exterior_wall_data + (vertex*3));
-        vertex_xyz[X] = *((float*) (vertex_data + (vertex*26)));
-        vertex_xyz[Y] = *((float*) (vertex_data + (vertex*26) + 4));
-        vertex_xyz[Z] = *((float*) (vertex_data + (vertex*26) + 8));
+        vertex_xyz[0] = *((float*) (vertex_data + (vertex*26)));
+        vertex_xyz[1] = *((float*) (vertex_data + (vertex*26) + 4));
+        vertex_xyz[2] = *((float*) (vertex_data + (vertex*26) + 8));
 
         vertex = (i + 1) % num_exterior_wall;
         vertex = sdf_read_unsigned_short(exterior_wall_data + (vertex*3));
-        next_vertex_xyz[X] = *((float*) (vertex_data + (vertex*26)));
-        next_vertex_xyz[Y] = *((float*) (vertex_data + (vertex*26) + 4));
-        next_vertex_xyz[Z] = *((float*) (vertex_data + (vertex*26) + 8));
+        next_vertex_xyz[0] = *((float*) (vertex_data + (vertex*26)));
+        next_vertex_xyz[1] = *((float*) (vertex_data + (vertex*26) + 4));
+        next_vertex_xyz[2] = *((float*) (vertex_data + (vertex*26) + 8));
 
         vertex = (i + num_exterior_wall - 1) % num_exterior_wall;
         vertex = sdf_read_unsigned_short(exterior_wall_data + (vertex*3));
-        last_vertex_xyz[X] = *((float*) (vertex_data + (vertex*26)));
-        last_vertex_xyz[Y] = *((float*) (vertex_data + (vertex*26) + 4));
-        last_vertex_xyz[Z] = *((float*) (vertex_data + (vertex*26) + 8));
+        last_vertex_xyz[0] = *((float*) (vertex_data + (vertex*26)));
+        last_vertex_xyz[1] = *((float*) (vertex_data + (vertex*26) + 4));
+        last_vertex_xyz[2] = *((float*) (vertex_data + (vertex*26) + 8));
 
         // Check distance from current vertex to last vertex...  Don't plop if close together...
-        distance_xyz[X] = vertex_xyz[X] - last_vertex_xyz[X];
-        distance_xyz[Y] = vertex_xyz[Y] - last_vertex_xyz[Y];
-        distance_xyz[Z] = 0.0f;
+        distance_xyz[0] = vertex_xyz[0] - last_vertex_xyz[0];
+        distance_xyz[1] = vertex_xyz[1] - last_vertex_xyz[1];
+        distance_xyz[2] = 0.0f;
         distance = vector_length(distance_xyz);
         if(distance > MINIMUM_WALL_LENGTH)
         {
             // Check distance from current vertex to next vertex...  Use lowest z if close together...
-            distance_xyz[X] = vertex_xyz[X] - next_vertex_xyz[X];
-            distance_xyz[Y] = vertex_xyz[Y] - next_vertex_xyz[Y];
+            distance_xyz[0] = vertex_xyz[0] - next_vertex_xyz[0];
+            distance_xyz[1] = vertex_xyz[1] - next_vertex_xyz[1];
             distance = vector_length(distance_xyz);
             if(distance < MINIMUM_WALL_LENGTH)
             {
-                if(next_vertex_xyz[Z] < vertex_xyz[Z])
+                if(next_vertex_xyz[2] < vertex_xyz[2])
                 {
-                    vertex_xyz[Z] = next_vertex_xyz[Z];
+                    vertex_xyz[2] = next_vertex_xyz[2];
                 }
             }
 
 
             // Find the forward normal of the pillar, by looking at normals of adjacent walls...
-            last_wall_xy[X] = -(vertex_xyz[Y] - last_vertex_xyz[Y]);
-            last_wall_xy[Y] = vertex_xyz[X] - last_vertex_xyz[X];
+            last_wall_xy[0] = -(vertex_xyz[1] - last_vertex_xyz[1]);
+            last_wall_xy[1] = vertex_xyz[0] - last_vertex_xyz[0];
             if(distance > MINIMUM_WALL_LENGTH)
             {
-                next_wall_xy[X] = -(next_vertex_xyz[Y] - vertex_xyz[Y]);
-                next_wall_xy[Y] = next_vertex_xyz[X] - vertex_xyz[X];
+                next_wall_xy[0] = -(next_vertex_xyz[1] - vertex_xyz[1]);
+                next_wall_xy[1] = next_vertex_xyz[0] - vertex_xyz[0];
             }
             else
             {
-                next_wall_xy[X] = last_wall_xy[X];
-                next_wall_xy[Y] = last_wall_xy[Y];
+                next_wall_xy[0] = last_wall_xy[0];
+                next_wall_xy[1] = last_wall_xy[1];
             }
-            distance_xyz[X] = last_wall_xy[X] + next_wall_xy[X];
-            distance_xyz[Y] = last_wall_xy[Y] + next_wall_xy[Y];
+            distance_xyz[0] = last_wall_xy[0] + next_wall_xy[0];
+            distance_xyz[1] = last_wall_xy[1] + next_wall_xy[1];
             distance = vector_length(distance_xyz);
             if(distance > 0.001f)
             {
-                distance_xyz[X] /= distance;
-                distance_xyz[Y] /= distance;
+                distance_xyz[0] /= distance;
+                distance_xyz[1] /= distance;
             }
             else
             {
-                distance_xyz[X] = 0.0f;
-                distance_xyz[Y] = 1.0f;
+                distance_xyz[0] = 0.0f;
+                distance_xyz[1] = 1.0f;
             }
 
 
@@ -615,7 +628,7 @@ log_message("INFO:     Plopping pillar %d", i);
     x = 0.0f;
     y = 0.0f;
     z = 0.0f;
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
 
@@ -671,9 +684,9 @@ log_message("INFO:     Plopping pillar %d", i);
 //log_message("INFO:       Using textures %d, %d, %d, %d", texture_list[0], texture_list[1], texture_list[2], texture_list[3]);
 
 
-                        angle = ((unsigned short)(rotation + (object_group_data[15]<<8))) * (2.0f * PI / 65536.0f);
-                        distance_xyz[X] = -((float) sin(angle));
-                        distance_xyz[Y] = (float) cos(angle);
+                        angle = ((unsigned short)(rotation + (object_group_data[15]<<8))) * (2.0f * M_PI / 65536.0f);
+                        distance_xyz[0] = -((float) sin(angle));
+                        distance_xyz[1] = (float) cos(angle);
                         write = room_ddd_plop_function(function, write, model_data, 0, texture_list, vertex_xyz, distance_xyz, FALSE);
                     }
                 }
@@ -733,7 +746,7 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
     float angle, sine, cosine;
 
 
-    angle = rotation * (-2.0f * PI / 65536.0f);
+    angle = rotation * (-2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
 
@@ -757,48 +770,48 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
 
 
     // Find the positions of the two vertices that the segment lies between...
-    vertex_xyz[X] = ((float*) (vertex_data + (26*vertex)))[X];
-    vertex_xyz[Y] = ((float*) (vertex_data + (26*vertex)))[Y];
-    vertex_xyz[Z] = ((float*) (vertex_data + (26*vertex)))[Z];
-    last_vertex_xyz[X] = ((float*) (vertex_data + (26*last_vertex)))[X];
-    last_vertex_xyz[Y] = ((float*) (vertex_data + (26*last_vertex)))[Y];
-    last_vertex_xyz[Z] = ((float*) (vertex_data + (26*last_vertex)))[Z];
-//log_message("INFO:     Last vertex at %f, %f, %f", last_vertex_xyz[X], last_vertex_xyz[Y], last_vertex_xyz[Z]);
-//log_message("INFO:     Vertex at %f, %f, %f", vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z]);
+    vertex_xyz[0] = ((float*) (vertex_data + (26*vertex)))[0];
+    vertex_xyz[1] = ((float*) (vertex_data + (26*vertex)))[1];
+    vertex_xyz[2] = ((float*) (vertex_data + (26*vertex)))[2];
+    last_vertex_xyz[0] = ((float*) (vertex_data + (26*last_vertex)))[0];
+    last_vertex_xyz[1] = ((float*) (vertex_data + (26*last_vertex)))[1];
+    last_vertex_xyz[2] = ((float*) (vertex_data + (26*last_vertex)))[2];
+//log_message("INFO:     Last vertex at %f, %f, %f", last_vertex_xyz[0], last_vertex_xyz[1], last_vertex_xyz[2]);
+//log_message("INFO:     Vertex at %f, %f, %f", vertex_xyz[0], vertex_xyz[1], vertex_xyz[2]);
 
 
     // Find the vector from the last vertex to the current one...
-    vector_xyz[X] = vertex_xyz[X] - last_vertex_xyz[X];
-    vector_xyz[Y] = vertex_xyz[Y] - last_vertex_xyz[Y];
-    vector_xyz[Z] = 0.0f;
+    vector_xyz[0] = vertex_xyz[0] - last_vertex_xyz[0];
+    vector_xyz[1] = vertex_xyz[1] - last_vertex_xyz[1];
+    vector_xyz[2] = 0.0f;
     segment_length = vector_length(vector_xyz);
     if(segment_length < MINIMUM_WALL_LENGTH)
     {
 //        log_message("INFO:     Room_wall_segment_function():  XY Segment length was %f...  Too short to draw", segment_length);
         return write;
     }
-    vector_xyz[Z] = vertex_xyz[Z] - last_vertex_xyz[Z];
+    vector_xyz[2] = vertex_xyz[2] - last_vertex_xyz[2];
 //    segment_length = vector_length(vector_xyz);
 //log_message("INFO:     Segment Length is %f", segment_length);
 
 
     // Find the normal to that vector (wall segment)...
-    distance_xyz[X] = 0.0f;
-    distance_xyz[Y] = 0.0f;
-    distance_xyz[Z] = 1.0f;
+    distance_xyz[0] = 0.0f;
+    distance_xyz[1] = 0.0f;
+    distance_xyz[2] = 1.0f;
     cross_product(vector_xyz, distance_xyz, normal_xyz);
     distance = vector_length(normal_xyz);
     if(distance > 0.0001f)
     {
-        normal_xyz[X]/=distance;
-        normal_xyz[Y]/=distance;
+        normal_xyz[0]/=distance;
+        normal_xyz[1]/=distance;
     }
 
 
     // And scale the vector by 1/32...  (because wall DDD's are 32ft long...)
-    vector_xyz[X]*=0.03125f;  //0.0625f;
-    vector_xyz[Y]*=0.03125f;  //0.0625f;
-    vector_xyz[Z]*=0.03125f;  //0.0625f;
+    vector_xyz[0]*=0.03125f;  //0.0625f;
+    vector_xyz[1]*=0.03125f;  //0.0625f;
+    vector_xyz[2]*=0.03125f;  //0.0625f;
 // LOLO
 
 
@@ -927,23 +940,23 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
             {
                 // Other vertices are skewed according to the start and stop
                 // positions of the wall segment...
-                z += (vertex_xyz[Z]*percent) + (last_vertex_xyz[Z]*inverse);
+                z += (vertex_xyz[2]*percent) + (last_vertex_xyz[2]*inverse);
             }
 
 
 
             // Then use vector_xyz and normal_xyz to do the rotation & scaling...
-            distance_xyz[X] = x*vector_xyz[X] - y*normal_xyz[X];
-            distance_xyz[Y] = x*vector_xyz[Y] - y*normal_xyz[Y];
-            x = distance_xyz[X] + last_vertex_xyz[X];
-            y = distance_xyz[Y] + last_vertex_xyz[Y];
+            distance_xyz[0] = x*vector_xyz[0] - y*normal_xyz[0];
+            distance_xyz[1] = x*vector_xyz[1] - y*normal_xyz[1];
+            x = distance_xyz[0] + last_vertex_xyz[0];
+            y = distance_xyz[1] + last_vertex_xyz[1];
 
 
             // Write our intersection info while we're at it...  (Better than welding...  I hope...)
             intersection_info[0] = x;
             intersection_info[1] = y;
-            intersection_info[2] = vector_xyz[X];
-            intersection_info[3] = vector_xyz[Y];
+            intersection_info[2] = vector_xyz[0];
+            intersection_info[3] = vector_xyz[1];
 //log_message("INFO:   Generated intersection info for vertex %d", i);
 //log_message("INFO:     Info[0] == %f", intersection_info[0]);
 //log_message("INFO:     Info[1] == %f", intersection_info[1]);
@@ -981,19 +994,19 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
                         {
 //log_message("INFO:         Matched adjacent segments");
                             // Check model tolerance distance...
-                            distance_xyz[X] = intersection_info[4] + room_weldable_intersection_info[j][4];
-                            distance_xyz[Y] = intersection_info[5] - room_weldable_intersection_info[j][5];
-                            distance_xyz[Z] = intersection_info[6] - room_weldable_intersection_info[j][6];
-                            distance = (distance_xyz[X]*distance_xyz[X]) + (distance_xyz[Y]*distance_xyz[Y]) + (distance_xyz[Z]*distance_xyz[Z]);
+                            distance_xyz[0] = intersection_info[4] + room_weldable_intersection_info[j][4];
+                            distance_xyz[1] = intersection_info[5] - room_weldable_intersection_info[j][5];
+                            distance_xyz[2] = intersection_info[6] - room_weldable_intersection_info[j][6];
+                            distance = (distance_xyz[0]*distance_xyz[0]) + (distance_xyz[1]*distance_xyz[1]) + (distance_xyz[2]*distance_xyz[2]);
                             if(distance < 0.01f)
                             {
 //log_message("INFO:         Beat model tolerance distance");
                                 // Check actual in-world distance...
                                 weld_xyz = (float*) (vertex_data + room_weldable_vertex_list[j]*26);
-                                distance_xyz[X] = x - weld_xyz[X];
-                                distance_xyz[Y] = y - weld_xyz[Y];
-                                distance_xyz[Z] = z - weld_xyz[Z];
-                                distance = (distance_xyz[X]*distance_xyz[X]) + (distance_xyz[Y]*distance_xyz[Y]) + (distance_xyz[Z]*distance_xyz[Z]);
+                                distance_xyz[0] = x - weld_xyz[0];
+                                distance_xyz[1] = y - weld_xyz[1];
+                                distance_xyz[2] = z - weld_xyz[2];
+                                distance = (distance_xyz[0]*distance_xyz[0]) + (distance_xyz[1]*distance_xyz[1]) + (distance_xyz[2]*distance_xyz[2]);
                                 if(distance < best_distance)
                                 {
 //log_message("INFO:         Beat best distance");
@@ -1015,13 +1028,13 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
                         {
                             // Only if we're actually addin' vertices...
                             weld_xyz = (float*) (vertex_data + best_vertex*26);
-//log_message("INFO:   Trying to weld vertex at (%f, %f, %f) to one at (%f, %f, %f)", weld_xyz[X], weld_xyz[Y], weld_xyz[Z], x, y, z);
-                            weld_xyz[X] = (weld_xyz[X] + x)*0.5f;
-                            weld_xyz[Y] = (weld_xyz[Y] + y)*0.5f;
-                            weld_xyz[Z] = (weld_xyz[Z] + z)*0.5f;
+//log_message("INFO:   Trying to weld vertex at (%f, %f, %f) to one at (%f, %f, %f)", weld_xyz[0], weld_xyz[1], weld_xyz[2], x, y, z);
+                            weld_xyz[0] = (weld_xyz[0] + x)*0.5f;
+                            weld_xyz[1] = (weld_xyz[1] + y)*0.5f;
+                            weld_xyz[2] = (weld_xyz[2] + z)*0.5f;
 
 
-                            // Weld_xyz[X] and Weld_xyz[Y] are only used if intersection routine fails...
+                            // Weld_xyz[0] and Weld_xyz[1] are only used if intersection routine fails...
 // !!!BAD!!!
 // !!!BAD!!! This only kinda worked...  Seems like it gets outta whack when room is rotated though, so I got rid of it...
 // !!!BAD!!!
@@ -1031,7 +1044,7 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
 // !!!BAD!!!
 
 
-//log_message("INFO:   Welded DDD vertex %d to Room vertex %d (%f, %f, %f)", i, best_vertex, weld_xyz[X], weld_xyz[Y], weld_xyz[Z]);
+//log_message("INFO:   Welded DDD vertex %d to Room vertex %d (%f, %f, %f)", i, best_vertex, weld_xyz[0], weld_xyz[1], weld_xyz[2]);
                         }
 
                         // Remove room vertex from weldable list
@@ -1232,7 +1245,7 @@ unsigned char* room_wall_segment_function(unsigned char function, unsigned char*
                     // Funky thing for making lower level doors use Floor2...
                     if(texture_to_use == 0)
                     {
-                        if(vertex_xyz[Z] < -3.0f && last_vertex_xyz[Z] < -3.0f)
+                        if(vertex_xyz[2] < -3.0f && last_vertex_xyz[2] < -3.0f)
                         {
                             texture_to_use = 7;
                         }
@@ -1293,11 +1306,11 @@ unsigned char* room_exterior_wall_function(unsigned char function, unsigned char
     {
         last_vertex = vertex;
         vertex = sdf_read_unsigned_short(read);  read+=3;
-        distance_xyz[X] = ((float*) (vertex_data + (26*vertex)))[X];
-        distance_xyz[Y] = ((float*) (vertex_data + (26*vertex)))[Y];
-        distance_xyz[X] -= ((float*) (vertex_data + (26*last_vertex)))[X];
-        distance_xyz[Y] -= ((float*) (vertex_data + (26*last_vertex)))[Y];
-        distance_xyz[Z] = 0.0f;
+        distance_xyz[0] = ((float*) (vertex_data + (26*vertex)))[0];
+        distance_xyz[1] = ((float*) (vertex_data + (26*vertex)))[1];
+        distance_xyz[0] -= ((float*) (vertex_data + (26*last_vertex)))[0];
+        distance_xyz[1] -= ((float*) (vertex_data + (26*last_vertex)))[1];
+        distance_xyz[2] = 0.0f;
         distance = vector_length(distance_xyz);
         perimeter+=distance;
     }
@@ -1324,11 +1337,11 @@ unsigned char* room_exterior_wall_function(unsigned char function, unsigned char
 
         wall_texture_offset = walls_we_can_fit * (distance / perimeter);
         wall_texture_offset = wall_texture_offset - ((unsigned short) wall_texture_offset);
-        distance_xyz[X] = ((float*) (vertex_data + (26*vertex)))[X];
-        distance_xyz[Y] = ((float*) (vertex_data + (26*vertex)))[Y];
-        distance_xyz[X] -= ((float*) (vertex_data + (26*last_vertex)))[X];
-        distance_xyz[Y] -= ((float*) (vertex_data + (26*last_vertex)))[Y];
-        distance_xyz[Z] = 0.0f;
+        distance_xyz[0] = ((float*) (vertex_data + (26*vertex)))[0];
+        distance_xyz[1] = ((float*) (vertex_data + (26*vertex)))[1];
+        distance_xyz[0] -= ((float*) (vertex_data + (26*last_vertex)))[0];
+        distance_xyz[1] -= ((float*) (vertex_data + (26*last_vertex)))[1];
+        distance_xyz[2] = 0.0f;
         distance += vector_length(distance_xyz);
 
 
@@ -1466,43 +1479,43 @@ void room_heightmap_triangle(signed short* heightmap_data, float* fa_xyz, float*
     a_order = 0;
     b_order = 0;
     c_order = 0;
-    if(fb_xyz[Y] < fa_xyz[Y]) { a_order++; } else { b_order++; }
-    if(fc_xyz[Y] < fa_xyz[Y]) { a_order++; } else { c_order++; }
-    if(fc_xyz[Y] < fb_xyz[Y]) { b_order++; } else { c_order++; }
+    if(fb_xyz[1] < fa_xyz[1]) { a_order++; } else { b_order++; }
+    if(fc_xyz[1] < fa_xyz[1]) { a_order++; } else { c_order++; }
+    if(fc_xyz[1] < fb_xyz[1]) { b_order++; } else { c_order++; }
 
 
     // Convert room coordinates into heightmap coordinates...
-    vertex_xyz[a_order][X] = (signed short) ((fa_xyz[X]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[a_order][Y] = (signed short) ((fa_xyz[Y]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[a_order][Z] = (signed short) (fa_xyz[Z]*16384/ROOM_HEIGHTMAP_Z);
-    vertex_xyz[b_order][X] = (signed short) ((fb_xyz[X]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[b_order][Y] = (signed short) ((fb_xyz[Y]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[b_order][Z] = (signed short) (fb_xyz[Z]*16384/ROOM_HEIGHTMAP_Z);
-    vertex_xyz[c_order][X] = (signed short) ((fc_xyz[X]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[c_order][Y] = (signed short) ((fc_xyz[Y]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
-    vertex_xyz[c_order][Z] = (signed short) (fc_xyz[Z]*16384/ROOM_HEIGHTMAP_Z);
+    vertex_xyz[a_order][0] = (signed short) ((fa_xyz[0]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[a_order][1] = (signed short) ((fa_xyz[1]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[a_order][2] = (signed short) (fa_xyz[2]*16384/ROOM_HEIGHTMAP_Z);
+    vertex_xyz[b_order][0] = (signed short) ((fb_xyz[0]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[b_order][1] = (signed short) ((fb_xyz[1]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[b_order][2] = (signed short) (fb_xyz[2]*16384/ROOM_HEIGHTMAP_Z);
+    vertex_xyz[c_order][0] = (signed short) ((fc_xyz[0]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[c_order][1] = (signed short) ((fc_xyz[1]*ROOM_HEIGHTMAP_PRECISION) + (ROOM_HEIGHTMAP_SIZE>>1));
+    vertex_xyz[c_order][2] = (signed short) (fc_xyz[2]*16384/ROOM_HEIGHTMAP_Z);
 
 
 
     // Draw the triangle in two sections...
-    y = vertex_xyz[0][Y];
-    full_size = vertex_xyz[2][Y] - vertex_xyz[0][Y];
+    y = vertex_xyz[0][1];
+    full_size = vertex_xyz[2][1] - vertex_xyz[0][1];
 
 
     // First section...
-    section_size = vertex_xyz[1][Y] - vertex_xyz[0][Y];
-//log_message("INFO:   room_heightmap_triangle():  Drawing triangle from (%d, %d, %d) to (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[0][X], vertex_xyz[0][Y], vertex_xyz[0][Z], vertex_xyz[1][X], vertex_xyz[1][Y], vertex_xyz[1][Z], vertex_xyz[2][X], vertex_xyz[2][Y], vertex_xyz[2][Z]);
+    section_size = vertex_xyz[1][1] - vertex_xyz[0][1];
+//log_message("INFO:   room_heightmap_triangle():  Drawing triangle from (%d, %d, %d) to (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[0][0], vertex_xyz[0][1], vertex_xyz[0][2], vertex_xyz[1][0], vertex_xyz[1][1], vertex_xyz[1][2], vertex_xyz[2][0], vertex_xyz[2][1], vertex_xyz[2][2]);
 
 
-//log_message("INFO:   room_heightmap_triangle():  Drawing first section from (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[0][X], vertex_xyz[0][Y], vertex_xyz[0][Z], vertex_xyz[1][X], vertex_xyz[1][Y], vertex_xyz[1][Z]);
-    while(y < vertex_xyz[1][Y])
+//log_message("INFO:   room_heightmap_triangle():  Drawing first section from (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[0][0], vertex_xyz[0][1], vertex_xyz[0][2], vertex_xyz[1][0], vertex_xyz[1][1], vertex_xyz[1][2]);
+    while(y < vertex_xyz[1][1])
     {
         if(y > ROOM_HEIGHTMAP_BORDER && y < (ROOM_HEIGHTMAP_SIZE-ROOM_HEIGHTMAP_BORDER-1))
         {
-            left_x =  ((y-vertex_xyz[0][Y])*(vertex_xyz[1][X] - vertex_xyz[0][X])/section_size) + vertex_xyz[0][X];
-            right_x = ((y-vertex_xyz[0][Y])*(vertex_xyz[2][X] - vertex_xyz[0][X])/full_size) + vertex_xyz[0][X];
-            left_z =  ((y-vertex_xyz[0][Y])*(vertex_xyz[1][Z] - vertex_xyz[0][Z])/section_size) + vertex_xyz[0][Z];
-            right_z = ((y-vertex_xyz[0][Y])*(vertex_xyz[2][Z] - vertex_xyz[0][Z])/full_size) + vertex_xyz[0][Z];
+            left_x =  ((y-vertex_xyz[0][1])*(vertex_xyz[1][0] - vertex_xyz[0][0])/section_size) + vertex_xyz[0][0];
+            right_x = ((y-vertex_xyz[0][1])*(vertex_xyz[2][0] - vertex_xyz[0][0])/full_size) + vertex_xyz[0][0];
+            left_z =  ((y-vertex_xyz[0][1])*(vertex_xyz[1][2] - vertex_xyz[0][2])/section_size) + vertex_xyz[0][2];
+            right_z = ((y-vertex_xyz[0][1])*(vertex_xyz[2][2] - vertex_xyz[0][2])/full_size) + vertex_xyz[0][2];
             if(right_x < left_x) { x = left_x;  left_x = right_x;  right_x = x;  z = left_z;  left_z = right_z;  right_z = z; }
 //log_message("INFO:     Y line is at %d, left is %d (%d high), right is %d (%d high)", y, left_x, left_z, right_x, right_z);
             x = left_x;
@@ -1529,16 +1542,16 @@ void room_heightmap_triangle(signed short* heightmap_data, float* fa_xyz, float*
 
 
     // Second section...
-//log_message("INFO:   room_heightmap_triangle():  Drawing second section from (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[1][X], vertex_xyz[1][Y], vertex_xyz[1][Z], vertex_xyz[2][X], vertex_xyz[2][Y], vertex_xyz[2][Z]);
-    section_size = vertex_xyz[2][Y] - vertex_xyz[1][Y];
-    while(y < vertex_xyz[2][Y])
+//log_message("INFO:   room_heightmap_triangle():  Drawing second section from (%d, %d, %d) to (%d, %d, %d)", vertex_xyz[1][0], vertex_xyz[1][1], vertex_xyz[1][2], vertex_xyz[2][0], vertex_xyz[2][1], vertex_xyz[2][2]);
+    section_size = vertex_xyz[2][1] - vertex_xyz[1][1];
+    while(y < vertex_xyz[2][1])
     {
         if(y > ROOM_HEIGHTMAP_BORDER && y < (ROOM_HEIGHTMAP_SIZE-ROOM_HEIGHTMAP_BORDER-1))
         {
-            left_x =  ((y-vertex_xyz[1][Y])*(vertex_xyz[2][X] - vertex_xyz[1][X])/section_size) + vertex_xyz[1][X];
-            right_x = ((y-vertex_xyz[0][Y])*(vertex_xyz[2][X] - vertex_xyz[0][X])/full_size) + vertex_xyz[0][X];
-            left_z =  ((y-vertex_xyz[1][Y])*(vertex_xyz[2][Z] - vertex_xyz[1][Z])/section_size) + vertex_xyz[1][Z];
-            right_z = ((y-vertex_xyz[0][Y])*(vertex_xyz[2][Z] - vertex_xyz[0][Z])/full_size) + vertex_xyz[0][Z];
+            left_x =  ((y-vertex_xyz[1][1])*(vertex_xyz[2][0] - vertex_xyz[1][0])/section_size) + vertex_xyz[1][0];
+            right_x = ((y-vertex_xyz[0][1])*(vertex_xyz[2][0] - vertex_xyz[0][0])/full_size) + vertex_xyz[0][0];
+            left_z =  ((y-vertex_xyz[1][1])*(vertex_xyz[2][2] - vertex_xyz[1][2])/section_size) + vertex_xyz[1][2];
+            right_z = ((y-vertex_xyz[0][1])*(vertex_xyz[2][2] - vertex_xyz[0][2])/full_size) + vertex_xyz[0][2];
             if(right_x < left_x) { x = left_x;  left_x = right_x;  right_x = x;  z = left_z;  left_z = right_z;  right_z = z; }
 //log_message("INFO:     Y line is at %d, left is %d (%d high), right is %d (%d high)", y, left_x, left_z, right_x, right_z);
             x = left_x;
@@ -1742,9 +1755,9 @@ void room_setup_lighting(unsigned char* data, float* light_xyz, float ambient)
         temp = 0.01f;
     }
     ambient = ambient * 255.0f;
-    final_light_xyz[X] = (light_xyz[X] * (255.0f - ambient)) / -temp;
-    final_light_xyz[Y] = (light_xyz[Y] * (255.0f - ambient)) / -temp;
-    final_light_xyz[Z] = (light_xyz[Z] * (255.0f - ambient)) / -temp;
+    final_light_xyz[0] = (light_xyz[0] * (255.0f - ambient)) / -temp;
+    final_light_xyz[1] = (light_xyz[1] * (255.0f - ambient)) / -temp;
+    final_light_xyz[2] = (light_xyz[2] * (255.0f - ambient)) / -temp;
 
 
     // Figger out the vertex & tex vertex lighting based on normals...
@@ -1784,12 +1797,12 @@ void room_set_texture_data(unsigned char* texture_data, unsigned char texture, u
 //      that the vertex number is valid...
 #define room_draw_srf_vertex_helper(VERTEX)             \
 {                                                       \
-    temp_xyz[X] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6))) * ONE_OVER_256);  \
-    temp_xyz[Y] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+2)) * ONE_OVER_256);  \
-    temp_xyz[Z] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+4)) * ONE_OVER_256);  \
-    vertex_xyz[X] = (cosine*temp_xyz[X]) - (sine*temp_xyz[Y]) + x; \
-    vertex_xyz[Y] = (sine*temp_xyz[X]) + (cosine*temp_xyz[Y]) + y; \
-    vertex_xyz[Z] = temp_xyz[Z] + z; \
+    temp_xyz[0] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6))) * ONE_OVER_256);  \
+    temp_xyz[1] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+2)) * ONE_OVER_256);  \
+    temp_xyz[2] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+4)) * ONE_OVER_256);  \
+    vertex_xyz[0] = (cosine*temp_xyz[0]) - (sine*temp_xyz[1]) + x; \
+    vertex_xyz[1] = (sine*temp_xyz[0]) + (cosine*temp_xyz[1]) + y; \
+    vertex_xyz[2] = temp_xyz[2] + z; \
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -1833,7 +1846,7 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
     x = 0.0f;
     y = 0.0f;
     z = 0.0f;
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
 
@@ -1862,11 +1875,11 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
         repeat(i, num_object)
         {
             // Seed the random number generator...
-            next_random = seed + i;
+            srand(seed + i);
 
 
             // Check the object's percent chance of spawning...
-            chance = random_number;
+            chance = random_number();
             if(chance <= ((unsigned char) (((object_group_data[13]&240)*255)/240)))
             {
                 // Check this object's name, and make sure it's null terminated...
@@ -1907,22 +1920,22 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
                                 {
                                     case 0:
                                         // Default...
-                                        global_spawn_subtype = random_number;
+                                        global_spawn_subtype = random_number();
                                         global_spawn_subtype = (global_spawn_subtype & 63);
                                         break;
                                     case 1:
                                         // Captain...
-                                        global_spawn_subtype = random_number;
+                                        global_spawn_subtype = random_number();
                                         global_spawn_subtype = (global_spawn_subtype & 63) | 64;
                                         break;
                                     case 2:
                                         // Super Captain... 
-                                        global_spawn_subtype = random_number;
+                                        global_spawn_subtype = random_number();
                                         global_spawn_subtype = (global_spawn_subtype & 63) | 128;
                                         break;
                                     case 3:
                                         // Random...
-                                        global_spawn_subtype = random_number;
+                                        global_spawn_subtype = random_number();
                                         break;
                                     case 4:
                                         // Subtype 0...
@@ -1961,7 +1974,7 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
 
                             if(do_spawn)
                             {
-                                child_data = obj_spawn(type, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], script, 65535);
+                                child_data = obj_spawn(type, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], script, 65535);
                                 if(child_data)
                                 {
                                     // Set the current frame to be the first frame of the stand action...
@@ -2016,8 +2029,7 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
         repeat(i, num_exterior_wall)
         {
             // Seed the random number generator...
-            next_random = seed + i;
-
+            srand(seed + i);
 
             last_vertex = vertex;
             vertex = sdf_read_unsigned_short(read);  read+=2;
@@ -2051,26 +2063,26 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
                 if(vertex < num_vertex && last_vertex < num_vertex)
                 {
                     room_draw_srf_vertex_helper(last_vertex);
-                    last_vertex_xyz[X] = vertex_xyz[X];
-                    last_vertex_xyz[Y] = vertex_xyz[Y];
-                    last_vertex_xyz[Z] = vertex_xyz[Z];
+                    last_vertex_xyz[0] = vertex_xyz[0];
+                    last_vertex_xyz[1] = vertex_xyz[1];
+                    last_vertex_xyz[2] = vertex_xyz[2];
                     room_draw_srf_vertex_helper(vertex);
-                    center_xyz[X]=(last_vertex_xyz[X] + vertex_xyz[X])*0.5f;
-                    center_xyz[Y]=(last_vertex_xyz[Y] + vertex_xyz[Y])*0.5f;
-                    center_xyz[Z]=(last_vertex_xyz[Z] + vertex_xyz[Z])*0.5f;
-                    temp_xyz[X] = vertex_xyz[X]-last_vertex_xyz[X];
-                    temp_xyz[Y] = vertex_xyz[Y]-last_vertex_xyz[Y];
-                    perp_xyz[X] = -temp_xyz[Y];
-                    perp_xyz[Y] = temp_xyz[X];
-                    perp_distance = ((float) sqrt(perp_xyz[X]*perp_xyz[X] + perp_xyz[Y]*perp_xyz[Y])) + 0.00000001f;
-                    perp_xyz[X]/=perp_distance;
-                    perp_xyz[Y]/=perp_distance;
-//                    perp_xyz[X]*=-2.85f;
-//                    perp_xyz[Y]*=-2.85f;
-                    perp_xyz[X]*=-0.9f;
-                    perp_xyz[Y]*=-0.9f;
-                    center_xyz[X]+=perp_xyz[X];
-                    center_xyz[Y]+=perp_xyz[Y];
+                    center_xyz[0]=(last_vertex_xyz[0] + vertex_xyz[0])*0.5f;
+                    center_xyz[1]=(last_vertex_xyz[1] + vertex_xyz[1])*0.5f;
+                    center_xyz[2]=(last_vertex_xyz[2] + vertex_xyz[2])*0.5f;
+                    temp_xyz[0] = vertex_xyz[0]-last_vertex_xyz[0];
+                    temp_xyz[1] = vertex_xyz[1]-last_vertex_xyz[1];
+                    perp_xyz[0] = -temp_xyz[1];
+                    perp_xyz[1] = temp_xyz[0];
+                    perp_distance = ((float) sqrt(perp_xyz[0]*perp_xyz[0] + perp_xyz[1]*perp_xyz[1])) + 0.00000001f;
+                    perp_xyz[0]/=perp_distance;
+                    perp_xyz[1]/=perp_distance;
+//                    perp_xyz[0]*=-2.85f;
+//                    perp_xyz[1]*=-2.85f;
+                    perp_xyz[0]*=-0.9f;
+                    perp_xyz[1]*=-0.9f;
+                    center_xyz[0]+=perp_xyz[0];
+                    center_xyz[1]+=perp_xyz[1];
 
 
 
@@ -2085,7 +2097,7 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
                         global_spawn_subtype = 128;
                     }
                     global_spawn_subtype |= door_wall;
-                    child_data = obj_spawn(CHARACTER, center_xyz[X], center_xyz[Y], center_xyz[Z], script, 65535);
+                    child_data = obj_spawn(CHARACTER, center_xyz[0], center_xyz[1], center_xyz[2], script, 65535);
                     if(child_data)
                     {
                         // Set the current frame to be the first frame of the stand action...
@@ -2100,7 +2112,7 @@ void room_spawn_all(unsigned char* srf_file, unsigned short rotation, unsigned c
 
 
                         // Set the facing too...
-                        (*((unsigned short*) (child_data+56))) = ((unsigned short) (atan2(temp_xyz[Y], temp_xyz[X])*10430.37835047f)) + 16384;
+                        (*((unsigned short*) (child_data+56))) = ((unsigned short) (atan2(temp_xyz[1], temp_xyz[0])*10430.37835047f)) + 16384;
                     }
                 }
             }
@@ -2157,11 +2169,6 @@ void room_restock_monsters(unsigned char* srf_file, unsigned char* object_defeat
     unsigned short length;
     unsigned char object_number;
     unsigned char temp;
-    unsigned short old_random;
-
-
-    old_random = next_random;
-
 
     // Read the object group data...
     object_group_data = srf_file + sdf_read_unsigned_int(srf_file+SRF_OBJECT_GROUP_OFFSET);
@@ -2187,10 +2194,8 @@ void room_restock_monsters(unsigned char* srf_file, unsigned char* object_defeat
         {
             // Seed the random number generator...
             // Check the object's percent chance of spawning...
-            next_random = old_random + i;
-            restock_chance = random_number;
-            next_random = seed + i;
-            chance = random_number;
+            restock_chance = random_number();
+            chance = random_number();
             if(chance <= ((unsigned char) (((object_group_data[13]&240)*255)/240)))
             {
                 // Check this object's name, and make sure it's null terminated...
@@ -2236,9 +2241,6 @@ void room_restock_monsters(unsigned char* srf_file, unsigned char* object_defeat
             object_group_data+=22;
         }
     }
-
-
-    next_random = old_random+1;
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2275,9 +2277,6 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
 
 //timer_start();
     // Remember the random number seed...
-    old_seed = next_random;
-
-
     // First copy the name...
     memcpy(destination_buffer, srf_file, 32);
     destination_buffer[31] = 0;  // Force null termination...
@@ -2301,14 +2300,14 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
     destination_buffer[37] = srf_file[37];  // Monster for CPORTAL subtype 1
     destination_buffer[38] = srf_file[38];  // Monster for CPORTAL subtype 2
     destination_buffer[39] = srf_file[39];  // Monster for CPORTAL subtype 3
-    if(destination_buffer[36] == 0) { destination_buffer[36] = random_number; if(destination_buffer[36] < 1) { destination_buffer[36]=1; } } else { destination_buffer[36]--; }
-    if(destination_buffer[37] == 0) { destination_buffer[37] = random_number; if(destination_buffer[37] < 1) { destination_buffer[37]=1; } } else { destination_buffer[37]--; }
-    if(destination_buffer[38] == 0) { destination_buffer[38] = random_number; if(destination_buffer[38] < 1) { destination_buffer[38]=1; } } else { destination_buffer[38]--; }
-    if(destination_buffer[39] == 0) { destination_buffer[39] = random_number; if(destination_buffer[39] < 1) { destination_buffer[39]=1; } } else { destination_buffer[39]--; }
+    if(destination_buffer[36] == 0) { destination_buffer[36] = random_number(); if(destination_buffer[36] < 1) { destination_buffer[36]=1; } } else { destination_buffer[36]--; }
+    if(destination_buffer[37] == 0) { destination_buffer[37] = random_number(); if(destination_buffer[37] < 1) { destination_buffer[37]=1; } } else { destination_buffer[37]--; }
+    if(destination_buffer[38] == 0) { destination_buffer[38] = random_number(); if(destination_buffer[38] < 1) { destination_buffer[38]=1; } } else { destination_buffer[38]--; }
+    if(destination_buffer[39] == 0) { destination_buffer[39] = random_number(); if(destination_buffer[39] < 1) { destination_buffer[39]=1; } } else { destination_buffer[39]--; }
 
 
     // Figger some rotation stuff...
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
 
@@ -2522,19 +2521,19 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
         vertex_xyz[0] = (float*) (vertex_data + (vertex[0]*26));
         vertex_xyz[1] = (float*) (vertex_data + (vertex[1]*26));
         vertex_xyz[2] = (float*) (vertex_data + (vertex[2]*26));
-        ab_xyz[X] = vertex_xyz[1][X] - vertex_xyz[0][X];
-        ab_xyz[Y] = vertex_xyz[1][Y] - vertex_xyz[0][Y];
-        ab_xyz[Z] = vertex_xyz[1][Z] - vertex_xyz[0][Z];
-        bc_xyz[X] = vertex_xyz[2][X] - vertex_xyz[1][X];
-        bc_xyz[Y] = vertex_xyz[2][Y] - vertex_xyz[1][Y];
-        bc_xyz[Z] = vertex_xyz[2][Z] - vertex_xyz[1][Z];
+        ab_xyz[0] = vertex_xyz[1][0] - vertex_xyz[0][0];
+        ab_xyz[1] = vertex_xyz[1][1] - vertex_xyz[0][1];
+        ab_xyz[2] = vertex_xyz[1][2] - vertex_xyz[0][2];
+        bc_xyz[0] = vertex_xyz[2][0] - vertex_xyz[1][0];
+        bc_xyz[1] = vertex_xyz[2][1] - vertex_xyz[1][1];
+        bc_xyz[2] = vertex_xyz[2][2] - vertex_xyz[1][2];
         cross_product(ab_xyz, bc_xyz, normal_xyz);
         length = vector_length(normal_xyz);
         if(length > 0.0001f)
         {
-            normal_xyz[X]/=length;
-            normal_xyz[Y]/=length;
-            normal_xyz[Z]/=length;
+            normal_xyz[0]/=length;
+            normal_xyz[1]/=length;
+            normal_xyz[2]/=length;
         }
 
 
@@ -2545,54 +2544,54 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
 
 
 //log_message("INFO:   Triangle Normal...");
-//log_message("INFO:     Vertex 0 is at (%f, %f, %f)", vertex_xyz[0][X], vertex_xyz[0][Y], vertex_xyz[0][Z]);
-//log_message("INFO:     Vertex 1 is at (%f, %f, %f)", vertex_xyz[1][X], vertex_xyz[1][Y], vertex_xyz[1][Z]);
-//log_message("INFO:     Vertex 2 is at (%f, %f, %f)", vertex_xyz[2][X], vertex_xyz[2][Y], vertex_xyz[2][Z]);
-//log_message("INFO:     Normal is (%f, %f, %f)", normal_xyz[X], normal_xyz[Y], normal_xyz[Z]);
+//log_message("INFO:     Vertex 0 is at (%f, %f, %f)", vertex_xyz[0][0], vertex_xyz[0][1], vertex_xyz[0][2]);
+//log_message("INFO:     Vertex 1 is at (%f, %f, %f)", vertex_xyz[1][0], vertex_xyz[1][1], vertex_xyz[1][2]);
+//log_message("INFO:     Vertex 2 is at (%f, %f, %f)", vertex_xyz[2][0], vertex_xyz[2][1], vertex_xyz[2][2]);
+//log_message("INFO:     Normal is (%f, %f, %f)", normal_xyz[0], normal_xyz[1], normal_xyz[2]);
 
 
 
         // Accumulate the normal into the vertices and tex vertices...
         vertex_xyz[0]+=3;  vertex_xyz[1]+=3;  vertex_xyz[2]+=3;  // Skip over position info
-        vertex_xyz[0][X] += normal_xyz[X];  vertex_xyz[0][Y] += normal_xyz[Y];  vertex_xyz[0][Z] += normal_xyz[Z];
-        vertex_xyz[1][X] += normal_xyz[X];  vertex_xyz[1][Y] += normal_xyz[Y];  vertex_xyz[1][Z] += normal_xyz[Z];
-        vertex_xyz[2][X] += normal_xyz[X];  vertex_xyz[2][Y] += normal_xyz[Y];  vertex_xyz[2][Z] += normal_xyz[Z];
+        vertex_xyz[0][0] += normal_xyz[0];  vertex_xyz[0][1] += normal_xyz[1];  vertex_xyz[0][2] += normal_xyz[2];
+        vertex_xyz[1][0] += normal_xyz[0];  vertex_xyz[1][1] += normal_xyz[1];  vertex_xyz[1][2] += normal_xyz[2];
+        vertex_xyz[2][0] += normal_xyz[0];  vertex_xyz[2][1] += normal_xyz[1];  vertex_xyz[2][2] += normal_xyz[2];
         vertex_xyz[0] = (float*) (tex_vertex_data + (tex_vertex[0]*22) + 8);
         vertex_xyz[1] = (float*) (tex_vertex_data + (tex_vertex[1]*22) + 8);
         vertex_xyz[2] = (float*) (tex_vertex_data + (tex_vertex[2]*22) + 8);
-        vertex_xyz[0][X] += normal_xyz[X];  vertex_xyz[0][Y] += normal_xyz[Y];  vertex_xyz[0][Z] += normal_xyz[Z];
-        vertex_xyz[1][X] += normal_xyz[X];  vertex_xyz[1][Y] += normal_xyz[Y];  vertex_xyz[1][Z] += normal_xyz[Z];
-        vertex_xyz[2][X] += normal_xyz[X];  vertex_xyz[2][Y] += normal_xyz[Y];  vertex_xyz[2][Z] += normal_xyz[Z];
+        vertex_xyz[0][0] += normal_xyz[0];  vertex_xyz[0][1] += normal_xyz[1];  vertex_xyz[0][2] += normal_xyz[2];
+        vertex_xyz[1][0] += normal_xyz[0];  vertex_xyz[1][1] += normal_xyz[1];  vertex_xyz[1][2] += normal_xyz[2];
+        vertex_xyz[2][0] += normal_xyz[0];  vertex_xyz[2][1] += normal_xyz[1];  vertex_xyz[2][2] += normal_xyz[2];
         read+=32;
     }
     // Now go through all vertices, normalizing normals...
     write = vertex_data;
     repeat(i, global_num_vertex)
     {
-        normal_xyz[X] = *((float*) (write+12));
-        normal_xyz[Y] = *((float*) (write+16));
-        normal_xyz[Z] = *((float*) (write+20));
+        normal_xyz[0] = *((float*) (write+12));
+        normal_xyz[1] = *((float*) (write+16));
+        normal_xyz[2] = *((float*) (write+20));
         length = vector_length(normal_xyz);
         if(length > 0.0001f)
         {
-            normal_xyz[X]/=length;
-            normal_xyz[Y]/=length;
-            normal_xyz[Z]/=length;
+            normal_xyz[0]/=length;
+            normal_xyz[1]/=length;
+            normal_xyz[2]/=length;
         }
-        *((float*) (write+12)) = normal_xyz[X];
-        *((float*) (write+16)) = normal_xyz[Y];
-        *((float*) (write+20)) = normal_xyz[Z];
+        *((float*) (write+12)) = normal_xyz[0];
+        *((float*) (write+16)) = normal_xyz[1];
+        *((float*) (write+20)) = normal_xyz[2];
 
         // If vertex is below pit level, paint it black...
-        if(((float*) write)[Z] < ROOM_PIT_HIGH_LEVEL)
+        if(((float*) write)[2] < ROOM_PIT_HIGH_LEVEL)
         {
-            if(((float*) write)[Z] < ROOM_PIT_LOW_LEVEL)
+            if(((float*) write)[2] < ROOM_PIT_LOW_LEVEL)
             {
                 write[24] = 0;
             }
             else
             {
-                write[24] -= (unsigned char) ((0.0625f * (ROOM_PIT_HIGH_LEVEL - ((float*) write)[Z])) * write[24]);
+                write[24] -= (unsigned char) ((0.0625f * (ROOM_PIT_HIGH_LEVEL - ((float*) write)[2])) * write[24]);
             }
         }
         write+=26;
@@ -2601,28 +2600,28 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
     write = tex_vertex_data;
     repeat(i, global_num_tex_vertex)
     {
-        normal_xyz[X] = *((float*) (write+8));
-        normal_xyz[Y] = *((float*) (write+12));
-        normal_xyz[Z] = *((float*) (write+16));
+        normal_xyz[0] = *((float*) (write+8));
+        normal_xyz[1] = *((float*) (write+12));
+        normal_xyz[2] = *((float*) (write+16));
         length = vector_length(normal_xyz);
         if(length > 0.0001f)
         {
-            normal_xyz[X]/=length;
-            normal_xyz[Y]/=length;
-            normal_xyz[Z]/=length;
+            normal_xyz[0]/=length;
+            normal_xyz[1]/=length;
+            normal_xyz[2]/=length;
         }
-        *((float*) (write+8)) = normal_xyz[X];
-        *((float*) (write+12)) = normal_xyz[Y];
-        *((float*) (write+16)) = normal_xyz[Z];
+        *((float*) (write+8)) = normal_xyz[0];
+        *((float*) (write+12)) = normal_xyz[1];
+        *((float*) (write+16)) = normal_xyz[2];
         write+=22;
     }
 
 
 
     // Do the lighting...
-    normal_xyz[X] = 1.0f;  // Light direction
-    normal_xyz[Y] = 0.5f;
-    normal_xyz[Z] = -1.0f;
+    normal_xyz[0] = 1.0f;  // Light direction
+    normal_xyz[1] = 0.5f;
+    normal_xyz[2] = -1.0f;
     room_setup_lighting(destination_buffer, normal_xyz, 0.25f);
 
 
@@ -2804,7 +2803,7 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
                 // Find coordinates for each vertex in the strip...
                 m = (*((unsigned short*) read));  read+=4;
                 vertex_xyz[j%3] = (float*) (vertex_data+(m*26));
-//log_message("INFO:         Vertex %d (%f, %f, %f)", m, vertex_xyz[j%3][X], vertex_xyz[j%3][Y], vertex_xyz[j%3][Z]);
+//log_message("INFO:         Vertex %d (%f, %f, %f)", m, vertex_xyz[j%3][0], vertex_xyz[j%3][1], vertex_xyz[j%3][2]);
 
                 // After 3 vertices are found, start adding to the heightmap...
                 if(j > 1)
@@ -2923,14 +2922,6 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
         }
         global_volumetric_shadow_vector_xyzz[3] -= 0.1f;
     }
-
-
-
-
-    // Unseed the random number generator...
-    next_random = old_seed;
-
-
 //timer_end();
     return TRUE;
 }
@@ -2941,20 +2932,20 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
 //      and stuff...  Assumes that vertex_data, num_vertex, sine, and cosine are all setup correctly...
 #define room_draw_srf_waypoint_helper(WAYPOINT)         \
 {                                                       \
-    temp_xyz[X] = (((signed short) sdf_read_unsigned_short(waypoint_data+(WAYPOINT*4))) * ONE_OVER_256);  \
-    temp_xyz[Y] = (((signed short) sdf_read_unsigned_short(waypoint_data+(WAYPOINT*4)+2)) * ONE_OVER_256);  \
-    vertex_xyz[X] = (cosine*temp_xyz[X]) - (sine*temp_xyz[Y]) + x; \
-    vertex_xyz[Y] = (sine*temp_xyz[X]) + (cosine*temp_xyz[Y]) + y; \
-    vertex_xyz[Z] = 0.0f; \
+    temp_xyz[0] = (((signed short) sdf_read_unsigned_short(waypoint_data+(WAYPOINT*4))) * ONE_OVER_256);  \
+    temp_xyz[1] = (((signed short) sdf_read_unsigned_short(waypoint_data+(WAYPOINT*4)+2)) * ONE_OVER_256);  \
+    vertex_xyz[0] = (cosine*temp_xyz[0]) - (sine*temp_xyz[1]) + x; \
+    vertex_xyz[1] = (sine*temp_xyz[0]) + (cosine*temp_xyz[1]) + y; \
+    vertex_xyz[2] = 0.0f; \
 }
 
 //-----------------------------------------------------------------------------------------------
 // <ZZ> This macro finds the xy values of a given tex vertex in an srf file...
 #define room_draw_srf_tex_vertex_helper(TEX_VERTEX)         \
 {                                                       \
-    vertex_xyz[X] = (((signed short) sdf_read_unsigned_short(tex_vertex_data+(TEX_VERTEX*4))) * ONE_OVER_256);  \
-    vertex_xyz[Y] = (((signed short) sdf_read_unsigned_short(tex_vertex_data+(TEX_VERTEX*4)+2)) * ONE_OVER_256);  \
-    vertex_xyz[Z] = 0.0f; \
+    vertex_xyz[0] = (((signed short) sdf_read_unsigned_short(tex_vertex_data+(TEX_VERTEX*4))) * ONE_OVER_256);  \
+    vertex_xyz[1] = (((signed short) sdf_read_unsigned_short(tex_vertex_data+(TEX_VERTEX*4)+2)) * ONE_OVER_256);  \
+    vertex_xyz[2] = 0.0f; \
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2962,11 +2953,11 @@ unsigned char room_uncompress(unsigned char* srf_file, unsigned char* destinatio
 //      and stuff...  Assumes that vertex_data, num_vertex, sine, and cosine are all setup correctly...
 #define room_draw_srf_bridge_helper(BRIDGE, POINT)         \
 {                                                       \
-    temp_xyz[X] = (((signed short) sdf_read_unsigned_short(bridge_data+(BRIDGE*8)+(POINT*4))) * ONE_OVER_256);  \
-    temp_xyz[Y] = (((signed short) sdf_read_unsigned_short(bridge_data+(BRIDGE*8)+(POINT*4)+2)) * ONE_OVER_256);  \
-    vertex_xyz[X] = (cosine*temp_xyz[X]) - (sine*temp_xyz[Y]) + x; \
-    vertex_xyz[Y] = (sine*temp_xyz[X]) + (cosine*temp_xyz[Y]) + y; \
-    vertex_xyz[Z] = 0.0f; \
+    temp_xyz[0] = (((signed short) sdf_read_unsigned_short(bridge_data+(BRIDGE*8)+(POINT*4))) * ONE_OVER_256);  \
+    temp_xyz[1] = (((signed short) sdf_read_unsigned_short(bridge_data+(BRIDGE*8)+(POINT*4)+2)) * ONE_OVER_256);  \
+    vertex_xyz[0] = (cosine*temp_xyz[0]) - (sine*temp_xyz[1]) + x; \
+    vertex_xyz[1] = (sine*temp_xyz[0]) + (cosine*temp_xyz[1]) + y; \
+    vertex_xyz[2] = 0.0f; \
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2988,24 +2979,24 @@ void room_get_point_xyz(float percent_x, float percent_y, float* final_x, float*
 
 
     // Scooch the camera back a bit, so I can find the corners by goin' forward...
-    window3d_camera_xyz[X] -= rotate_camera_matrix[1] * SCREEN_FORE_SCALE;
-    window3d_camera_xyz[Y] -= rotate_camera_matrix[5] * SCREEN_FORE_SCALE;
-    window3d_camera_xyz[Z] -= rotate_camera_matrix[9] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[0] -= rotate_camera_matrix[1] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[1] -= rotate_camera_matrix[5] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[2] -= rotate_camera_matrix[9] * SCREEN_FORE_SCALE;
 
     // Find the screen corners
     // Top corners...
     corner = 0;
     repeat(i, 2)
     {
-        screen_corner_xyz[corner][X] = window3d_camera_xyz[X]
+        screen_corner_xyz[corner][0] = window3d_camera_xyz[0]
                                   + rotate_camera_matrix[0] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[1] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[2] * SCREEN_UP_SCALE;
-        screen_corner_xyz[corner][Y] = window3d_camera_xyz[Y]
+        screen_corner_xyz[corner][1] = window3d_camera_xyz[1]
                                   + rotate_camera_matrix[4] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[5] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[6] * SCREEN_UP_SCALE;
-        screen_corner_xyz[corner][Z] = window3d_camera_xyz[Z]
+        screen_corner_xyz[corner][2] = window3d_camera_xyz[2]
                                   + rotate_camera_matrix[8] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[9] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[10] * SCREEN_UP_SCALE;
@@ -3015,15 +3006,15 @@ void room_get_point_xyz(float percent_x, float percent_y, float* final_x, float*
     corner = 3;
     repeat(i, 2)
     {
-        screen_corner_xyz[corner][X] = window3d_camera_xyz[X]
+        screen_corner_xyz[corner][0] = window3d_camera_xyz[0]
                                   + rotate_camera_matrix[0] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[1] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[2] * -SCREEN_UP_SCALE;
-        screen_corner_xyz[corner][Y] = window3d_camera_xyz[Y]
+        screen_corner_xyz[corner][1] = window3d_camera_xyz[1]
                                   + rotate_camera_matrix[4] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[5] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[6] * -SCREEN_UP_SCALE;
-        screen_corner_xyz[corner][Z] = window3d_camera_xyz[Z]
+        screen_corner_xyz[corner][2] = window3d_camera_xyz[2]
                                   + rotate_camera_matrix[8] * SCREEN_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[9] * SCREEN_FORE_SCALE
                                   + rotate_camera_matrix[10] * -SCREEN_UP_SCALE;
@@ -3032,21 +3023,21 @@ void room_get_point_xyz(float percent_x, float percent_y, float* final_x, float*
 
 
     // Use the screen corner positions to find where our screen point is between 'em...
-    screen_point_xyz[X] = (screen_corner_xyz[2][X]*percent_x) + (screen_corner_xyz[3][X]*(1.0f-percent_x));  // Point along bottom of screen...
-    screen_point_xyz[Y] = (screen_corner_xyz[2][Y]*percent_x) + (screen_corner_xyz[3][Y]*(1.0f-percent_x));
-    screen_point_xyz[Z] = (screen_corner_xyz[2][Z]*percent_x) + (screen_corner_xyz[3][Z]*(1.0f-percent_x));
-    vector_xyz[X] = (screen_corner_xyz[1][X]*percent_x) + (screen_corner_xyz[0][X]*(1.0f-percent_x));  // Point along top of screen...
-    vector_xyz[Y] = (screen_corner_xyz[1][Y]*percent_x) + (screen_corner_xyz[0][Y]*(1.0f-percent_x));
-    vector_xyz[Z] = (screen_corner_xyz[1][Z]*percent_x) + (screen_corner_xyz[0][Z]*(1.0f-percent_x));
-    screen_point_xyz[X] = (screen_point_xyz[X]*percent_y) + (vector_xyz[X]*(1.0f-percent_y));  // Final point projected between 3D onscreen corner locations
-    screen_point_xyz[Y] = (screen_point_xyz[Y]*percent_y) + (vector_xyz[Y]*(1.0f-percent_y));
-    screen_point_xyz[Z] = (screen_point_xyz[Z]*percent_y) + (vector_xyz[Z]*(1.0f-percent_y));
+    screen_point_xyz[0] = (screen_corner_xyz[2][0]*percent_x) + (screen_corner_xyz[3][0]*(1.0f-percent_x));  // Point along bottom of screen...
+    screen_point_xyz[1] = (screen_corner_xyz[2][1]*percent_x) + (screen_corner_xyz[3][1]*(1.0f-percent_x));
+    screen_point_xyz[2] = (screen_corner_xyz[2][2]*percent_x) + (screen_corner_xyz[3][2]*(1.0f-percent_x));
+    vector_xyz[0] = (screen_corner_xyz[1][0]*percent_x) + (screen_corner_xyz[0][0]*(1.0f-percent_x));  // Point along top of screen...
+    vector_xyz[1] = (screen_corner_xyz[1][1]*percent_x) + (screen_corner_xyz[0][1]*(1.0f-percent_x));
+    vector_xyz[2] = (screen_corner_xyz[1][2]*percent_x) + (screen_corner_xyz[0][2]*(1.0f-percent_x));
+    screen_point_xyz[0] = (screen_point_xyz[0]*percent_y) + (vector_xyz[0]*(1.0f-percent_y));  // Final point projected between 3D onscreen corner locations
+    screen_point_xyz[1] = (screen_point_xyz[1]*percent_y) + (vector_xyz[1]*(1.0f-percent_y));
+    screen_point_xyz[2] = (screen_point_xyz[2]*percent_y) + (vector_xyz[2]*(1.0f-percent_y));
 
 
     // Use that screen point position to calculate the screen point ray...
-    vector_xyz[X] = screen_point_xyz[X] - window3d_camera_xyz[X];
-    vector_xyz[Y] = screen_point_xyz[Y] - window3d_camera_xyz[Y];
-    vector_xyz[Z] = screen_point_xyz[Z] - window3d_camera_xyz[Z];
+    vector_xyz[0] = screen_point_xyz[0] - window3d_camera_xyz[0];
+    vector_xyz[1] = screen_point_xyz[1] - window3d_camera_xyz[1];
+    vector_xyz[2] = screen_point_xyz[2] - window3d_camera_xyz[2];
 
 
     // Two possible operation modes...
@@ -3055,26 +3046,26 @@ void room_get_point_xyz(float percent_x, float percent_y, float* final_x, float*
         // We want to find the z at the given xy location (we're holding shift for a riser line)...
         // To do that, we collide our ray with the plane that runs through our xy location and
         // whose normal is opposite our camera fore xyz...  Find point where dot product is 0...
-        normal_xyz[X] = rotate_camera_matrix[1];
-        normal_xyz[Y] = rotate_camera_matrix[5];
-        normal_xyz[Z] = 0.0f; //rotate_camera_matrix[9];
+        normal_xyz[0] = rotate_camera_matrix[1];
+        normal_xyz[1] = rotate_camera_matrix[5];
+        normal_xyz[2] = 0.0f; //rotate_camera_matrix[9];
         distance = vector_length(normal_xyz);
         if(distance > 0.0f)
         {
-            normal_xyz[X]/=distance;  normal_xyz[Y]/=distance;
-            distance = (normal_xyz[X]*(*final_x) - normal_xyz[X]*screen_point_xyz[X] + normal_xyz[Y]*(*final_y) - normal_xyz[Y]*screen_point_xyz[Y]) / (normal_xyz[Y]*vector_xyz[Y] + normal_xyz[X]*vector_xyz[X]);
-            *final_z = screen_point_xyz[Z] + vector_xyz[Z]*distance;
+            normal_xyz[0]/=distance;  normal_xyz[1]/=distance;
+            distance = (normal_xyz[0]*(*final_x) - normal_xyz[0]*screen_point_xyz[0] + normal_xyz[1]*(*final_y) - normal_xyz[1]*screen_point_xyz[1]) / (normal_xyz[1]*vector_xyz[1] + normal_xyz[0]*vector_xyz[0]);
+            *final_z = screen_point_xyz[2] + vector_xyz[2]*distance;
         }
     }
     else
     {
         // Collide the screen point ray with our 0-z plane...
-//        distance = window3d_camera_xyz[Z] /  -vector_xyz[Z];
+//        distance = window3d_camera_xyz[2] /  -vector_xyz[2];
 
         // Collide with our current z position's plane...
-        distance = (window3d_camera_xyz[Z]-(*final_z)) /  -vector_xyz[Z];
-        *final_x = window3d_camera_xyz[X] + (distance*vector_xyz[X]);
-        *final_y = window3d_camera_xyz[Y] + (distance*vector_xyz[Y]);
+        distance = (window3d_camera_xyz[2]-(*final_z)) /  -vector_xyz[2];
+        *final_x = window3d_camera_xyz[0] + (distance*vector_xyz[0]);
+        *final_y = window3d_camera_xyz[1] + (distance*vector_xyz[1]);
     }
 
 
@@ -3098,9 +3089,9 @@ void room_get_point_xyz(float percent_x, float percent_y, float* final_x, float*
 
 
     // Restore the camera to where it was...
-    window3d_camera_xyz[X] += rotate_camera_matrix[1] * SCREEN_FORE_SCALE;
-    window3d_camera_xyz[Y] += rotate_camera_matrix[5] * SCREEN_FORE_SCALE;
-    window3d_camera_xyz[Z] += rotate_camera_matrix[9] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[0] += rotate_camera_matrix[1] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[1] += rotate_camera_matrix[5] * SCREEN_FORE_SCALE;
+    window3d_camera_xyz[2] += rotate_camera_matrix[9] * SCREEN_FORE_SCALE;
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -3128,8 +3119,8 @@ void room_srf_move(void)
     if(selection_move == MOVE_MODE_ROTATE)
     {
         // Build the rotation matrix...
-        x = select_offset_xyz[X] - select_center_xyz[X];
-        y = select_offset_xyz[Y] - select_center_xyz[Y];
+        x = select_offset_xyz[0] - select_center_xyz[0];
+        y = select_offset_xyz[1] - select_center_xyz[1];
         z = 0;
         distance = (float) sqrt(x*x + y*y + z*z);
         if(distance > 0.20f)
@@ -3154,37 +3145,37 @@ void room_srf_move(void)
     repeat(index, room_select_num)
     {
         x = 0.0f;  y = 0.0f;  z = 0.0f;
-        if(room_select_axes[index] > 0)  { x = room_select_xyz[index][X]; }
-        if(room_select_axes[index] > 1)  { y = room_select_xyz[index][Y]; }
-        if(room_select_axes[index] > 2)  { z = room_select_xyz[index][Z]; }
+        if(room_select_axes[index] > 0)  { x = room_select_xyz[index][0]; }
+        if(room_select_axes[index] > 1)  { y = room_select_xyz[index][1]; }
+        if(room_select_axes[index] > 2)  { z = room_select_xyz[index][2]; }
 
 
         if(selection_move == MOVE_MODE_MOVE)
         {
             // Translation
-            x += select_offset_xyz[X] - select_center_xyz[X];
-            y += select_offset_xyz[Y] - select_center_xyz[Y];
-            z += select_offset_xyz[Z] - select_center_xyz[Z];
+            x += select_offset_xyz[0] - select_center_xyz[0];
+            y += select_offset_xyz[1] - select_center_xyz[1];
+            z += select_offset_xyz[2] - select_center_xyz[2];
         }
         else if(selection_move == MOVE_MODE_SCALE)
         {
             // Scaling
-            x = ((x-select_center_xyz[X])*(1.0f + 0.05f*(select_offset_xyz[X] - select_center_xyz[X]))) + select_center_xyz[X];
-            y = ((y-select_center_xyz[Y])*(1.0f + 0.05f*(select_offset_xyz[Y] - select_center_xyz[Y]))) + select_center_xyz[Y];
-            z = ((z-select_center_xyz[Z])*(1.0f + 0.05f*(select_offset_xyz[Z] - select_center_xyz[Z]))) + select_center_xyz[Z];
+            x = ((x-select_center_xyz[0])*(1.0f + 0.05f*(select_offset_xyz[0] - select_center_xyz[0]))) + select_center_xyz[0];
+            y = ((y-select_center_xyz[1])*(1.0f + 0.05f*(select_offset_xyz[1] - select_center_xyz[1]))) + select_center_xyz[1];
+            z = ((z-select_center_xyz[2])*(1.0f + 0.05f*(select_offset_xyz[2] - select_center_xyz[2]))) + select_center_xyz[2];
         }
         else if(selection_move == MOVE_MODE_ROTATE)
         {
             // Rotation
-            x -= select_center_xyz[X];
-            y -= select_center_xyz[Y];
-            z -= select_center_xyz[Z];
+            x -= select_center_xyz[0];
+            y -= select_center_xyz[1];
+            z -= select_center_xyz[2];
             tx = x*rotate_matrix[0] + y*rotate_matrix[3] + z*rotate_matrix[6];
             ty = x*rotate_matrix[1] + y*rotate_matrix[4] + z*rotate_matrix[7];
             tz = x*rotate_matrix[2] + y*rotate_matrix[5] + z*rotate_matrix[8];
-            x = tx + select_center_xyz[X];
-            y = ty + select_center_xyz[Y];
-            z = tz + select_center_xyz[Z];
+            x = tx + select_center_xyz[0];
+            y = ty + select_center_xyz[1];
+            z = tz + select_center_xyz[2];
         }
 
         // Bounds
@@ -3834,9 +3825,9 @@ unsigned char room_srf_delete_bridge(unsigned char* data, unsigned char bridge_t
 }
 #define room_srf_minimap_vertex_helper(VERTEX, PLACE_XYZ)   \
 {                                                       \
-    PLACE_XYZ[X] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6))) * ONE_OVER_256);  \
-    PLACE_XYZ[Y] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+2)) * ONE_OVER_256);  \
-    PLACE_XYZ[Z] = 0.0f;  \
+    PLACE_XYZ[0] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6))) * ONE_OVER_256);  \
+    PLACE_XYZ[1] = (((signed short) sdf_read_unsigned_short(vertex_data+(VERTEX*6)+2)) * ONE_OVER_256);  \
+    PLACE_XYZ[2] = 0.0f;  \
 }
 unsigned char room_srf_intersection_helper(float* a_xy, float* b_xy, float* c_xy, float* d_xy)
 {
@@ -3845,19 +3836,19 @@ unsigned char room_srf_intersection_helper(float* a_xy, float* b_xy, float* c_xy
     float normal_xy[2], temp_xy[2], dota, dotb, dotc, dotd;
 
 //log_message("INFO:   Testing line collisions");
-//log_message("INFO:     Line ab == %f, %f to %f, %f", a_xy[X], a_xy[Y], b_xy[X], b_xy[Y]);
-//log_message("INFO:     Line cd == %f, %f to %f, %f", c_xy[X], c_xy[Y], d_xy[X], d_xy[Y]);
+//log_message("INFO:     Line ab == %f, %f to %f, %f", a_xy[0], a_xy[1], b_xy[0], b_xy[1]);
+//log_message("INFO:     Line cd == %f, %f to %f, %f", c_xy[0], c_xy[1], d_xy[0], d_xy[1]);
 
 
     // Check points a and b against line cd...
-    normal_xy[X] = c_xy[Y] - d_xy[Y];
-    normal_xy[Y] = d_xy[X] - c_xy[X];
-    temp_xy[X] = a_xy[X] - c_xy[X];
-    temp_xy[Y] = a_xy[Y] - c_xy[Y];
-    dota = normal_xy[X]*temp_xy[X] + normal_xy[Y]*temp_xy[Y];
-    temp_xy[X] = b_xy[X] - c_xy[X];
-    temp_xy[Y] = b_xy[Y] - c_xy[Y];
-    dotb = normal_xy[X]*temp_xy[X] + normal_xy[Y]*temp_xy[Y];
+    normal_xy[0] = c_xy[1] - d_xy[1];
+    normal_xy[1] = d_xy[0] - c_xy[0];
+    temp_xy[0] = a_xy[0] - c_xy[0];
+    temp_xy[1] = a_xy[1] - c_xy[1];
+    dota = normal_xy[0]*temp_xy[0] + normal_xy[1]*temp_xy[1];
+    temp_xy[0] = b_xy[0] - c_xy[0];
+    temp_xy[1] = b_xy[1] - c_xy[1];
+    dotb = normal_xy[0]*temp_xy[0] + normal_xy[1]*temp_xy[1];
     if((dota >= 0.0f && dotb >= 0.0f) || (dota <= 0.0f && dotb <= 0.0f))
     {
         // Both points (a & b) are on the same side of line cd...
@@ -3866,14 +3857,14 @@ unsigned char room_srf_intersection_helper(float* a_xy, float* b_xy, float* c_xy
 
 
     // Check points c and d against line ab...
-    normal_xy[X] = a_xy[Y] - b_xy[Y];
-    normal_xy[Y] = b_xy[X] - a_xy[X];
-    temp_xy[X] = c_xy[X] - a_xy[X];
-    temp_xy[Y] = c_xy[Y] - a_xy[Y];
-    dotc = normal_xy[X]*temp_xy[X] + normal_xy[Y]*temp_xy[Y];
-    temp_xy[X] = d_xy[X] - a_xy[X];
-    temp_xy[Y] = d_xy[Y] - a_xy[Y];
-    dotd = normal_xy[X]*temp_xy[X] + normal_xy[Y]*temp_xy[Y];
+    normal_xy[0] = a_xy[1] - b_xy[1];
+    normal_xy[1] = b_xy[0] - a_xy[0];
+    temp_xy[0] = c_xy[0] - a_xy[0];
+    temp_xy[1] = c_xy[1] - a_xy[1];
+    dotc = normal_xy[0]*temp_xy[0] + normal_xy[1]*temp_xy[1];
+    temp_xy[0] = d_xy[0] - a_xy[0];
+    temp_xy[1] = d_xy[1] - a_xy[1];
+    dotd = normal_xy[0]*temp_xy[0] + normal_xy[1]*temp_xy[1];
     if((dotc >= 0.0f && dotd >= 0.0f) || (dotc <= 0.0f && dotd <= 0.0f))
     {
         // Both points (c & d) are on the same side of line ab...
@@ -3910,10 +3901,10 @@ unsigned char room_srf_minimap_add_triangle(unsigned char* data, unsigned short 
         room_srf_minimap_vertex_helper(va, va_xyz);
         room_srf_minimap_vertex_helper(vb, vb_xyz);
         room_srf_minimap_vertex_helper(vc, vc_xyz);
-        ab_xyz[X] = vb_xyz[X]-va_xyz[X];  ab_xyz[Y] = vb_xyz[Y]-va_xyz[Y];  ab_xyz[Z] = vb_xyz[Z]-va_xyz[Z];
-        bc_xyz[X] = vc_xyz[X]-vb_xyz[X];  bc_xyz[Y] = vc_xyz[Y]-vb_xyz[Y];  bc_xyz[Z] = vc_xyz[Z]-vb_xyz[Z];
+        ab_xyz[0] = vb_xyz[0]-va_xyz[0];  ab_xyz[1] = vb_xyz[1]-va_xyz[1];  ab_xyz[2] = vb_xyz[2]-va_xyz[2];
+        bc_xyz[0] = vc_xyz[0]-vb_xyz[0];  bc_xyz[1] = vc_xyz[1]-vb_xyz[1];  bc_xyz[2] = vc_xyz[2]-vb_xyz[2];
         cross_product(ab_xyz, bc_xyz, normal_xyz);
-        if(normal_xyz[Z] < 0.0f)
+        if(normal_xyz[2] < 0.0f)
         {
             // Inverted...
             return FALSE;
@@ -4133,8 +4124,8 @@ unsigned char room_srf_add_texture_triangle(unsigned char* data, unsigned char t
     y = 0.0f;
     if(tvaxy)
     {
-        x = tvaxy[X];
-        y = tvaxy[Y];
+        x = tvaxy[0];
+        y = tvaxy[1];
     }
     if(room_srf_add_tex_vertex(data, x, y))
     {
@@ -4150,8 +4141,8 @@ unsigned char room_srf_add_texture_triangle(unsigned char* data, unsigned char t
     y = 0.0f;
     if(tvbxy)
     {
-        x = tvbxy[X];
-        y = tvbxy[Y];
+        x = tvbxy[0];
+        y = tvbxy[1];
     }
     if(room_srf_add_tex_vertex(data, x, y))
     {
@@ -4167,8 +4158,8 @@ unsigned char room_srf_add_texture_triangle(unsigned char* data, unsigned char t
     y = 0.0f;
     if(tvcxy)
     {
-        x = tvcxy[X];
-        y = tvcxy[Y];
+        x = tvcxy[0];
+        y = tvcxy[1];
     }
     if(room_srf_add_tex_vertex(data, x, y))
     {
@@ -4248,8 +4239,8 @@ void room_srf_autoweld_tex_vertices(unsigned char* data)
             {
                 vertex = sdf_read_unsigned_short(triangle_data);  triangle_data+=2;
                 tex_vertex = sdf_read_unsigned_short(triangle_data);  triangle_data+=2;
-                tex_vertex_xy[X] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (tex_vertex<<2)));
-                tex_vertex_xy[Y] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (tex_vertex<<2) + 2));
+                tex_vertex_xy[0] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (tex_vertex<<2)));
+                tex_vertex_xy[1] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (tex_vertex<<2) + 2));
 
                 // Look for any triangles that share this vertex...
                 other_triangle_data = triangle_data_start;
@@ -4260,10 +4251,10 @@ void room_srf_autoweld_tex_vertices(unsigned char* data)
                     {
                         // Found one...  Are tex vertices near one another?
                         other_tex_vertex = sdf_read_unsigned_short(other_triangle_data);
-                        other_tex_vertex_xy[X] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (other_tex_vertex<<2)));
-                        other_tex_vertex_xy[Y] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (other_tex_vertex<<2) + 2));
-                        disx = other_tex_vertex_xy[X] - tex_vertex_xy[X];
-                        disy = other_tex_vertex_xy[Y] - tex_vertex_xy[Y];
+                        other_tex_vertex_xy[0] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (other_tex_vertex<<2)));
+                        other_tex_vertex_xy[1] = (signed short) sdf_read_unsigned_short((tex_vertex_data + (other_tex_vertex<<2) + 2));
+                        disx = other_tex_vertex_xy[0] - tex_vertex_xy[0];
+                        disy = other_tex_vertex_xy[1] - tex_vertex_xy[1];
                         ABS(disx);
                         ABS(disy);
                         disx+=disy;
@@ -4472,22 +4463,22 @@ void room_srf_autotrim(unsigned char* data)
 
 
     // Find the length of the segment we're currently working on...
-    segment_start_xyz[X] = room_select_xyz[0][X];
-    segment_start_xyz[Y] = room_select_xyz[0][Y];
-    segment_start_xyz[Z] = room_select_xyz[0][Z];
-    segment_end_xyz[X] = room_select_xyz[1][X];
-    segment_end_xyz[Y] = room_select_xyz[1][Y];
-    segment_end_xyz[Z] = room_select_xyz[1][Z];
-    x = segment_end_xyz[X] - segment_start_xyz[X];
-    y = segment_end_xyz[Y] - segment_start_xyz[Y];
+    segment_start_xyz[0] = room_select_xyz[0][0];
+    segment_start_xyz[1] = room_select_xyz[0][1];
+    segment_start_xyz[2] = room_select_xyz[0][2];
+    segment_end_xyz[0] = room_select_xyz[1][0];
+    segment_end_xyz[1] = room_select_xyz[1][1];
+    segment_end_xyz[2] = room_select_xyz[1][2];
+    x = segment_end_xyz[0] - segment_start_xyz[0];
+    y = segment_end_xyz[1] - segment_start_xyz[1];
     segment_length = (float) sqrt(x*x + y*y);
     segment_scaling = segment_length * autotrim_scaling;
-    segment_normal_xy[X] = 0.0f;
-    segment_normal_xy[Y] = 0.0f;
+    segment_normal_xy[0] = 0.0f;
+    segment_normal_xy[1] = 0.0f;
     if(segment_length > 0.0f)
     {
-        segment_normal_xy[X] = x/segment_length;
-        segment_normal_xy[Y] = y/segment_length;
+        segment_normal_xy[0] = x/segment_length;
+        segment_normal_xy[1] = y/segment_length;
     }
 
 
@@ -4570,12 +4561,12 @@ void room_srf_autotrim(unsigned char* data)
 
 
                         // Now figger out the X position based on distance over segment (plus offset)...
-                        x = triangle_vertex_xyz[k][X] - segment_start_xyz[X];
-                        y = triangle_vertex_xyz[k][Y] - segment_start_xyz[Y];
-                        z = (x*segment_normal_xy[X] + y*segment_normal_xy[Y]);
+                        x = triangle_vertex_xyz[k][0] - segment_start_xyz[0];
+                        y = triangle_vertex_xyz[k][1] - segment_start_xyz[1];
+                        z = (x*segment_normal_xy[0] + y*segment_normal_xy[1]);
                         distance = (z*autotrim_scaling) + autotrim_offset;
-                        z = z*((segment_end_xyz[Z]-segment_start_xyz[Z])/segment_length);
-                        z+=segment_start_xyz[Z];
+                        z = z*((segment_end_xyz[2]-segment_start_xyz[2])/segment_length);
+                        z+=segment_start_xyz[2];
                         value = (signed short) (distance * 256.0f);
 //    log_message("INFO:       Writing value %d for Tex X", value);
                         sdf_write_unsigned_short(tex_vertex_data+(tex_vertex*4), (unsigned short) value);
@@ -4594,7 +4585,7 @@ void room_srf_autotrim(unsigned char* data)
                         else
                         {
                             //  ...based on distance from top of wall...
-                            value = (signed short) ((z-triangle_vertex_xyz[k][Z]) * WALL_TEXTURE_SCALE * 256.0f);
+                            value = (signed short) ((z-triangle_vertex_xyz[k][2]) * WALL_TEXTURE_SCALE * 256.0f);
                         }
 //    log_message("INFO:       Writing value %d for Tex Y", value);
                         sdf_write_unsigned_short(tex_vertex_data+(tex_vertex*4)+2, (unsigned short) value);
@@ -4715,9 +4706,9 @@ void room_srf_weld_selected_vertices(unsigned char* data)
                 if(room_select_flag[j] == MAX_VERTEX)
                 {
                     // Yup, so check how close they are...
-                    distance_xyz[X] = 0.0f;  if(axes > 0) { distance_xyz[X] = room_select_xyz[j][X]-room_select_xyz[i][X]; }
-                    distance_xyz[Y] = 0.0f;  if(axes > 1) { distance_xyz[Y] = room_select_xyz[j][Y]-room_select_xyz[i][Y]; }
-                    distance_xyz[Z] = 0.0f;  if(axes > 2) { distance_xyz[Z] = room_select_xyz[j][Z]-room_select_xyz[i][Z]; }
+                    distance_xyz[0] = 0.0f;  if(axes > 0) { distance_xyz[0] = room_select_xyz[j][0]-room_select_xyz[i][0]; }
+                    distance_xyz[1] = 0.0f;  if(axes > 1) { distance_xyz[1] = room_select_xyz[j][1]-room_select_xyz[i][1]; }
+                    distance_xyz[2] = 0.0f;  if(axes > 2) { distance_xyz[2] = room_select_xyz[j][2]-room_select_xyz[i][2]; }
                     distance = vector_length(distance_xyz);
                     if(distance < best_distance)
                     {
@@ -4737,26 +4728,26 @@ void room_srf_weld_selected_vertices(unsigned char* data)
             room_select_flag[i] = best_partner;
             room_select_flag[best_partner] = i;
             // Find the center of the points, and move both to that location
-            room_select_xyz[i][X] = (room_select_xyz[i][X] + room_select_xyz[best_partner][X]) * 0.5f;
-            room_select_xyz[i][Y] = (room_select_xyz[i][Y] + room_select_xyz[best_partner][Y]) * 0.5f;
-            room_select_xyz[i][Z] = (room_select_xyz[i][Z] + room_select_xyz[best_partner][Z]) * 0.5f;
-            room_select_xyz[best_partner][X] = room_select_xyz[i][X];
-            room_select_xyz[best_partner][Y] = room_select_xyz[i][Y];
-            room_select_xyz[best_partner][Z] = room_select_xyz[i][Z];
+            room_select_xyz[i][0] = (room_select_xyz[i][0] + room_select_xyz[best_partner][0]) * 0.5f;
+            room_select_xyz[i][1] = (room_select_xyz[i][1] + room_select_xyz[best_partner][1]) * 0.5f;
+            room_select_xyz[i][2] = (room_select_xyz[i][2] + room_select_xyz[best_partner][2]) * 0.5f;
+            room_select_xyz[best_partner][0] = room_select_xyz[i][0];
+            room_select_xyz[best_partner][1] = room_select_xyz[i][1];
+            room_select_xyz[best_partner][2] = room_select_xyz[i][2];
             if(axes > 0)
             {
-                sdf_write_unsigned_short(room_select_data[i], (unsigned short) ((signed short) (room_select_xyz[i][X]*256.0f)) );
-                sdf_write_unsigned_short(room_select_data[best_partner], (unsigned short) ((signed short) (room_select_xyz[best_partner][X]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[i], (unsigned short) ((signed short) (room_select_xyz[i][0]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[best_partner], (unsigned short) ((signed short) (room_select_xyz[best_partner][0]*256.0f)) );
             }
             if(axes > 1)
             {
-                sdf_write_unsigned_short(room_select_data[i]+2, (unsigned short) ((signed short) (room_select_xyz[i][Y]*256.0f)) );
-                sdf_write_unsigned_short(room_select_data[best_partner]+2, (unsigned short) ((signed short) (room_select_xyz[best_partner][Y]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[i]+2, (unsigned short) ((signed short) (room_select_xyz[i][1]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[best_partner]+2, (unsigned short) ((signed short) (room_select_xyz[best_partner][1]*256.0f)) );
             }
             if(axes > 2)
             {
-                sdf_write_unsigned_short(room_select_data[i]+4, (unsigned short) ((signed short) (room_select_xyz[i][Z]*256.0f)) );
-                sdf_write_unsigned_short(room_select_data[best_partner]+4, (unsigned short) ((signed short) (room_select_xyz[best_partner][Z]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[i]+4, (unsigned short) ((signed short) (room_select_xyz[i][2]*256.0f)) );
+                sdf_write_unsigned_short(room_select_data[best_partner]+4, (unsigned short) ((signed short) (room_select_xyz[best_partner][2]*256.0f)) );
             }
         }
     }
@@ -4971,7 +4962,7 @@ void room_object_add(unsigned char* srf_file, unsigned char delete_instead)
                         object_group_data[11] = 0;
                         object_group_data[13] = 240;
                         object_group_data[14] = TEAM_MONSTER;
-                        object_group_data[15] = random_number;
+                        object_group_data[15] = random_number();
                     }
                 }
             }
@@ -4986,7 +4977,7 @@ void room_object_add(unsigned char* srf_file, unsigned char delete_instead)
 #define HARDPLOPPER_PAVEMENT     5
 #define HARDPLOPPER_BORDER       6
 #define HARDPLOPPER_MINE         7
-#define RANDOMIZE_TEMP_XYZ() { temp_xyz[X] = 0.0f;  temp_xyz[Y] = 0.0f;  temp_xyz[Z] = 0.0f;  if(randomize_ledge) { temp = random_number;  temp*=ONE_OVER_256*0.5f;  temp_xyz[X]=temp*final_vector_xyz[X];  temp_xyz[Y]=temp*final_vector_xyz[Y];  temp = random_number;  temp*=ONE_OVER_256;  temp_xyz[Z]=(temp-0.5f);} }
+#define RANDOMIZE_TEMP_XYZ() { temp_xyz[0] = 0.0f;  temp_xyz[1] = 0.0f;  temp_xyz[2] = 0.0f;  if(randomize_ledge) { temp = random_number();  temp*=ONE_OVER_256*0.5f;  temp_xyz[0]=temp*final_vector_xyz[0];  temp_xyz[1]=temp*final_vector_xyz[1];  temp = random_number();  temp*=ONE_OVER_256;  temp_xyz[2]=(temp-0.5f);} }
 void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned char normalize, unsigned char type, unsigned char base_vertex_ledge, unsigned char randomize_ledge, unsigned char ledge_height)
 {
     // <ZZ> This function plops a hard coded model type o' thing into an SRF file...  Used for making
@@ -5016,19 +5007,19 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
         {
             repeat(i, num_segment)
             {
-                vector_xyz[X] = room_select_xyz[i+1][X] - room_select_xyz[i][X];
-                vector_xyz[Y] = room_select_xyz[i+1][Y] - room_select_xyz[i][Y];
-                vector_xyz[Z] = 0.0f;
+                vector_xyz[0] = room_select_xyz[i+1][0] - room_select_xyz[i][0];
+                vector_xyz[1] = room_select_xyz[i+1][1] - room_select_xyz[i][1];
+                vector_xyz[2] = 0.0f;
                 length = vector_length(vector_xyz)*0.5f;
                 if(length > 0.0f)
                 {
-                    vector_xyz[X] = (vector_xyz[X]/length) - vector_xyz[X];
-                    vector_xyz[Y] = (vector_xyz[Y]/length) - vector_xyz[Y];
+                    vector_xyz[0] = (vector_xyz[0]/length) - vector_xyz[0];
+                    vector_xyz[1] = (vector_xyz[1]/length) - vector_xyz[1];
                     j = i;
                     while(j < num_segment)
                     {
-                        room_select_xyz[j+1][X] += vector_xyz[X];
-                        room_select_xyz[j+1][Y] += vector_xyz[Y];
+                        room_select_xyz[j+1][0] += vector_xyz[0];
+                        room_select_xyz[j+1][1] += vector_xyz[1];
                         j++;
                     }
                 }
@@ -5041,12 +5032,12 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
         {
             repeat(i, num_segment)
             {
-                room_select_xyz[i+1][Z] = room_select_xyz[0][Z] + ((i+1)*1.0f);
+                room_select_xyz[i+1][2] = room_select_xyz[0][2] + ((i+1)*1.0f);
             }
         }
         repeat(i, num_original)
         {
-            room_select_xyz[i][Z] += 0.30f;  // 0.30f is to offset above floor for cartoon lines...
+            room_select_xyz[i][2] += 0.30f;  // 0.30f is to offset above floor for cartoon lines...
         }
 
 
@@ -5056,38 +5047,38 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
         scaling = width*0.01953125f;
         repeat(i, num_segment)
         {
-            vector_xyz[X] = room_select_xyz[i+1][X] - room_select_xyz[i][X];
-            vector_xyz[Y] = room_select_xyz[i+1][Y] - room_select_xyz[i][Y];
-            vector_xyz[Z] = 0.0f;
+            vector_xyz[0] = room_select_xyz[i+1][0] - room_select_xyz[i][0];
+            vector_xyz[1] = room_select_xyz[i+1][1] - room_select_xyz[i][1];
+            vector_xyz[2] = 0.0f;
             length = vector_length(vector_xyz);
             if(length > 0.0f)
             {
-                vector_xyz[X]/=length;
-                vector_xyz[Y]/=length;
+                vector_xyz[0]/=length;
+                vector_xyz[1]/=length;
                 if(i == 0)
                 {
-                    last_vector_xyz[X] = vector_xyz[X];
-                    last_vector_xyz[Y] = vector_xyz[Y];
-                    last_vector_xyz[Z] = vector_xyz[Z];
+                    last_vector_xyz[0] = vector_xyz[0];
+                    last_vector_xyz[1] = vector_xyz[1];
+                    last_vector_xyz[2] = vector_xyz[2];
                     if(type == HARDPLOPPER_LEDGE_LOOP)
                     {
-                        last_vector_xyz[X] = room_select_xyz[i][X] - room_select_xyz[num_segment][X];
-                        last_vector_xyz[Y] = room_select_xyz[i][Y] - room_select_xyz[num_segment][Y];
-                        last_vector_xyz[Z] = 0.0f;
+                        last_vector_xyz[0] = room_select_xyz[i][0] - room_select_xyz[num_segment][0];
+                        last_vector_xyz[1] = room_select_xyz[i][1] - room_select_xyz[num_segment][1];
+                        last_vector_xyz[2] = 0.0f;
                         length = vector_length(last_vector_xyz);
                         if(length > 0.0f)
                         {
-                            last_vector_xyz[X]/=length;
-                            last_vector_xyz[Y]/=length;
+                            last_vector_xyz[0]/=length;
+                            last_vector_xyz[1]/=length;
                         }
                     }
                 }
-                final_vector_xyz[X] = (last_vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                final_vector_xyz[Y] = (last_vector_xyz[X] + vector_xyz[X])*scaling;
-                final_vector_xyz[Z] = 0.0f;
-                last_vector_xyz[X] = vector_xyz[X];
-                last_vector_xyz[Y] = vector_xyz[Y];
-                last_vector_xyz[Z] = vector_xyz[Z];
+                final_vector_xyz[0] = (last_vector_xyz[1] + vector_xyz[1])*-scaling;
+                final_vector_xyz[1] = (last_vector_xyz[0] + vector_xyz[0])*scaling;
+                final_vector_xyz[2] = 0.0f;
+                last_vector_xyz[0] = vector_xyz[0];
+                last_vector_xyz[1] = vector_xyz[1];
+                last_vector_xyz[2] = vector_xyz[2];
 
 
 
@@ -5104,74 +5095,74 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(j, k)
                     {
                         // Setup vectors...
-                        temp_xyz[X] = final_vector_xyz[X] - final_vector_xyz[Y];
-                        temp_xyz[Y] = final_vector_xyz[Y] + final_vector_xyz[X];
-                        temp_xyz[Z] = 0.0f;
+                        temp_xyz[0] = final_vector_xyz[0] - final_vector_xyz[1];
+                        temp_xyz[1] = final_vector_xyz[1] + final_vector_xyz[0];
+                        temp_xyz[2] = 0.0f;
                         length = vector_length(temp_xyz);
                         if(length > 0.0f)
                         {
-                            temp_xyz[X]/=length;
-                            temp_xyz[Y]/=length;
+                            temp_xyz[0]/=length;
+                            temp_xyz[1]/=length;
                         }
-                        temp_xyz[X]*=scaling;
-                        temp_xyz[Y]*=scaling;
+                        temp_xyz[0]*=scaling;
+                        temp_xyz[1]*=scaling;
 
 
 
                         if(i > 0)
                         {
                             // Three vertices on left side of post for bottom railing
-                            temp_xyz[Z] = room_select_xyz[i][Z]+1.25f;
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[X]-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+temp_xyz[Y]-(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[Y]-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+temp_xyz[X]-(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+((temp_xyz[X]-temp_xyz[Y])*0.5f)-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+((temp_xyz[X]+temp_xyz[Y])*0.5f)-(vector_xyz[Y]*0.22f), temp_xyz[Z]-0.75f, TRUE);
+                            temp_xyz[2] = room_select_xyz[i][2]+1.25f;
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[0]-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+temp_xyz[1]-(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[1]-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+temp_xyz[0]-(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+((temp_xyz[0]-temp_xyz[1])*0.5f)-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+((temp_xyz[0]+temp_xyz[1])*0.5f)-(vector_xyz[1]*0.22f), temp_xyz[2]-0.75f, TRUE);
 
                             // Three vertices on left side of post for top railing
-                            temp_xyz[Z] = room_select_xyz[i][Z]+3.5f;
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[X]-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+temp_xyz[Y]-(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[Y]-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+temp_xyz[X]-(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+((temp_xyz[X]-temp_xyz[Y])*0.5f)-(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+((temp_xyz[X]+temp_xyz[Y])*0.5f)-(vector_xyz[Y]*0.22f), temp_xyz[Z]-0.75f, TRUE);
+                            temp_xyz[2] = room_select_xyz[i][2]+3.5f;
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[0]-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+temp_xyz[1]-(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[1]-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+temp_xyz[0]-(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+((temp_xyz[0]-temp_xyz[1])*0.5f)-(vector_xyz[0]*0.22f), room_select_xyz[i][1]+((temp_xyz[0]+temp_xyz[1])*0.5f)-(vector_xyz[1]*0.22f), temp_xyz[2]-0.75f, TRUE);
                         }
 
 
                         // Four vertices at bottom of post...
-                        temp_xyz[Z] = room_select_xyz[i][Z];
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[X], room_select_xyz[i][Y]+temp_xyz[Y], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[Y], room_select_xyz[i][Y]+temp_xyz[X], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X], room_select_xyz[i][Y]-temp_xyz[Y], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[Y], room_select_xyz[i][Y]-temp_xyz[X], temp_xyz[Z], TRUE);
+                        temp_xyz[2] = room_select_xyz[i][2];
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[0], room_select_xyz[i][1]+temp_xyz[1], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[1], room_select_xyz[i][1]+temp_xyz[0], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0], room_select_xyz[i][1]-temp_xyz[1], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[1], room_select_xyz[i][1]-temp_xyz[0], temp_xyz[2], TRUE);
 
 
                         // Four vertices at top of post...
-                        temp_xyz[Z] = room_select_xyz[i][Z]+4.0f;
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[X], room_select_xyz[i][Y]+temp_xyz[Y], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[Y], room_select_xyz[i][Y]+temp_xyz[X], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X], room_select_xyz[i][Y]-temp_xyz[Y], temp_xyz[Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[Y], room_select_xyz[i][Y]-temp_xyz[X], temp_xyz[Z], TRUE);
+                        temp_xyz[2] = room_select_xyz[i][2]+4.0f;
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[0], room_select_xyz[i][1]+temp_xyz[1], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[1], room_select_xyz[i][1]+temp_xyz[0], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0], room_select_xyz[i][1]-temp_xyz[1], temp_xyz[2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[1], room_select_xyz[i][1]-temp_xyz[0], temp_xyz[2], TRUE);
 
 
                         if(i < num_segment)
                         {
                             // Three vertices on right side of post for bottom railing
-                            temp_xyz[Z] = room_select_xyz[i][Z]+1.25f;
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X]+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]-temp_xyz[Y]+(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[Y]+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]-temp_xyz[X]+(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+((temp_xyz[Y]-temp_xyz[X])*0.5f)+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+((-temp_xyz[X]-temp_xyz[Y])*0.5f)+(vector_xyz[Y]*0.22f), temp_xyz[Z]-0.75f, TRUE);
+                            temp_xyz[2] = room_select_xyz[i][2]+1.25f;
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0]+(vector_xyz[0]*0.22f), room_select_xyz[i][1]-temp_xyz[1]+(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[1]+(vector_xyz[0]*0.22f), room_select_xyz[i][1]-temp_xyz[0]+(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+((temp_xyz[1]-temp_xyz[0])*0.5f)+(vector_xyz[0]*0.22f), room_select_xyz[i][1]+((-temp_xyz[0]-temp_xyz[1])*0.5f)+(vector_xyz[1]*0.22f), temp_xyz[2]-0.75f, TRUE);
 
 
                             // Three vertices on right side of post for top railing
-                            temp_xyz[Z] = room_select_xyz[i][Z]+3.5f;
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X]+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]-temp_xyz[Y]+(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+temp_xyz[Y]+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]-temp_xyz[X]+(vector_xyz[Y]*0.22f), temp_xyz[Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+((temp_xyz[Y]-temp_xyz[X])*0.5f)+(vector_xyz[X]*0.22f), room_select_xyz[i][Y]+((-temp_xyz[X]-temp_xyz[Y])*0.5f)+(vector_xyz[Y]*0.22f), temp_xyz[Z]-0.75f, TRUE);
+                            temp_xyz[2] = room_select_xyz[i][2]+3.5f;
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0]+(vector_xyz[0]*0.22f), room_select_xyz[i][1]-temp_xyz[1]+(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+temp_xyz[1]+(vector_xyz[0]*0.22f), room_select_xyz[i][1]-temp_xyz[0]+(vector_xyz[1]*0.22f), temp_xyz[2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+((temp_xyz[1]-temp_xyz[0])*0.5f)+(vector_xyz[0]*0.22f), room_select_xyz[i][1]+((-temp_xyz[0]-temp_xyz[1])*0.5f)+(vector_xyz[1]*0.22f), temp_xyz[2]-0.75f, TRUE);
                         }
 
 
                         // Just in case we're on the last segment...
                         if(k > 1)
                         {
-                            final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                            final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                            final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                            final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             i++;
                         }
                     }
@@ -5192,31 +5183,31 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(j, k)
                     {
                         // Two vertices for low end of step...  To sides of control vertices...
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X], room_select_xyz[i][Y]-final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0], room_select_xyz[i][1]-final_vector_xyz[1], room_select_xyz[i][2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1], room_select_xyz[i][2], TRUE);
 
 
                         // Two vertices for top of step...  Don't do for last step...
                         if(i < num_segment)
                         {
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X], room_select_xyz[i][Y]-final_vector_xyz[Y], room_select_xyz[i][Z]+1.0f, TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y], room_select_xyz[i][Z]+1.0f, TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0], room_select_xyz[i][1]-final_vector_xyz[1], room_select_xyz[i][2]+1.0f, TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1], room_select_xyz[i][2]+1.0f, TRUE);
                         }
 
 
                         // Also put two vertices at floor level...  Don't do for first step...
                         if(i > 0)
                         {
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X], room_select_xyz[i][Y]-final_vector_xyz[Y], room_select_xyz[0][Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y], room_select_xyz[0][Z], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0], room_select_xyz[i][1]-final_vector_xyz[1], room_select_xyz[0][2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1], room_select_xyz[0][2], TRUE);
                         }
 
 
                         // Just in case we're on the last segment...
                         if(k > 1)
                         {
-                            final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                            final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                            final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                            final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             i++;
                         }
                     }
@@ -5237,15 +5228,15 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(j, k)
                     {
                         // Expand each vertex into two vertices...
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X], room_select_xyz[i][Y]-final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0], room_select_xyz[i][1]-final_vector_xyz[1], room_select_xyz[i][2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1], room_select_xyz[i][2], TRUE);
 
 
                         // Just in case we're on the last segment...
                         if(k > 1)
                         {
-                            final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                            final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                            final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                            final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             i++;
                         }
                     }
@@ -5267,26 +5258,26 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(j, k)
                     {
                         // Expand each vertex into 10 vertices...
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*-1.25f, room_select_xyz[i][Y]+final_vector_xyz[Y]*-1.25f, room_select_xyz[i][Z]+0.3f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*-1.25f, room_select_xyz[i][Y]+final_vector_xyz[Y]*-1.25f, room_select_xyz[i][Z]+0.8f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*-1.0f,  room_select_xyz[i][Y]+final_vector_xyz[Y]*-1.0f,  room_select_xyz[i][Z]+0.8f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*-1.0f,  room_select_xyz[i][Y]+final_vector_xyz[Y]*-1.0f,  room_select_xyz[i][Z]+0.3f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*-1.25f, room_select_xyz[i][1]+final_vector_xyz[1]*-1.25f, room_select_xyz[i][2]+0.3f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*-1.25f, room_select_xyz[i][1]+final_vector_xyz[1]*-1.25f, room_select_xyz[i][2]+0.8f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*-1.0f,  room_select_xyz[i][1]+final_vector_xyz[1]*-1.0f,  room_select_xyz[i][2]+0.8f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*-1.0f,  room_select_xyz[i][1]+final_vector_xyz[1]*-1.0f,  room_select_xyz[i][2]+0.3f, TRUE);
 
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*1.0f,  room_select_xyz[i][Y]+final_vector_xyz[Y]*1.0f,  room_select_xyz[i][Z]+0.3f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*1.0f,  room_select_xyz[i][Y]+final_vector_xyz[Y]*1.0f,  room_select_xyz[i][Z]+0.8f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*1.25f, room_select_xyz[i][Y]+final_vector_xyz[Y]*1.25f, room_select_xyz[i][Z]+0.8f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*1.25f, room_select_xyz[i][Y]+final_vector_xyz[Y]*1.25f, room_select_xyz[i][Z]+0.3f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*1.0f,  room_select_xyz[i][1]+final_vector_xyz[1]*1.0f,  room_select_xyz[i][2]+0.3f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*1.0f,  room_select_xyz[i][1]+final_vector_xyz[1]*1.0f,  room_select_xyz[i][2]+0.8f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*1.25f, room_select_xyz[i][1]+final_vector_xyz[1]*1.25f, room_select_xyz[i][2]+0.8f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*1.25f, room_select_xyz[i][1]+final_vector_xyz[1]*1.25f, room_select_xyz[i][2]+0.3f, TRUE);
 
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*-1.75f, room_select_xyz[i][Y]+final_vector_xyz[Y]*-1.75f, room_select_xyz[i][Z]+0.0f, TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*1.75f,  room_select_xyz[i][Y]+final_vector_xyz[Y]*1.75f,  room_select_xyz[i][Z]+0.0f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*-1.75f, room_select_xyz[i][1]+final_vector_xyz[1]*-1.75f, room_select_xyz[i][2]+0.0f, TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*1.75f,  room_select_xyz[i][1]+final_vector_xyz[1]*1.75f,  room_select_xyz[i][2]+0.0f, TRUE);
 
 
 
                         // Just in case we're on the last segment...
                         if(k > 1)
                         {
-                            final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                            final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                            final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                            final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             i++;
                         }
                     }
@@ -5308,15 +5299,15 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(j, k)
                     {
                         // Expand each vertex into two vertices...
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X], room_select_xyz[i][Y]-final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
-                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y], room_select_xyz[i][Z], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0], room_select_xyz[i][1]-final_vector_xyz[1], room_select_xyz[i][2], TRUE);
+                        worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1], room_select_xyz[i][2], TRUE);
 
 
                         // Just in case we're on the last segment...
                         if(k > 1)
                         {
-                            final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                            final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                            final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                            final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             i++;
                         }
                     }
@@ -5339,24 +5330,24 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                         if(base_vertex_ledge)
                         {
                             // Five vertices...
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X], room_select_xyz[i][Y], room_select_xyz[i][Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-final_vector_xyz[X]*0.5f, room_select_xyz[i][Y]-final_vector_xyz[Y]*0.5f, room_select_xyz[i][Z], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0], room_select_xyz[i][1], room_select_xyz[i][2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-final_vector_xyz[0]*0.5f, room_select_xyz[i][1]-final_vector_xyz[1]*0.5f, room_select_xyz[i][2], TRUE);
                             RANDOMIZE_TEMP_XYZ();
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X], room_select_xyz[i][Y], room_select_xyz[i][Z]+1.0f+temp_xyz[Z]*0.5f, TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0], room_select_xyz[i][1], room_select_xyz[i][2]+1.0f+temp_xyz[2]*0.5f, TRUE);
                             RANDOMIZE_TEMP_XYZ();
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X], room_select_xyz[i][Y]-temp_xyz[Y], room_select_xyz[i][Z]+ledge_height+temp_xyz[Z], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0], room_select_xyz[i][1]-temp_xyz[1], room_select_xyz[i][2]+ledge_height+temp_xyz[2], TRUE);
                             RANDOMIZE_TEMP_XYZ();
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]-temp_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y]-temp_xyz[Y], room_select_xyz[i][Z]+ledge_height+temp_xyz[Z], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]-temp_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1]-temp_xyz[1], room_select_xyz[i][2]+ledge_height+temp_xyz[2], TRUE);
                         }
                         else
                         {
                             // Four vertices...
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]*0.5f, room_select_xyz[i][Y]+final_vector_xyz[Y]*0.5f, room_select_xyz[i][Z], TRUE);
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X], room_select_xyz[i][Y], room_select_xyz[i][Z], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]*0.5f, room_select_xyz[i][1]+final_vector_xyz[1]*0.5f, room_select_xyz[i][2], TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0], room_select_xyz[i][1], room_select_xyz[i][2], TRUE);
                             RANDOMIZE_TEMP_XYZ();
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-temp_xyz[X], room_select_xyz[i][Y]-temp_xyz[Y], room_select_xyz[i][Z]+ledge_height+temp_xyz[Z]-1.0f, TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-temp_xyz[0], room_select_xyz[i][1]-temp_xyz[1], room_select_xyz[i][2]+ledge_height+temp_xyz[2]-1.0f, TRUE);
                             RANDOMIZE_TEMP_XYZ();
-                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+final_vector_xyz[X]-temp_xyz[X], room_select_xyz[i][Y]+final_vector_xyz[Y]-temp_xyz[Y], room_select_xyz[i][Z]+ledge_height+temp_xyz[Z]-1.0f, TRUE);
+                            worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+final_vector_xyz[0]-temp_xyz[0], room_select_xyz[i][1]+final_vector_xyz[1]-temp_xyz[1], room_select_xyz[i][2]+ledge_height+temp_xyz[2]-1.0f, TRUE);
                         }
 
 
@@ -5365,22 +5356,22 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                         {
                             if(type == HARDPLOPPER_LEDGE_LOOP)
                             {
-                                vector_xyz[X] = room_select_xyz[0][X] - room_select_xyz[i+1][X];
-                                vector_xyz[Y] = room_select_xyz[0][Y] - room_select_xyz[i+1][Y];
-                                vector_xyz[Z] = 0.0f;
+                                vector_xyz[0] = room_select_xyz[0][0] - room_select_xyz[i+1][0];
+                                vector_xyz[1] = room_select_xyz[0][1] - room_select_xyz[i+1][1];
+                                vector_xyz[2] = 0.0f;
                                 length = vector_length(vector_xyz);
                                 if(length > 0.0f)
                                 {
-                                    vector_xyz[X]/=length;
-                                    vector_xyz[Y]/=length;
+                                    vector_xyz[0]/=length;
+                                    vector_xyz[1]/=length;
                                 }
-                                final_vector_xyz[X] = (last_vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                                final_vector_xyz[Y] = (last_vector_xyz[X] + vector_xyz[X])*scaling;
+                                final_vector_xyz[0] = (last_vector_xyz[1] + vector_xyz[1])*-scaling;
+                                final_vector_xyz[1] = (last_vector_xyz[0] + vector_xyz[0])*scaling;
                             }
                             else
                             {
-                                final_vector_xyz[X] = (vector_xyz[Y] + vector_xyz[Y])*-scaling;
-                                final_vector_xyz[Y] = (vector_xyz[X] + vector_xyz[X])*scaling;
+                                final_vector_xyz[0] = (vector_xyz[1] + vector_xyz[1])*-scaling;
+                                final_vector_xyz[1] = (vector_xyz[0] + vector_xyz[0])*scaling;
                             }
                             i++;
                         }
@@ -5396,10 +5387,10 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
         {
             repeat(i, num_original)
             {
-                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-2.0f, room_select_xyz[i][Y]+2.0f, room_select_xyz[i][Z], TRUE);
-                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]-2.0f, room_select_xyz[i][Y]-2.0f, room_select_xyz[i][Z], TRUE);
-                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+2.0f, room_select_xyz[i][Y]-2.0f, room_select_xyz[i][Z], TRUE);
-                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][X]+2.0f, room_select_xyz[i][Y]+2.0f, room_select_xyz[i][Z], TRUE);
+                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-2.0f, room_select_xyz[i][1]+2.0f, room_select_xyz[i][2], TRUE);
+                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]-2.0f, room_select_xyz[i][1]-2.0f, room_select_xyz[i][2], TRUE);
+                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+2.0f, room_select_xyz[i][1]-2.0f, room_select_xyz[i][2], TRUE);
+                worked &= room_srf_add_vertex(srf_file, room_select_xyz[i][0]+2.0f, room_select_xyz[i][1]+2.0f, room_select_xyz[i][2], TRUE);
             }
         }
 
@@ -5408,10 +5399,10 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
         // Make sure all vertex locations are up to date...
         repeat(i, room_select_num)
         {
-//log_message("INFO:   Stair vertex %d at %f, %f, %f", i, room_select_xyz[i][X], room_select_xyz[i][Y], room_select_xyz[i][Z]);
-            sdf_write_unsigned_short(room_select_data[i], (unsigned short) ((signed short) (room_select_xyz[i][X]*256.0f)) );
-            sdf_write_unsigned_short(room_select_data[i]+2, (unsigned short) ((signed short) (room_select_xyz[i][Y]*256.0f)) );
-            sdf_write_unsigned_short(room_select_data[i]+4, (unsigned short) ((signed short) (room_select_xyz[i][Z]*256.0f)) );
+//log_message("INFO:   Stair vertex %d at %f, %f, %f", i, room_select_xyz[i][0], room_select_xyz[i][1], room_select_xyz[i][2]);
+            sdf_write_unsigned_short(room_select_data[i], (unsigned short) ((signed short) (room_select_xyz[i][0]*256.0f)) );
+            sdf_write_unsigned_short(room_select_data[i]+2, (unsigned short) ((signed short) (room_select_xyz[i][1]*256.0f)) );
+            sdf_write_unsigned_short(room_select_data[i]+4, (unsigned short) ((signed short) (room_select_xyz[i][2]*256.0f)) );
         }
 
 
@@ -5439,10 +5430,10 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
                     // Post top & bottom triangles...
                     left_x = 0.8125f;  right_x = 0.96875f;  top_y = 0.53125f;  bottom_y = 0.9375f;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+4], room_select_list[j+5], room_select_list[j+6], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+4], room_select_list[j+6], room_select_list[j+7], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+2], room_select_list[j+1], room_select_list[j+0], tex_vertex_xy[2], tex_vertex_xy[1], tex_vertex_xy[0]);
@@ -5451,10 +5442,10 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
                     // Post side triangles
                     left_x = 0.0625f;  right_x = 0.8125f;  top_y = 0.53125f;  bottom_y = 0.9375f;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+7], room_select_list[j+6], room_select_list[j+2], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+7], room_select_list[j+2], room_select_list[j+3], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
                     room_srf_add_texture_triangle(srf_file, 16, room_select_list[j+4], room_select_list[j+7], room_select_list[j+3], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
@@ -5469,15 +5460,15 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     if(i < num_segment)
                     {
                         // Do bottom railing first, then top railing...
-                        vector_xyz[X] = room_select_xyz[j+8][X] - room_select_xyz[j+14][X];
-                        vector_xyz[Y] = room_select_xyz[j+8][Y] - room_select_xyz[j+14][Y];
-                        vector_xyz[Z] = 0.0f;
+                        vector_xyz[0] = room_select_xyz[j+8][0] - room_select_xyz[j+14][0];
+                        vector_xyz[1] = room_select_xyz[j+8][1] - room_select_xyz[j+14][1];
+                        vector_xyz[2] = 0.0f;
                         length = vector_length(vector_xyz);
                         left_x = 0.0f;  right_x = (length*0.15f);  top_y = 0.0625f;  bottom_y = 0.4375f;
-                        tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                        tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                        tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                        tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                        tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                        tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                        tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                        tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
 
 
                         k = 0;
@@ -5523,34 +5514,34 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
                     // Riser
                     left_x = ((rand()&255)*ONE_OVER_256);  right_x = left_x + (scaling*WALL_TEXTURE_SCALE*4.0f);  top_y = 0.0f;  bottom_y = WALL_TEXTURE_SCALE;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+0], room_select_list[j+2], room_select_list[j+1], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[3]);
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+2], room_select_list[j+3], room_select_list[j+1], tex_vertex_xy[1], tex_vertex_xy[2], tex_vertex_xy[3]);
 
 
                     // Walkable area of step
-                    tex_vertex_xy[0][Y] = 0.95f;
-                    tex_vertex_xy[1][Y] = 0.05f;
-                    tex_vertex_xy[2][Y] = 0.05f;
-                    tex_vertex_xy[3][Y] = 0.95f;
+                    tex_vertex_xy[0][1] = 0.95f;
+                    tex_vertex_xy[1][1] = 0.05f;
+                    tex_vertex_xy[2][1] = 0.05f;
+                    tex_vertex_xy[3][1] = 0.95f;
                     room_srf_add_texture_triangle(srf_file, 5, room_select_list[j+2], room_select_list[j+skip+0], room_select_list[j+3], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[3]);
                     room_srf_add_texture_triangle(srf_file, 5, room_select_list[j+skip+0], room_select_list[j+skip+1], room_select_list[j+3], tex_vertex_xy[1], tex_vertex_xy[2], tex_vertex_xy[3]);
 
 
                     // Right wall side
-                    vector_xyz[X] = room_select_xyz[j+skip+1][X] - room_select_xyz[j+3][X];
-                    vector_xyz[Y] = room_select_xyz[j+skip+1][Y] - room_select_xyz[j+3][Y];
-                    vector_xyz[Z] = 0.0f;
+                    vector_xyz[0] = room_select_xyz[j+skip+1][0] - room_select_xyz[j+3][0];
+                    vector_xyz[1] = room_select_xyz[j+skip+1][1] - room_select_xyz[j+3][1];
+                    vector_xyz[2] = 0.0f;
                     length = vector_length(vector_xyz);
-                    left_x = (right_tex_x*WALL_TEXTURE_SCALE);  right_x = ((right_tex_x+length)*WALL_TEXTURE_SCALE);  top_y = 1.0f-room_select_xyz[j+3][Z]*WALL_TEXTURE_SCALE;  bottom_y = 1.0f-room_select_xyz[j+skip+skiplow+1][Z]*WALL_TEXTURE_SCALE;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
-                    tex_vertex_xy[4][X] = left_x;  tex_vertex_xy[4][Y] = 1.0f-room_select_xyz[j+1][Z]*WALL_TEXTURE_SCALE;
+                    left_x = (right_tex_x*WALL_TEXTURE_SCALE);  right_x = ((right_tex_x+length)*WALL_TEXTURE_SCALE);  top_y = 1.0f-room_select_xyz[j+3][2]*WALL_TEXTURE_SCALE;  bottom_y = 1.0f-room_select_xyz[j+skip+skiplow+1][2]*WALL_TEXTURE_SCALE;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
+                    tex_vertex_xy[4][0] = left_x;  tex_vertex_xy[4][1] = 1.0f-room_select_xyz[j+1][2]*WALL_TEXTURE_SCALE;
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+1], room_select_list[j+3], room_select_list[j+skip+1], tex_vertex_xy[4], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+1], room_select_list[j+skip+1], room_select_list[j+skip+skiplow+1], tex_vertex_xy[4], tex_vertex_xy[2], tex_vertex_xy[3]);
                     if(i>0)
@@ -5561,16 +5552,16 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
 
                     // Left wall side
-                    vector_xyz[X] = room_select_xyz[j+skip+0][X] - room_select_xyz[j+2][X];
-                    vector_xyz[Y] = room_select_xyz[j+skip+0][Y] - room_select_xyz[j+2][Y];
-                    vector_xyz[Z] = 0.0f;
+                    vector_xyz[0] = room_select_xyz[j+skip+0][0] - room_select_xyz[j+2][0];
+                    vector_xyz[1] = room_select_xyz[j+skip+0][1] - room_select_xyz[j+2][1];
+                    vector_xyz[2] = 0.0f;
                     length = vector_length(vector_xyz);
-                    left_x = ((left_tex_x-length)*WALL_TEXTURE_SCALE);  right_x = (left_tex_x*WALL_TEXTURE_SCALE);  top_y = 1.0f-room_select_xyz[j+2][Z]*WALL_TEXTURE_SCALE;  bottom_y = 1.0f-room_select_xyz[j+skip+skiplow+0][Z]*WALL_TEXTURE_SCALE;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
-                    tex_vertex_xy[4][X] = right_x; tex_vertex_xy[4][Y] = 1.0f-room_select_xyz[j+0][Z]*WALL_TEXTURE_SCALE;
+                    left_x = ((left_tex_x-length)*WALL_TEXTURE_SCALE);  right_x = (left_tex_x*WALL_TEXTURE_SCALE);  top_y = 1.0f-room_select_xyz[j+2][2]*WALL_TEXTURE_SCALE;  bottom_y = 1.0f-room_select_xyz[j+skip+skiplow+0][2]*WALL_TEXTURE_SCALE;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
+                    tex_vertex_xy[4][0] = right_x; tex_vertex_xy[4][1] = 1.0f-room_select_xyz[j+0][2]*WALL_TEXTURE_SCALE;
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+0], room_select_list[j+skip+0], room_select_list[j+2], tex_vertex_xy[4], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 6, room_select_list[j+0], room_select_list[j+skip+skiplow], room_select_list[j+skip+0], tex_vertex_xy[4], tex_vertex_xy[0], tex_vertex_xy[1]);
                     if(i>0)
@@ -5599,9 +5590,9 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                     repeat(i, (num_segment+1))
                     {
                         skip=j+skiplow+4;  if(i >= num_segment) { skip = num_original; }
-                        vector_xyz[X] = room_select_xyz[skip+skiplow+2][X] - room_select_xyz[j+skiplow+2][X];
-                        vector_xyz[Y] = room_select_xyz[skip+skiplow+2][Y] - room_select_xyz[j+skiplow+2][Y];
-                        vector_xyz[Z] = 0.0f;
+                        vector_xyz[0] = room_select_xyz[skip+skiplow+2][0] - room_select_xyz[j+skiplow+2][0];
+                        vector_xyz[1] = room_select_xyz[skip+skiplow+2][1] - room_select_xyz[j+skiplow+2][1];
+                        vector_xyz[2] = 0.0f;
                         length = vector_length(vector_xyz);
                         right_tex_x += length;
                         j+=skiplow+4;
@@ -5629,16 +5620,16 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
 
                     // Ledge cap triangles...
-                    vector_xyz[X] = room_select_xyz[skip+skiplow+2][X] - room_select_xyz[j+skiplow+2][X];
-                    vector_xyz[Y] = room_select_xyz[skip+skiplow+2][Y] - room_select_xyz[j+skiplow+2][Y];
-                    vector_xyz[Z] = 0.0f;
+                    vector_xyz[0] = room_select_xyz[skip+skiplow+2][0] - room_select_xyz[j+skiplow+2][0];
+                    vector_xyz[1] = room_select_xyz[skip+skiplow+2][1] - room_select_xyz[j+skiplow+2][1];
+                    vector_xyz[2] = 0.0f;
                     length = vector_length(vector_xyz);
                     right_x = (right_tex_x*scaling);  left_x = ((right_tex_x+length)*scaling);  top_y = 0.0390625f;  bottom_y = 0.9609375f;
                     right_tex_x += length;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
                     room_srf_add_texture_triangle(srf_file, 5, room_select_list[skip+skiplow+2], room_select_list[skip+skiplow+3], room_select_list[j+skiplow+3], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 5, room_select_list[skip+skiplow+2], room_select_list[j+skiplow+3], room_select_list[j+skiplow+2], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
@@ -5657,11 +5648,11 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
 
                     // Ledge wall triangles...
-                    top_y = 0.0f;  bottom_y = (room_select_xyz[skip+skiplow+2][Z]-room_select_xyz[skip+skiplow+1][Z])*WALL_TEXTURE_SCALE;;
-                    tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                    tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                    tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                    tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                    top_y = 0.0f;  bottom_y = (room_select_xyz[skip+skiplow+2][2]-room_select_xyz[skip+skiplow+1][2])*WALL_TEXTURE_SCALE;;
+                    tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                    tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                    tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                    tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
                     room_srf_add_texture_triangle(srf_file, 4, room_select_list[skip+skiplow+1], room_select_list[skip+skiplow+2], room_select_list[j+skiplow+2], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 4, room_select_list[skip+skiplow+1], room_select_list[j+skiplow+2], room_select_list[j+skiplow+1], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
@@ -5677,10 +5668,10 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
                 left_x = temp + 0.0078125f;  right_x = temp + 0.2421875f;
                 temp = (width>>2) * 0.25f;
                 top_y = temp + 0.0078125f;  bottom_y = temp + 0.2421875f;
-                tex_vertex_xy[0][X] = left_x;  tex_vertex_xy[0][Y] = bottom_y;
-                tex_vertex_xy[1][X] = left_x;  tex_vertex_xy[1][Y] = top_y;
-                tex_vertex_xy[2][X] = right_x; tex_vertex_xy[2][Y] = top_y;
-                tex_vertex_xy[3][X] = right_x; tex_vertex_xy[3][Y] = bottom_y;
+                tex_vertex_xy[0][0] = left_x;  tex_vertex_xy[0][1] = bottom_y;
+                tex_vertex_xy[1][0] = left_x;  tex_vertex_xy[1][1] = top_y;
+                tex_vertex_xy[2][0] = right_x; tex_vertex_xy[2][1] = top_y;
+                tex_vertex_xy[3][0] = right_x; tex_vertex_xy[3][1] = bottom_y;
 
 
                 j = num_original;
@@ -5694,34 +5685,34 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
             if(type==HARDPLOPPER_PAVEMENT)
             {
 //log_message("INFO:   Texturing pavement");
-                tex_vertex_xy[0][X] = 0.0f;
-                tex_vertex_xy[1][X] = 0.0f;
-                tex_vertex_xy[2][X] = 1.0f;
-                tex_vertex_xy[3][X] = 1.0f;
+                tex_vertex_xy[0][0] = 0.0f;
+                tex_vertex_xy[1][0] = 0.0f;
+                tex_vertex_xy[2][0] = 1.0f;
+                tex_vertex_xy[3][0] = 1.0f;
                 j = num_original;  // First vertex (index into selected vertex array) of current segment...
                 repeat(i, num_segment)
                 {
                     // Reset bottom edges...
-                    tex_vertex_xy[0][Y] = 0.0f;
-                    tex_vertex_xy[3][Y] = 0.0f;
+                    tex_vertex_xy[0][1] = 0.0f;
+                    tex_vertex_xy[3][1] = 0.0f;
 
 
                     // Left side of road...
-                    vector_xyz[X] = room_select_xyz[j+0][X] - room_select_xyz[j+2][X];
-                    vector_xyz[Y] = room_select_xyz[j+0][Y] - room_select_xyz[j+2][Y];
-                    vector_xyz[Z] = room_select_xyz[j+0][Z] - room_select_xyz[j+2][Z];
+                    vector_xyz[0] = room_select_xyz[j+0][0] - room_select_xyz[j+2][0];
+                    vector_xyz[1] = room_select_xyz[j+0][1] - room_select_xyz[j+2][1];
+                    vector_xyz[2] = room_select_xyz[j+0][2] - room_select_xyz[j+2][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[1][Y] = length * WALL_TEXTURE_SCALE * 4.0f + 0.25f;
-                    tex_vertex_xy[1][Y] = ((int) (tex_vertex_xy[1][Y] * 4.0f)) * 0.25f;
+                    tex_vertex_xy[1][1] = length * WALL_TEXTURE_SCALE * 4.0f + 0.25f;
+                    tex_vertex_xy[1][1] = ((int) (tex_vertex_xy[1][1] * 4.0f)) * 0.25f;
 
 
                     // Right side of road...
-                    vector_xyz[X] = room_select_xyz[j+1][X] - room_select_xyz[j+3][X];
-                    vector_xyz[Y] = room_select_xyz[j+1][Y] - room_select_xyz[j+3][Y];
-                    vector_xyz[Z] = room_select_xyz[j+1][Z] - room_select_xyz[j+3][Z];
+                    vector_xyz[0] = room_select_xyz[j+1][0] - room_select_xyz[j+3][0];
+                    vector_xyz[1] = room_select_xyz[j+1][1] - room_select_xyz[j+3][1];
+                    vector_xyz[2] = room_select_xyz[j+1][2] - room_select_xyz[j+3][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[2][Y] = length * WALL_TEXTURE_SCALE * 4.0f + 0.25f;
-                    tex_vertex_xy[2][Y] = ((int) (tex_vertex_xy[2][Y] * 4.0f)) * 0.25f;
+                    tex_vertex_xy[2][1] = length * WALL_TEXTURE_SCALE * 4.0f + 0.25f;
+                    tex_vertex_xy[2][1] = ((int) (tex_vertex_xy[2][1] * 4.0f)) * 0.25f;
 
 
                     // Plop the triangles...
@@ -5734,41 +5725,41 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
             {
 //log_message("INFO:   Texturing border");
                 texture = (unsigned char) ((ledge_height-2)&31);
-                tex_vertex_xy[0][X] = 0.0f;
-                tex_vertex_xy[1][X] = 0.0f;
-                tex_vertex_xy[2][X] = 0.0f;
-                tex_vertex_xy[3][X] = 0.0f;
-                tex_vertex_xy[0][Y] = 0.0625f;
-                tex_vertex_xy[1][Y] = 0.0625f;
-                tex_vertex_xy[2][Y] = 0.9375f;
-                tex_vertex_xy[3][Y] = 0.9375f;
+                tex_vertex_xy[0][0] = 0.0f;
+                tex_vertex_xy[1][0] = 0.0f;
+                tex_vertex_xy[2][0] = 0.0f;
+                tex_vertex_xy[3][0] = 0.0f;
+                tex_vertex_xy[0][1] = 0.0625f;
+                tex_vertex_xy[1][1] = 0.0625f;
+                tex_vertex_xy[2][1] = 0.9375f;
+                tex_vertex_xy[3][1] = 0.9375f;
                 j = num_original;  // First vertex (index into selected vertex array) of current segment...
                 repeat(i, num_segment)
                 {
                     // Reset edges...
-                    tex_vertex_xy[0][X] = tex_vertex_xy[1][X];
-                    tex_vertex_xy[3][X] = tex_vertex_xy[2][X];
+                    tex_vertex_xy[0][0] = tex_vertex_xy[1][0];
+                    tex_vertex_xy[3][0] = tex_vertex_xy[2][0];
 
 
                     // Left side of border...
-                    vector_xyz[X] = room_select_xyz[j+0][X] - room_select_xyz[j+2][X];
-                    vector_xyz[Y] = room_select_xyz[j+0][Y] - room_select_xyz[j+2][Y];
-                    vector_xyz[Z] = room_select_xyz[j+0][Z] - room_select_xyz[j+2][Z];
+                    vector_xyz[0] = room_select_xyz[j+0][0] - room_select_xyz[j+2][0];
+                    vector_xyz[1] = room_select_xyz[j+0][1] - room_select_xyz[j+2][1];
+                    vector_xyz[2] = room_select_xyz[j+0][2] - room_select_xyz[j+2][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[1][X] = tex_vertex_xy[0][X] + (length * WALL_TEXTURE_SCALE * 2.0f);
+                    tex_vertex_xy[1][0] = tex_vertex_xy[0][0] + (length * WALL_TEXTURE_SCALE * 2.0f);
 
 
                     // Right side of border...
-                    vector_xyz[X] = room_select_xyz[j+1][X] - room_select_xyz[j+3][X];
-                    vector_xyz[Y] = room_select_xyz[j+1][Y] - room_select_xyz[j+3][Y];
-                    vector_xyz[Z] = room_select_xyz[j+1][Z] - room_select_xyz[j+3][Z];
+                    vector_xyz[0] = room_select_xyz[j+1][0] - room_select_xyz[j+3][0];
+                    vector_xyz[1] = room_select_xyz[j+1][1] - room_select_xyz[j+3][1];
+                    vector_xyz[2] = room_select_xyz[j+1][2] - room_select_xyz[j+3][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[2][X] = tex_vertex_xy[3][X] + (length * WALL_TEXTURE_SCALE * 2.0f);
+                    tex_vertex_xy[2][0] = tex_vertex_xy[3][0] + (length * WALL_TEXTURE_SCALE * 2.0f);
 
 
                     // Average 'em together...
-                    tex_vertex_xy[1][X] = (tex_vertex_xy[1][X] + tex_vertex_xy[2][X]) * 0.5f;
-                    tex_vertex_xy[2][X] = tex_vertex_xy[1][X];
+                    tex_vertex_xy[1][0] = (tex_vertex_xy[1][0] + tex_vertex_xy[2][0]) * 0.5f;
+                    tex_vertex_xy[2][0] = tex_vertex_xy[1][0];
 
 
                     // Plop the triangles...
@@ -5781,80 +5772,80 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
             {
 //log_message("INFO:   Texturing mine track");
 
-                tex_vertex_xy[0][X] = 0.0f;
-                tex_vertex_xy[1][X] = 0.0f;
-                tex_vertex_xy[2][X] = 0.0f;
-                tex_vertex_xy[3][X] = 0.0f;
+                tex_vertex_xy[0][0] = 0.0f;
+                tex_vertex_xy[1][0] = 0.0f;
+                tex_vertex_xy[2][0] = 0.0f;
+                tex_vertex_xy[3][0] = 0.0f;
                 j = num_original;  // First vertex (index into selected vertex array) of current segment...
                 repeat(i, num_segment)
                 {
                     // Reset edges...
-                    tex_vertex_xy[0][X] = tex_vertex_xy[1][X];
-                    tex_vertex_xy[3][X] = tex_vertex_xy[2][X];
+                    tex_vertex_xy[0][0] = tex_vertex_xy[1][0];
+                    tex_vertex_xy[3][0] = tex_vertex_xy[2][0];
 
 
                     // Left side of border...
-                    vector_xyz[X] = room_select_xyz[j+8][X] - room_select_xyz[j+18][X];
-                    vector_xyz[Y] = room_select_xyz[j+8][Y] - room_select_xyz[j+18][Y];
-                    vector_xyz[Z] = room_select_xyz[j+8][Z] - room_select_xyz[j+18][Z];
+                    vector_xyz[0] = room_select_xyz[j+8][0] - room_select_xyz[j+18][0];
+                    vector_xyz[1] = room_select_xyz[j+8][1] - room_select_xyz[j+18][1];
+                    vector_xyz[2] = room_select_xyz[j+8][2] - room_select_xyz[j+18][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[1][X] = tex_vertex_xy[0][X] + (length * WALL_TEXTURE_SCALE * 2.0f);
+                    tex_vertex_xy[1][0] = tex_vertex_xy[0][0] + (length * WALL_TEXTURE_SCALE * 2.0f);
 
 
                     // Right side of border...
-                    vector_xyz[X] = room_select_xyz[j+9][X] - room_select_xyz[j+19][X];
-                    vector_xyz[Y] = room_select_xyz[j+9][Y] - room_select_xyz[j+19][Y];
-                    vector_xyz[Z] = room_select_xyz[j+9][Z] - room_select_xyz[j+19][Z];
+                    vector_xyz[0] = room_select_xyz[j+9][0] - room_select_xyz[j+19][0];
+                    vector_xyz[1] = room_select_xyz[j+9][1] - room_select_xyz[j+19][1];
+                    vector_xyz[2] = room_select_xyz[j+9][2] - room_select_xyz[j+19][2];
                     length = vector_length(vector_xyz);
-                    tex_vertex_xy[2][X] = tex_vertex_xy[3][X] + (length * WALL_TEXTURE_SCALE * 2.0f);
+                    tex_vertex_xy[2][0] = tex_vertex_xy[3][0] + (length * WALL_TEXTURE_SCALE * 2.0f);
 
 
                     // Average 'em together...
-                    tex_vertex_xy[1][X] = (tex_vertex_xy[1][X] + tex_vertex_xy[2][X]) * 0.5f;
-                    tex_vertex_xy[2][X] = tex_vertex_xy[1][X];
+                    tex_vertex_xy[1][0] = (tex_vertex_xy[1][0] + tex_vertex_xy[2][0]) * 0.5f;
+                    tex_vertex_xy[2][0] = tex_vertex_xy[1][0];
 
 
 
                     // Plop rail triangles...
-                    tex_vertex_xy[0][X] *= 0.25f;
-                    tex_vertex_xy[1][X] *= 0.25f;
-                    tex_vertex_xy[2][X] *= 0.25f;
-                    tex_vertex_xy[3][X] *= 0.25f;
+                    tex_vertex_xy[0][0] *= 0.25f;
+                    tex_vertex_xy[1][0] *= 0.25f;
+                    tex_vertex_xy[2][0] *= 0.25f;
+                    tex_vertex_xy[3][0] *= 0.25f;
                     k = 0;
                     while(k < 5)
                     {
                         // Left side
-                        tex_vertex_xy[0][Y] = 0.00f;
-                        tex_vertex_xy[1][Y] = 0.00f;
-                        tex_vertex_xy[2][Y] = 0.25f;
-                        tex_vertex_xy[3][Y] = 0.25f;
+                        tex_vertex_xy[0][1] = 0.00f;
+                        tex_vertex_xy[1][1] = 0.00f;
+                        tex_vertex_xy[2][1] = 0.25f;
+                        tex_vertex_xy[3][1] = 0.25f;
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+0+k], room_select_list[j+10+k], room_select_list[j+11+k], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+0+k], room_select_list[j+11+k], room_select_list[j+1+k], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
 
                         // Top side
-                        tex_vertex_xy[0][Y] = 0.25f;
-                        tex_vertex_xy[1][Y] = 0.25f;
-                        tex_vertex_xy[2][Y] = 0.50f;
-                        tex_vertex_xy[3][Y] = 0.50f;
+                        tex_vertex_xy[0][1] = 0.25f;
+                        tex_vertex_xy[1][1] = 0.25f;
+                        tex_vertex_xy[2][1] = 0.50f;
+                        tex_vertex_xy[3][1] = 0.50f;
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+1+k], room_select_list[j+11+k], room_select_list[j+12+k], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+1+k], room_select_list[j+12+k], room_select_list[j+2+k], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
 
                         // Right side
-                        tex_vertex_xy[0][Y] = 0.50f;
-                        tex_vertex_xy[1][Y] = 0.50f;
-                        tex_vertex_xy[2][Y] = 0.75f;
-                        tex_vertex_xy[3][Y] = 0.75f;
+                        tex_vertex_xy[0][1] = 0.50f;
+                        tex_vertex_xy[1][1] = 0.50f;
+                        tex_vertex_xy[2][1] = 0.75f;
+                        tex_vertex_xy[3][1] = 0.75f;
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+2+k], room_select_list[j+12+k], room_select_list[j+13+k], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+2+k], room_select_list[j+13+k], room_select_list[j+3+k], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
 
                         // Under side
-                        tex_vertex_xy[0][Y] = 0.75f;
-                        tex_vertex_xy[1][Y] = 0.75f;
-                        tex_vertex_xy[2][Y] = 1.00f;
-                        tex_vertex_xy[3][Y] = 1.00f;
+                        tex_vertex_xy[0][1] = 0.75f;
+                        tex_vertex_xy[1][1] = 0.75f;
+                        tex_vertex_xy[2][1] = 1.00f;
+                        tex_vertex_xy[3][1] = 1.00f;
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+3+k], room_select_list[j+13+k], room_select_list[j+10+k], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                         room_srf_add_texture_triangle(srf_file, 14, room_select_list[j+3+k], room_select_list[j+10+k], room_select_list[j+0+k], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
@@ -5877,18 +5868,18 @@ void room_srf_hardplopper(unsigned char* srf_file, unsigned char width, unsigned
 
                         k+=4;
                     }
-                    tex_vertex_xy[0][X] *= 4.00f;
-                    tex_vertex_xy[1][X] *= 4.00f;
-                    tex_vertex_xy[2][X] *= 4.00f;
-                    tex_vertex_xy[3][X] *= 4.00f;
+                    tex_vertex_xy[0][0] *= 4.00f;
+                    tex_vertex_xy[1][0] *= 4.00f;
+                    tex_vertex_xy[2][0] *= 4.00f;
+                    tex_vertex_xy[3][0] *= 4.00f;
 
 
 
                     // Plop wooden tie triangles
-                    tex_vertex_xy[0][Y] = 0.00f;
-                    tex_vertex_xy[1][Y] = 0.00f;
-                    tex_vertex_xy[2][Y] = 1.00f;
-                    tex_vertex_xy[3][Y] = 1.00f;
+                    tex_vertex_xy[0][1] = 0.00f;
+                    tex_vertex_xy[1][1] = 0.00f;
+                    tex_vertex_xy[2][1] = 1.00f;
+                    tex_vertex_xy[3][1] = 1.00f;
                     room_srf_add_texture_triangle(srf_file, 15, room_select_list[j+8], room_select_list[j+18], room_select_list[j+19], tex_vertex_xy[0], tex_vertex_xy[1], tex_vertex_xy[2]);
                     room_srf_add_texture_triangle(srf_file, 15, room_select_list[j+8], room_select_list[j+19], room_select_list[j+9], tex_vertex_xy[0], tex_vertex_xy[2], tex_vertex_xy[3]);
 
@@ -5958,9 +5949,9 @@ void room_srf_copy(unsigned char* data)
         repeat(i, room_select_num)
         {
             room_copy_vertex_original[i] = room_select_list[i];
-            room_copy_vertex_xyz[i][X] = room_select_xyz[i][X];
-            room_copy_vertex_xyz[i][Y] = room_select_xyz[i][Y];
-            room_copy_vertex_xyz[i][Z] = room_select_xyz[i][Z];
+            room_copy_vertex_xyz[i][0] = room_select_xyz[i][0];
+            room_copy_vertex_xyz[i][1] = room_select_xyz[i][1];
+            room_copy_vertex_xyz[i][2] = room_select_xyz[i][2];
         }
         num_room_copy_vertex = room_select_num;
 //log_message("INFO:     Copied all %d vertices", num_room_copy_vertex);
@@ -5993,8 +5984,8 @@ void room_srf_copy(unsigned char* data)
                         tex_vertex = sdf_read_unsigned_short(triangle_data);  triangle_data+=2;
                         room_draw_srf_tex_vertex_helper(tex_vertex);
                         room_copy_triangle_vertex[num_room_copy_triangle][k] = vertex;
-                        room_copy_triangle_tex_vertex_xy[num_room_copy_triangle][k][X] = vertex_xyz[X];
-                        room_copy_triangle_tex_vertex_xy[num_room_copy_triangle][k][Y] = vertex_xyz[Y];
+                        room_copy_triangle_tex_vertex_xy[num_room_copy_triangle][k][0] = vertex_xyz[0];
+                        room_copy_triangle_tex_vertex_xy[num_room_copy_triangle][k][1] = vertex_xyz[1];
                     }
                     room_copy_triangle_texture[num_room_copy_triangle] = i;
                     num_room_copy_triangle++;
@@ -6030,7 +6021,7 @@ void room_srf_paste(unsigned char* data)
     worked = FALSE;
     repeat(i, num_room_copy_vertex)
     {
-        worked |= room_srf_add_vertex(data, room_copy_vertex_xyz[i][X], room_copy_vertex_xyz[i][Y], room_copy_vertex_xyz[i][Z], TRUE);
+        worked |= room_srf_add_vertex(data, room_copy_vertex_xyz[i][0], room_copy_vertex_xyz[i][1], room_copy_vertex_xyz[i][2], TRUE);
     }
 
 
@@ -6091,12 +6082,12 @@ unsigned char room_find_wall_center(unsigned char* data, unsigned short rotation
     float x, y, z;
 
     // Generate the rotation information...
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
-    x = offset_xyz[X];
-    y = offset_xyz[Y];
-    z = offset_xyz[Z];
+    x = offset_xyz[0];
+    y = offset_xyz[1];
+    z = offset_xyz[2];
 
 
     // Start to read the SRF file...
@@ -6117,38 +6108,38 @@ unsigned char room_find_wall_center(unsigned char* data, unsigned short rotation
             last_vertex = sdf_read_unsigned_short(exterior_wall_data+(3*wall));
         }
         room_draw_srf_vertex_helper(last_vertex);
-        center_xyz[X] = vertex_xyz[X];
-        center_xyz[Y] = vertex_xyz[Y];
-        center_xyz[Z] = vertex_xyz[Z];
+        center_xyz[0] = vertex_xyz[0];
+        center_xyz[1] = vertex_xyz[1];
+        center_xyz[2] = vertex_xyz[2];
         room_draw_srf_vertex_helper(vertex);
         if(normal_add > 0.001f)
         {
-            side_xy[X] = vertex_xyz[Y] - center_xyz[Y];
-            side_xy[Y] = -(vertex_xyz[X] - center_xyz[X]);
-            distance = ((float) sqrt(side_xy[X]*side_xy[X] + side_xy[Y]*side_xy[Y])) + 0.0000001f;
+            side_xy[0] = vertex_xyz[1] - center_xyz[1];
+            side_xy[1] = -(vertex_xyz[0] - center_xyz[0]);
+            distance = ((float) sqrt(side_xy[0]*side_xy[0] + side_xy[1]*side_xy[1])) + 0.0000001f;
             normal_add = normal_add / distance;
-            center_xyz[X] += vertex_xyz[X];
-            center_xyz[Y] += vertex_xyz[Y];
-            center_xyz[Z] += vertex_xyz[Z];
-            center_xyz[X] *= 0.5f;
-            center_xyz[Y] *= 0.5f;
-            center_xyz[Z] *= 0.5f;
-            center_xyz[X]+=(side_xy[X]*normal_add);
-            center_xyz[Y]+=(side_xy[Y]*normal_add);
-            map_room_door_spin = ((unsigned short) (atan2(side_xy[Y], side_xy[X])*10430.37835047f)) + 32768;
+            center_xyz[0] += vertex_xyz[0];
+            center_xyz[1] += vertex_xyz[1];
+            center_xyz[2] += vertex_xyz[2];
+            center_xyz[0] *= 0.5f;
+            center_xyz[1] *= 0.5f;
+            center_xyz[2] *= 0.5f;
+            center_xyz[0]+=(side_xy[0]*normal_add);
+            center_xyz[1]+=(side_xy[1]*normal_add);
+            map_room_door_spin = ((unsigned short) (atan2(side_xy[1], side_xy[0])*10430.37835047f)) + 32768;
             return TRUE;
         }
-        center_xyz[X] += vertex_xyz[X];
-        center_xyz[Y] += vertex_xyz[Y];
-        center_xyz[Z] += vertex_xyz[Z];
-        center_xyz[X] *= 0.5f;
-        center_xyz[Y] *= 0.5f;
-        center_xyz[Z] *= 0.5f;
+        center_xyz[0] += vertex_xyz[0];
+        center_xyz[1] += vertex_xyz[1];
+        center_xyz[2] += vertex_xyz[2];
+        center_xyz[0] *= 0.5f;
+        center_xyz[1] *= 0.5f;
+        center_xyz[2] *= 0.5f;
         return TRUE;
     }
-    center_xyz[X] = x;
-    center_xyz[Y] = y;
-    center_xyz[Z] = z;
+    center_xyz[0] = x;
+    center_xyz[1] = y;
+    center_xyz[2] = z;
     return FALSE;
 }
 
@@ -6177,7 +6168,7 @@ unsigned char room_find_best_wall(unsigned char* data, unsigned char allow_botto
 
 
     // Generate the rotation information...
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
     x = 0.0f;
@@ -6219,21 +6210,21 @@ unsigned char room_find_best_wall(unsigned char* data, unsigned char allow_botto
                 // Check the dot product, of the wall side normal & the supplied vector to
                 // see if this is the best wall...
                 room_draw_srf_vertex_helper(last_vertex);
-                last_vertex_xyz[X] = vertex_xyz[X];
-                last_vertex_xyz[Y] = vertex_xyz[Y];
-                last_vertex_xyz[Z] = vertex_xyz[Z];
+                last_vertex_xyz[0] = vertex_xyz[0];
+                last_vertex_xyz[1] = vertex_xyz[1];
+                last_vertex_xyz[2] = vertex_xyz[2];
                 room_draw_srf_vertex_helper(vertex);
-                wall_xy[X] = vertex_xyz[X] - last_vertex_xyz[X];
-                wall_xy[Y] = vertex_xyz[Y] - last_vertex_xyz[Y];
-                side_xy[X] = wall_xy[Y];
-                side_xy[Y] = -wall_xy[X];
-                distance = ((float) sqrt(side_xy[X]*side_xy[X] + side_xy[Y]*side_xy[Y])) + 0.000001f;
-                side_xy[X]/=distance;
-                side_xy[Y]/=distance;
-                dot = side_xy[X]*vector_xy[X] + side_xy[Y]*vector_xy[Y];
+                wall_xy[0] = vertex_xyz[0] - last_vertex_xyz[0];
+                wall_xy[1] = vertex_xyz[1] - last_vertex_xyz[1];
+                side_xy[0] = wall_xy[1];
+                side_xy[1] = -wall_xy[0];
+                distance = ((float) sqrt(side_xy[0]*side_xy[0] + side_xy[1]*side_xy[1])) + 0.000001f;
+                side_xy[0]/=distance;
+                side_xy[1]/=distance;
+                dot = side_xy[0]*vector_xy[0] + side_xy[1]*vector_xy[1];
                 if(dot > best_dot)
                 {
-                    if((vertex_xyz[Z] > -1.0f && last_vertex_xyz[Z] > -1.0f) || allow_bottom_doors)
+                    if((vertex_xyz[2] > -1.0f && last_vertex_xyz[2] > -1.0f) || allow_bottom_doors)
                     {
                         best_wall = i;
                         best_dot = dot;
@@ -6308,7 +6299,7 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
 
 
     // Generate the rotation information...
-    angle = rotation * (2.0f * PI / 65536.0f);
+    angle = rotation * (2.0f * M_PI / 65536.0f);
     sine = (float) sin(angle);
     cosine = (float) cos(angle);
 
@@ -6363,14 +6354,14 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
         {
             // Horizontal lines...
             display_texture_off();
-            vertex_xyz[Z] = 0.0f;
+            vertex_xyz[2] = 0.0f;
             gy = -100.0f;
             while(gy < 101.0f)
             {
                 display_start_line();
-                    vertex_xyz[Y] = gy;
-                    vertex_xyz[X] = -100.0f;  display_vertex(vertex_xyz);
-                    vertex_xyz[X] =  100.0f;  display_vertex(vertex_xyz);
+                    vertex_xyz[1] = gy;
+                    vertex_xyz[0] = -100.0f;  display_vertex(vertex_xyz);
+                    vertex_xyz[0] =  100.0f;  display_vertex(vertex_xyz);
                 display_end();
                 gy+=10.0f;
             }
@@ -6379,9 +6370,9 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
             while(gx < 101.0f)
             {
                 display_start_line();
-                    vertex_xyz[X] = gx;
-                    vertex_xyz[Y] = -100.0f;  display_vertex(vertex_xyz);
-                    vertex_xyz[Y] =  100.0f;  display_vertex(vertex_xyz);
+                    vertex_xyz[0] = gx;
+                    vertex_xyz[1] = -100.0f;  display_vertex(vertex_xyz);
+                    vertex_xyz[1] =  100.0f;  display_vertex(vertex_xyz);
                 display_end();
                 gx+=10.0f;
             }
@@ -6397,7 +6388,7 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
             // Handle box selection of vertices...  Other stuff too...
             if(plopping_bridge && !mouse_down[BUTTON0])
             {
-                room_srf_add_bridge(data, select_center_xyz[X], select_center_xyz[Y], select_offset_xyz[X], select_offset_xyz[Y]);
+                room_srf_add_bridge(data, select_center_xyz[0], select_center_xyz[1], select_offset_xyz[0], select_offset_xyz[1]);
                 plopping_bridge = FALSE;
             }
             if(selection_close_type == BORDER_SELECT)
@@ -6409,10 +6400,10 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                         if(!room_select_inlist(i))
                         {
                             room_draw_srf_vertex_helper(i);
-                            render_get_point_xy(vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], &new_x, &new_y);
-                            if(new_x > selection_box_tl[X] &&  new_x < selection_box_br[X])
+                            render_get_point_xy(vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], &new_x, &new_y);
+                            if(new_x > selection_box_tl[0] &&  new_x < selection_box_br[0])
                             {
-                                if(new_y > selection_box_tl[Y] &&  new_y < selection_box_br[Y])
+                                if(new_y > selection_box_tl[1] &&  new_y < selection_box_br[1])
                                 {
                                     room_select_add(i, vertex_data+(i*6), 3);
                                 }
@@ -6423,14 +6414,14 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
             }
             else if(selection_close_type == BORDER_CROSS_HAIRS)
             {
-                room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_center_xyz[X], &select_center_xyz[Y], &select_center_xyz[Z], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
+                room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_center_xyz[0], &select_center_xyz[1], &select_center_xyz[2], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
             }
             else if(selection_close_type == BORDER_MOVE)
             {
                 if(select_move_on)
                 {
                     // Working on movement...  Center xyz should've been magically set by now...
-                    room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_offset_xyz[X], &select_offset_xyz[Y], &select_offset_xyz[Z], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
+                    room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_offset_xyz[0], &select_offset_xyz[1], &select_offset_xyz[2], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
                     room_srf_move();
                     if(selection_move == MOVE_MODE_BRIDGE_PLOP)
                     {
@@ -6440,11 +6431,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 else
                 {
                     // Done with movement
-                    room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_center_xyz[X], &select_center_xyz[Y], &select_center_xyz[Z], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
-                    select_center_xyz[Z] = 0.0f;
-                    select_offset_xyz[X] = select_center_xyz[X];
-                    select_offset_xyz[Y] = select_center_xyz[Y];
-                    select_offset_xyz[Z] = select_center_xyz[Z];
+                    room_get_point_xyz(((mouse_x - script_window_x)/script_window_w), ((mouse_y - script_window_y)/script_window_h), &select_center_xyz[0], &select_center_xyz[1], &select_center_xyz[2], 100.0f,(unsigned char) (key_down[SDLK_LCTRL] || key_down[SDLK_RCTRL]), (unsigned char) (key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT]));
+                    select_center_xyz[2] = 0.0f;
+                    select_offset_xyz[0] = select_center_xyz[0];
+                    select_offset_xyz[1] = select_center_xyz[1];
+                    select_offset_xyz[2] = select_center_xyz[2];
                     room_select_update_xyz();
                 }
             }
@@ -6501,14 +6492,14 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 {
                     if(!room_select_inlist(i))
                     {
-                        temp_xyz[X] = ((signed short)sdf_read_unsigned_short(search_data)) * ONE_OVER_256;
-                        temp_xyz[Y] = ((signed short)sdf_read_unsigned_short(search_data+2)) * ONE_OVER_256;
-                        temp_xyz[Z] = 0.0f;
+                        temp_xyz[0] = ((signed short)sdf_read_unsigned_short(search_data)) * ONE_OVER_256;
+                        temp_xyz[1] = ((signed short)sdf_read_unsigned_short(search_data+2)) * ONE_OVER_256;
+                        temp_xyz[2] = 0.0f;
                         if(m == 3)
                         {
-                            temp_xyz[Z] = ((signed short)sdf_read_unsigned_short(search_data+4)) * ONE_OVER_256;
+                            temp_xyz[2] = ((signed short)sdf_read_unsigned_short(search_data+4)) * ONE_OVER_256;
                         }
-                        render_get_point_xyd(temp_xyz[X], temp_xyz[Y], temp_xyz[Z], &new_x, &new_y, &new_d);
+                        render_get_point_xyd(temp_xyz[0], temp_xyz[1], temp_xyz[2], &new_x, &new_y, &new_d);
                         new_x = new_x-mouse_x;
                         new_y = new_y-mouse_y;
                         new_x = (float) sqrt(new_x*new_x + new_y*new_y);
@@ -6634,11 +6625,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 }
                 if(inlist)
                 {
-                    display_riser_marker(white, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_riser_marker(white, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
                 else
                 {
-                    display_riser_marker(color_rgb, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_riser_marker(color_rgb, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
             }
             display_texture_on();
@@ -6744,23 +6735,23 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
 
 
                         room_draw_srf_vertex_helper(k);
-                        center_xyz[X] = vertex_xyz[X];
-                        center_xyz[Y] = vertex_xyz[Y];
-                        center_xyz[Z] = vertex_xyz[Z];
+                        center_xyz[0] = vertex_xyz[0];
+                        center_xyz[1] = vertex_xyz[1];
+                        center_xyz[2] = vertex_xyz[2];
                         room_draw_srf_vertex_helper(j);
-                        perp_xyz[X] = -(vertex_xyz[Y] - center_xyz[Y]);
-                        perp_xyz[Y] = vertex_xyz[X] - center_xyz[X];
-                        new_d = ((float) sqrt(perp_xyz[X]*perp_xyz[X] + perp_xyz[Y]*perp_xyz[Y])) + 0.0000001f;
-                        perp_xyz[X]/=new_d;
-                        perp_xyz[Y]/=new_d;
-                        center_xyz[X] = (center_xyz[X] + vertex_xyz[X]) * 0.5f;
-                        center_xyz[Y] = (center_xyz[Y] + vertex_xyz[Y]) * 0.5f;
-                        center_xyz[Z] = (center_xyz[Z] + vertex_xyz[Z]) * 0.5f;
-                        vertex_xyz[X] = center_xyz[X] + perp_xyz[X];
-                        vertex_xyz[Y] = center_xyz[Y] + perp_xyz[Y];
-                        vertex_xyz[Z] = center_xyz[Z];
-                        center_xyz[X] -= perp_xyz[X];
-                        center_xyz[Y] -= perp_xyz[Y];
+                        perp_xyz[0] = -(vertex_xyz[1] - center_xyz[1]);
+                        perp_xyz[1] = vertex_xyz[0] - center_xyz[0];
+                        new_d = ((float) sqrt(perp_xyz[0]*perp_xyz[0] + perp_xyz[1]*perp_xyz[1])) + 0.0000001f;
+                        perp_xyz[0]/=new_d;
+                        perp_xyz[1]/=new_d;
+                        center_xyz[0] = (center_xyz[0] + vertex_xyz[0]) * 0.5f;
+                        center_xyz[1] = (center_xyz[1] + vertex_xyz[1]) * 0.5f;
+                        center_xyz[2] = (center_xyz[2] + vertex_xyz[2]) * 0.5f;
+                        vertex_xyz[0] = center_xyz[0] + perp_xyz[0];
+                        vertex_xyz[1] = center_xyz[1] + perp_xyz[1];
+                        vertex_xyz[2] = center_xyz[2];
+                        center_xyz[0] -= perp_xyz[0];
+                        center_xyz[1] -= perp_xyz[1];
                         display_start_line();
                             display_vertex(center_xyz);
                             display_vertex(vertex_xyz);
@@ -6789,11 +6780,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 }
                 if(inlist)
                 {
-                    display_solid_marker(white, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(white, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
                 else
                 {
-                    display_solid_marker(color_rgb, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(color_rgb, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
             }
             display_color(color_rgb)
@@ -6836,11 +6827,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 }
                 if(inlist)
                 {
-                    display_solid_marker(white, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(white, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
                 else
                 {
-                    display_solid_marker(color_rgb, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(color_rgb, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
                 room_draw_srf_bridge_helper(i, 1);
                 inlist = FALSE;
@@ -6853,11 +6844,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                 }
                 if(inlist)
                 {
-                    display_solid_marker(white, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(white, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
                 else
                 {
-                    display_solid_marker(color_rgb, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], 1.0f);
+                    display_solid_marker(color_rgb, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], 1.0f);
                 }
             }
             display_texture_on();
@@ -6928,14 +6919,14 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                             size = 2.0f;
                         }
                     }
-                    display_solid_marker(color_temp, vertex_xyz[X], vertex_xyz[Y], vertex_xyz[Z], size);
+                    display_solid_marker(color_temp, vertex_xyz[0], vertex_xyz[1], vertex_xyz[2], size);
 
                     // Riser line
                     display_start_line();
                         display_vertex(vertex_xyz);
-                        temp_xyz[X] = vertex_xyz[X];
-                        temp_xyz[Y] = vertex_xyz[Y];
-                        temp_xyz[Z] = 0.0f;
+                        temp_xyz[0] = vertex_xyz[0];
+                        temp_xyz[1] = vertex_xyz[1];
+                        temp_xyz[2] = 0.0f;
                         display_vertex(temp_xyz);
                     display_end();
 
@@ -6943,10 +6934,10 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
                     // Facing line
                     display_start_line();
                         display_vertex(vertex_xyz);
-                        angle = ((unsigned short) (rotation + (object_group_data[15]<<8))) * (2.0f * PI / 65536.0f);
-                        temp_xyz[X] = - (((float) sin(angle))*5.0f) + vertex_xyz[X];
-                        temp_xyz[Y] = (((float) cos(angle))*5.0f) + vertex_xyz[Y];
-                        temp_xyz[Z] = vertex_xyz[Z];
+                        angle = ((unsigned short) (rotation + (object_group_data[15]<<8))) * (2.0f * M_PI / 65536.0f);
+                        temp_xyz[0] = - (((float) sin(angle))*5.0f) + vertex_xyz[0];
+                        temp_xyz[1] = (((float) cos(angle))*5.0f) + vertex_xyz[1];
+                        temp_xyz[2] = vertex_xyz[2];
                         display_vertex(temp_xyz);
                     display_end();
                     object_group_data+=22;
@@ -6961,8 +6952,8 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
         {
             display_zbuffer_off();
             display_texture_off();
-            display_crosshairs(white, select_center_xyz[X], select_center_xyz[Y], 100.00f);
-            display_riser_marker(white, select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z], 2.0f);
+            display_crosshairs(white, select_center_xyz[0], select_center_xyz[1], 100.00f);
+            display_riser_marker(white, select_center_xyz[0], select_center_xyz[1], select_center_xyz[2], 2.0f);
             display_texture_on();
             display_zbuffer_on();
         }
@@ -6972,11 +6963,11 @@ void room_draw_srf(float x, float y, float z, unsigned char* data, unsigned char
             display_zbuffer_off();
             display_texture_off();
 
-            display_crosshairs(red, select_center_xyz[X], select_center_xyz[Y], 100.00f);
-            display_riser_marker(red, select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z], 2.0f);
+            display_crosshairs(red, select_center_xyz[0], select_center_xyz[1], 100.00f);
+            display_riser_marker(red, select_center_xyz[0], select_center_xyz[1], select_center_xyz[2], 2.0f);
 
-            display_crosshairs(white, select_offset_xyz[X], select_offset_xyz[Y], 100.00f);
-            display_riser_marker(white, select_offset_xyz[X], select_offset_xyz[Y], select_offset_xyz[Z], 2.0f);
+            display_crosshairs(white, select_offset_xyz[0], select_offset_xyz[1], 100.00f);
+            display_riser_marker(white, select_offset_xyz[0], select_offset_xyz[1], select_offset_xyz[2], 2.0f);
 
             display_start_line();
                 display_vertex(select_center_xyz);
@@ -7186,9 +7177,9 @@ void room_draw(unsigned char* data)
                             // Read the vertex
                             vertex = (*((unsigned short*) triangle_data));  triangle_data+=4;
                             current_vertex_data = (vertex_data+(vertex*26));
-                            vertex_xyz[X] = (*((float*) current_vertex_data)) + (*((float*) (current_vertex_data+12)))*cartoon_line_size;
-                            vertex_xyz[Y] = (*((float*) (current_vertex_data+4))) + (*((float*) (current_vertex_data+16)))*cartoon_line_size;
-                            vertex_xyz[Z] = (*((float*) (current_vertex_data+8))) + (*((float*) (current_vertex_data+20)))*cartoon_line_size;
+                            vertex_xyz[0] = (*((float*) current_vertex_data)) + (*((float*) (current_vertex_data+12)))*cartoon_line_size;
+                            vertex_xyz[1] = (*((float*) (current_vertex_data+4))) + (*((float*) (current_vertex_data+16)))*cartoon_line_size;
+                            vertex_xyz[2] = (*((float*) (current_vertex_data+8))) + (*((float*) (current_vertex_data+20)))*cartoon_line_size;
 
 
                             // Add to draw list...
@@ -7237,8 +7228,8 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
         waypoint_xy = waypoint_xy_start;
         repeat(i, num_waypoint)
         {
-            disx = waypoint_xy[X] - to_xy[X];
-            disy = waypoint_xy[Y] - to_xy[Y];
+            disx = waypoint_xy[0] - to_xy[0];
+            disy = waypoint_xy[1] - to_xy[1];
             distance = disx*disx + disy*disy;
             if(distance < best_distance)
             {
@@ -7250,14 +7241,14 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
 
 
         // Is our from spot closer to the target than our final waypoint?
-        disx = to_xy[X] - from_xy[X];
-        disy = to_xy[Y] - from_xy[Y];
+        disx = to_xy[0] - from_xy[0];
+        disy = to_xy[1] - from_xy[1];
         distance = disx*disx + disy*disy;
         if(distance < best_distance)
         {
             // Looks better just to go straight to our target...
-            write_xy[X] = to_xy[X];
-            write_xy[Y] = to_xy[Y];
+            write_xy[0] = to_xy[0];
+            write_xy[1] = to_xy[1];
         }
         else
         {
@@ -7267,8 +7258,8 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
             waypoint_xy = waypoint_xy_start;
             repeat(i, num_waypoint)
             {
-                disx = waypoint_xy[X] - from_xy[X];
-                disy = waypoint_xy[Y] - from_xy[Y];
+                disx = waypoint_xy[0] - from_xy[0];
+                disy = waypoint_xy[1] - from_xy[1];
                 distance = disx*disx + disy*disy;
                 if(distance < best_distance)
                 {
@@ -7291,8 +7282,8 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
             if(from_waypoint == to_waypoint)
             {
                 // Looks like we're really close...  Just go 'fer the target...
-                write_xy[X] = to_xy[X];
-                write_xy[Y] = to_xy[Y];
+                write_xy[0] = to_xy[0];
+                write_xy[1] = to_xy[1];
             }
             else
             {
@@ -7307,8 +7298,8 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
                     return_code = FALSE;
                 }
                 waypoint_xy = waypoint_xy_start + (to_waypoint<<1);
-                write_xy[X] = waypoint_xy[X];
-                write_xy[Y] = waypoint_xy[Y];
+                write_xy[0] = waypoint_xy[0];
+                write_xy[1] = waypoint_xy[1];
 
 
                 // Record new character data...
@@ -7320,8 +7311,8 @@ unsigned char room_findpath(unsigned char* data, float* from_xy, float* to_xy, f
     else
     {
         // No waypoint data...  We'll just have to give 'em the to_xy...
-        write_xy[X] = to_xy[X];
-        write_xy[Y] = to_xy[Y];
+        write_xy[0] = to_xy[0];
+        write_xy[1] = to_xy[1];
     }
     return return_code;
 }
@@ -7342,7 +7333,7 @@ void room_shadow_test(float x, float y, float z, float radius)
     display_zbuffer_write_off();
 
     // Radial stuff...
-    angleadd = -PI/16.0f;
+    angleadd = -M_PI/16.0f;
 
     // Front faces should halve the existing color...
     if(!key_down[SDLK_F5])
@@ -7356,9 +7347,9 @@ void room_shadow_test(float x, float y, float z, float radius)
         angle = 0.0f;
         repeat(i, 33)
         {
-            vertex_xyz[X] = x+(((float) sin(angle))*radius);
-            vertex_xyz[Y] = y+(((float) cos(angle))*radius);
-            vertex_xyz[Z] = 0.0f;
+            vertex_xyz[0] = x+(((float) sin(angle))*radius);
+            vertex_xyz[1] = y+(((float) cos(angle))*radius);
+            vertex_xyz[2] = 0.0f;
             display_vertex(vertex_xyz);
             angle+=angleadd;
         }
@@ -7378,9 +7369,9 @@ void room_shadow_test(float x, float y, float z, float radius)
         angle = 0.0f;
         repeat(i, 33)
         {
-            vertex_xyz[X] = x+(((float) sin(angle))*radius);
-            vertex_xyz[Y] = y+(((float) cos(angle))*radius);
-            vertex_xyz[Z] = 0.0f;
+            vertex_xyz[0] = x+(((float) sin(angle))*radius);
+            vertex_xyz[1] = y+(((float) cos(angle))*radius);
+            vertex_xyz[2] = 0.0f;
             display_vertex(vertex_xyz);
             angle+=angleadd;
         }
@@ -7408,7 +7399,7 @@ void room_light_test(float x, float y, float z, float radius)
     display_zbuffer_write_off();
 
     // Radial stuff...
-    angleadd = -PI/16.0f;
+    angleadd = -M_PI/16.0f;
 
     // Back faces should halve the existing color...
     if(!key_down[SDLK_F5])
@@ -7422,9 +7413,9 @@ void room_light_test(float x, float y, float z, float radius)
         angle = 0.0f;
         repeat(i, 33)
         {
-            vertex_xyz[X] = x+(((float) sin(angle))*radius);
-            vertex_xyz[Y] = y+(((float) cos(angle))*radius);
-            vertex_xyz[Z] = 0.0f;
+            vertex_xyz[0] = x+(((float) sin(angle))*radius);
+            vertex_xyz[1] = y+(((float) cos(angle))*radius);
+            vertex_xyz[2] = 0.0f;
             display_vertex(vertex_xyz);
             angle+=angleadd;
         }
@@ -7444,9 +7435,9 @@ void room_light_test(float x, float y, float z, float radius)
         angle = 0.0f;
         repeat(i, 33)
         {
-            vertex_xyz[X] = x+(((float) sin(angle))*radius);
-            vertex_xyz[Y] = y+(((float) cos(angle))*radius);
-            vertex_xyz[Z] = 0.0f;
+            vertex_xyz[0] = x+(((float) sin(angle))*radius);
+            vertex_xyz[1] = y+(((float) cos(angle))*radius);
+            vertex_xyz[2] = 0.0f;
             display_vertex(vertex_xyz);
             angle+=angleadd;
         }

@@ -1,6 +1,16 @@
 // <ZZ> This file contains functions to convert OGG files to RAW
 //  **  decode_ogg            - The main function to do an OGG conversion
 
+#include "dcodeogg.h"
+
+#include "common.h"
+#include "soulfu.h"
+#include "datafile.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <vorbis/vorbisfile.h>
+#include <ogg/ogg.h>
 
 ogg_int16_t convbuffer[4096];
 int convsize=4096;
