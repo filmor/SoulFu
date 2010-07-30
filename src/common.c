@@ -5,6 +5,11 @@
 //  **  count_indentation       - Returns the number of spaces at the start of a string
 //  **  datadump                - Spits out some data into a file on disk (for debuggin')
 
+#include "soulfu.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
 #define MAINBUFFERSIZE (32*MEG)         // 16 Meg for temporary buffers, 4 Meg for map, 12 Meg for room...
 unsigned char* mainbuffer = NULL;       // A General purpose buffer
 unsigned char* subbuffer = NULL;        // A subset of the mainbuffer
@@ -13,31 +18,6 @@ unsigned char* fourthbuffer = NULL;     // A subset of the mainbuffer
 unsigned char* mapbuffer = NULL;        // A subset of the mainbuffer
 unsigned char* roombuffer = NULL;       // A subset of the mainbuffer
 
-
-#define NUM_SINE_ENTRIES  4096
-float sine_table[NUM_SINE_ENTRIES];
-float cosine_table[NUM_SINE_ENTRIES];
-
-//-----------------------------------------------------------------------------------------------
-void sine_table_setup()
-{
-    // <ZZ> This function sets up the sine and cosine tables...
-    unsigned int i;
-    float angle, angle_add;
-
-
-    log_message("INFO:   Setting up sine/cosine table...");
-    angle = 0.0f;
-    angle_add = 2.0f*PI/NUM_SINE_ENTRIES;
-    repeat(i, NUM_SINE_ENTRIES)
-    {
-        sine_table[i] = (float) sin(angle);
-        cosine_table[i] = (float) cos(angle);
-        angle+=angle_add;
-    }
-}
-
-//-----------------------------------------------------------------------------------------------
 unsigned int timer_start_time = 0;
 unsigned int timer_end_time;
 unsigned int timer_end_length;
@@ -169,32 +149,26 @@ void datadump(unsigned char* location, int size, signed char append)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
 void cross_product(float* A_xyz, float* B_xyz, float* C_xyz)
 {
     // <ZZ> This function crosses two vectors, A and B, and gives the result in C.  C should be
     //      a different location than either A or B...
-    C_xyz[X] = (A_xyz[Y]*B_xyz[Z]) - (A_xyz[Z]*B_xyz[Y]);
-    C_xyz[Y] = (A_xyz[Z]*B_xyz[X]) - (A_xyz[X]*B_xyz[Z]);
-    C_xyz[Z] = (A_xyz[X]*B_xyz[Y]) - (A_xyz[Y]*B_xyz[X]);
+    C_xyz[0] = (A_xyz[1]*B_xyz[2]) - (A_xyz[2]*B_xyz[1]);
+    C_xyz[1] = (A_xyz[2]*B_xyz[0]) - (A_xyz[0]*B_xyz[2]);
+    C_xyz[2] = (A_xyz[0]*B_xyz[1]) - (A_xyz[1]*B_xyz[0]);
 // !!!BAD!!!
 // !!!BAD!!!  Should macroize...
 // !!!BAD!!!
 }
 
 //-----------------------------------------------------------------------------------------------
-#define dot_product(A, B) (A[X]*B[X] + A[Y]*B[Y] + A[Z]*B[Z])
-//float dot_product(float* A_xyz, float* B_xyz)
-//{
-//  // <ZZ> This function dots two vectors, A and B, and gives the result.
-//    return (A_xyz[X]*B_xyz[X] + A_xyz[Y]*B_xyz[Y] + A_xyz[Z]*B_xyz[Z]);
-//}
+#define dot_product(A, B) (A[0]*B[0] + A[1]*B[1] + A[2]*B[2])
 
 //-----------------------------------------------------------------------------------------------
 float vector_length(float* A_xyz)
 {
     // <ZZ> This function returns the length of a vector.
-    return ((float) sqrt(A_xyz[X]*A_xyz[X] + A_xyz[Y]*A_xyz[Y] + A_xyz[Z]*A_xyz[Z]));
+    return ((float) sqrt(dot_product(A_xyz, A_xyz)));
 // !!!BAD!!!
 // !!!BAD!!!  Should macroize...
 // !!!BAD!!!

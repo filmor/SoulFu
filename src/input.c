@@ -1,3 +1,5 @@
+#include "input.h"
+
 // !!!BAD!!!
 // !!!BAD!!!
 // !!!BAD!!!  Stuff up here
@@ -6,10 +8,6 @@
 
 #define JOY_TOLERANCE 5000                      // Joystick must move so much before it activates...
 
-
-#define MAX_KEY SDLK_LAST                       // The number of keys
-#define MAX_KEY_BUFFER 256                      // Must be 256
-#define MAX_ASCII 128                           // Must be 128
 unsigned char key_down[MAX_KEY];                // TRUE if key is held down
 unsigned char key_pressed[MAX_KEY];             // TRUE if key was just pressed (updated once per timing cycle)
 unsigned char key_unpressed[MAX_KEY];           // TRUE if key was just released (updated once per timing cycle)
@@ -21,13 +19,6 @@ unsigned char key_shift[MAX_ASCII];             // Convert an SDLK_ to ASCII cap
 unsigned short last_key_pressed = 0;            // The sdlk value of the last key pressed...
 
 
-
-#define MOUSE_TEXT_TIME 10                      // Number of ticks mouse text should show after taking off of character...
-#define MAX_MOUSE_BUTTON 4
-#define BUTTON0    0
-#define BUTTON1    1
-#define BUTTON2    2
-#define BUTTON3    3
 unsigned char* mouse_last_click_object;         // Pointer to data of object last clicked on...
 char mouse_text[MAX_STRING_SIZE];               // The alternate text...  Tool tips...
 char mouse_text_timer;                          // For names of mouse-over'd characters/items

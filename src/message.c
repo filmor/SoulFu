@@ -7,6 +7,8 @@
 #include "soulfu.h"
 #include "datafile.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MESSAGE_MAX 16                  // Maximum number of messages
 #define MAX_MESSAGE_SIZE 128            // Maximum length of the messages

@@ -1,4 +1,5 @@
 #include "page.h"
+#include "datafile.h"
 
 float page_xy[PAGE_FRAME][PAGE_COL*2];      // The page animation
 

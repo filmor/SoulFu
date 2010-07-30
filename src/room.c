@@ -1,58 +1,10 @@
-//-----------------------------------------------------------------------------------------------
-// <ZZ> This file contains functions for drawing & editing & otherwise working with the new room
-//      format...
-//-----------------------------------------------------------------------------------------------
-#define EXTERIOR_VERTEX             0
-#define EXTERIOR_TEX_VERTEX         1
-#define EXTERIOR_TRIANGLE           2
+#include "room.h"
+
 unsigned short global_num_vertex = 0;
 unsigned short global_num_tex_vertex = 0;
 unsigned short global_num_triangle = 0;
 unsigned short global_room_active_group = 0;
 
-#define ROOM_CEILING_Z  20.0f
-#define ROOM_CEILING_BUMP_Z 18.0f
-#define ROOM_HEIGHTMAP_Z  40.0f
-#define ROOM_HEIGHTMAP_SCALE 0.00244140625f // ROOM_HEIGHTMAP_Z / 16384...  for the heightmap return function...
-#define ROOM_HEIGHTMAP_SIZE 1024            // Heightmap is 2048x2048, 16 values per square foot
-#define ROOM_HEIGHTMAP_PRECISION 4.0f       // Each foot of room is sampled this many times (square for a square foot)
-#define ROOM_HEIGHTMAP_BIAS      0.125f     // Should be 0.5/precision...  Used to help out with rounding...
-#define ROOM_HEIGHTMAP_BORDER 64            // Size of border on any side...
-#define ROOM_PIT_HIGH_LEVEL -14.0f
-#define ROOM_PIT_HURT_LEVEL -28.0f
-#define ROOM_PIT_LOW_LEVEL -30.0f
-
-#define ONE_OVER_512 0.001953125f
-#define ONE_OVER_256 0.00390625f
-#define MAX_ROOM_TEXTURE 32
-
-#define WALL_TEXTURE_SCALE   0.050f   // Wall texture repeats every 20ft...
-//#define WALL_TEXTURE_SCALE   0.0625f   // Wall texture repeats every 16ft...
-#define MINIMUM_WALL_LENGTH  0.2500f    // Don't allow short walls...
-
-// Exterior wall flags...
-#define ROOM_WALL_FLAG_LOW_NORMAL_WALL   0
-#define ROOM_WALL_FLAG_LOW_NO_TRIM_WALL  1
-#define ROOM_WALL_FLAG_LOW_NO_WALL       2
-#define ROOM_WALL_FLAG_LOW_DOOR          3
-#define ROOM_WALL_FLAG_LOW_SHUTTER       4
-#define ROOM_WALL_FLAG_LOW_PASSAGE       5
-#define ROOM_WALL_FLAG_LOW_BOSS_DOOR     6
-#define ROOM_WALL_FLAG_LOW_CRACKED_DOOR  7
-#define ROOM_WALL_FLAG_LOW_SECRET_DOOR   8
-
-
-// Room texture flags...
-#define ROOM_TEXTURE_FLAG_NOLINE     1
-#define ROOM_TEXTURE_FLAG_NOHEIGHT   2
-#define ROOM_TEXTURE_FLAG_FLOORTEX   4
-#define ROOM_TEXTURE_FLAG_NODRAW     8
-#define ROOM_TEXTURE_FLAG_ALPHATRANS 16
-#define ROOM_TEXTURE_FLAG_NOSHADOW   32
-#define ROOM_TEXTURE_FLAG_PAPERDOLL  64
-#define ROOM_TEXTURE_FLAG_SMOOTH     128
-
-//-----------------------------------------------------------------------------------------------
 #define MAX_ROOM_WELDABLE_VERTEX 128
 #define ROOM_WELDABLE_DISTANCE_TOLERANCE 100.0f  // Square of actual distance tolerance...
 unsigned short room_weldable_vertex_list[MAX_ROOM_WELDABLE_VERTEX];

@@ -1,9 +1,14 @@
-// <ZZ> This file has stuff for drawing the water.  Done as a multitextured plane with animated
-//      textures...
-//      water_generate              - Creates a batch of animated tga files for the water...
+#include "water.h"
 
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------
+#include "datafile.h"
+#include "soulfu.h"
+#include "room.h"
+#include "object.h"
+#include "input.h"
+#include "display.h"
+
+#include <math.h>
+
 #ifdef DEVTOOL
 void water_phong_texture_color_xy(unsigned char* rgb_file, unsigned char x, unsigned char y)
 {
@@ -32,38 +37,37 @@ float water_generator_distance(float* first_xy, float* second_xy)
     float vector_xyz[3];
     float offset_xy[2];
 
-    vector_xyz[Z] = 0.0f;
+    vector_xyz[2] = 0.0f;
 
 
-    vector_xyz[X] = first_xy[X] - second_xy[X];
-    vector_xyz[Y] = first_xy[Y] - second_xy[Y];
+    vector_xyz[0] = first_xy[0] - second_xy[0];
+    vector_xyz[1] = first_xy[1] - second_xy[1];
     best_distance = vector_length(vector_xyz);
 
-    offset_xy[X] = 0.0f;  offset_xy[Y] = 0.0f;
-    if(second_xy[X] > first_xy[X]) { offset_xy[X] = -1.0f; } else { offset_xy[X] = 1.0f; }
-    vector_xyz[X] = first_xy[X] - (second_xy[X] + offset_xy[X]);
-    vector_xyz[Y] = first_xy[Y] - (second_xy[Y] + offset_xy[Y]);
+    offset_xy[0] = 0.0f;  offset_xy[1] = 0.0f;
+    if(second_xy[0] > first_xy[0]) { offset_xy[0] = -1.0f; } else { offset_xy[0] = 1.0f; }
+    vector_xyz[0] = first_xy[0] - (second_xy[0] + offset_xy[0]);
+    vector_xyz[1] = first_xy[1] - (second_xy[1] + offset_xy[1]);
     distance = vector_length(vector_xyz);
     if(distance < best_distance) best_distance = distance;
 
-    offset_xy[X] = 0.0f;  offset_xy[Y] = 0.0f;
-    if(second_xy[Y] > first_xy[Y]) { offset_xy[Y] = -1.0f; } else { offset_xy[Y] = 1.0f; }
-    vector_xyz[X] = first_xy[X] - (second_xy[X] + offset_xy[X]);
-    vector_xyz[Y] = first_xy[Y] - (second_xy[Y] + offset_xy[Y]);
+    1ffset_xy[0] = 0.0f;  offset_xy[1] = 0.0f;
+    if(second_xy[1] > first_xy[1]) { offset_xy[1] = -1.0f; } else { offset_xy[1] = 1.0f; }
+    vector_xyz[0] = first_xy[0] - (second_xy[0] + offset_xy[0]);
+    vector_xyz[1] = first_xy[1] - (second_xy[1] + offset_xy[1]);
     distance = vector_length(vector_xyz);
     if(distance < best_distance) best_distance = distance;
 
-    offset_xy[X] = 0.0f;  offset_xy[Y] = 0.0f;
-    if(second_xy[X] > first_xy[X]) { offset_xy[X] = -1.0f; } else { offset_xy[X] = 1.0f; }
-    if(second_xy[Y] > first_xy[Y]) { offset_xy[Y] = -1.0f; } else { offset_xy[Y] = 1.0f; }
-    vector_xyz[X] = first_xy[X] - (second_xy[X] + offset_xy[X]);
-    vector_xyz[Y] = first_xy[Y] - (second_xy[Y] + offset_xy[Y]);
+    offset_xy[0] = 0.0f;  offset_xy[1] = 0.0f;
+    if(second_xy[0] > first_xy[0]) { offset_xy[0] = -1.0f; } else { offset_xy[0] = 1.0f; }
+    if(second_xy[1] > first_xy[1]) { offset_xy[1] = -1.0f; } else { offset_xy[1] = 1.0f; }
+    vector_xyz[0] = first_xy[0] - (second_xy[0] + offset_xy[0]);
+    vector_xyz[1] = first_xy[1] - (second_xy[1] + offset_xy[1]);
     distance = vector_length(vector_xyz);
     if(distance < best_distance) best_distance = distance;
     return best_distance;
 }
-#define WATER_GENERATE_SIZE 64
-#define WATER_GENERATORS 256
+
 void water_generate(unsigned short number_of_frames)
 {
     // <ZZ> This function exports a bunch of .TGA files for helping with the water animation...
@@ -100,8 +104,8 @@ void water_generate(unsigned short number_of_frames)
         log_message("INFO:   Generating water animation...");
         repeat(i, WATER_GENERATORS)
         {
-            generator_xy[i][X] = (rand()&255) / 256.0f;
-            generator_xy[i][Y] = (rand()&255) / 256.0f;
+            generator_xy[i][0] = (rand()&255) / 256.0f;
+            generator_xy[i][1] = (rand()&255) / 256.0f;
             generator_radius[i] = (((rand()&127) / 256.0f) + 0.5f) * 0.10f;
             generator_amplitude[i] = (((rand()&127) / 256.0f) + 0.5f);
             generator_frame[i] = rand() % number_of_frames;
@@ -126,8 +130,8 @@ void water_generate(unsigned short number_of_frames)
             {
                 repeat(x, WATER_GENERATE_SIZE)
                 {
-                    point_xy[X] = ((float) x)/((float) WATER_GENERATE_SIZE);
-                    point_xy[Y] = ((float) y)/((float) WATER_GENERATE_SIZE);
+                    point_xy[0] = ((float) x)/((float) WATER_GENERATE_SIZE);
+                    point_xy[1] = ((float) y)/((float) WATER_GENERATE_SIZE);
                     height = 0.0f;
                     repeat(i, WATER_GENERATORS)
                     {
@@ -154,11 +158,11 @@ void water_generate(unsigned short number_of_frames)
                 repeat(x, WATER_GENERATE_SIZE)
                 {
                     value = (unsigned char) (height_data[y][x] * 255.0f);
-                    normal_xy[X] = height_data[y][(x+1)&(WATER_GENERATE_SIZE-1)] - height_data[y][x];
-                    normal_xy[Y] = height_data[(y+1)&(WATER_GENERATE_SIZE-1)][x] - height_data[y][x];
-                    phong_xy[X] = (unsigned char) (16 + (normal_xy[X]*80.0f));
-                    phong_xy[Y] = (unsigned char) (16 + (normal_xy[Y]*80.0f));
-                    water_phong_texture_color_xy(phong_file, phong_xy[X], phong_xy[Y]);
+                    normal_xy[0] = height_data[y][(x+1)&(WATER_GENERATE_SIZE-1)] - height_data[y][x];
+                    normal_xy[1] = height_data[(y+1)&(WATER_GENERATE_SIZE-1)][x] - height_data[y][x];
+                    phong_xy[0] = (unsigned char) (16 + (normal_xy[0]*80.0f));
+                    phong_xy[1] = (unsigned char) (16 + (normal_xy[1]*80.0f));
+                    water_phong_texture_color_xy(phong_file, phong_xy[0], phong_xy[1]);
                     *write = (color_temp[0] + value)>>1;  write++;
                     *write = (color_temp[1] + value)>>1;  write++;
                     *write = (color_temp[2] + value)>>1;  write++;
@@ -246,9 +250,9 @@ void water_draw_room(unsigned char* data)
             if(player_device_type[i] && local_player_character[i] < MAX_CHARACTER)
             {
                 character_xyz = (float*) main_character_data[local_player_character[i]];
-                if(character_xyz[Z] < (room_water_level-4.0f))
+                if(character_xyz[2] < (room_water_level-4.0f))
                 {
-                    z = room_water_level - 4.0f - character_xyz[Z];
+                    z = room_water_level - 4.0f - character_xyz[2];
                     if(z > 5.0f)
                     {
                         alpha = 70;
@@ -341,11 +345,11 @@ void water_draw_room(unsigned char* data)
                     current_vertex_data = (float*) (vertex_data+(vertex*26));
                     vertex = (*((unsigned short*) triangle_data));  triangle_data+=2;
                     current_tex_vertex_data = (float*) (tex_vertex_data+(vertex*22));
-                    vertex_xyz[X] = current_vertex_data[X];
-                    vertex_xyz[Y] = current_vertex_data[Y];
-                    vertex_xyz[Z] = (current_vertex_data[Z] > -0.25f) ? room_water_level : current_vertex_data[Z];
-                    tex_vertex_xy[X] = current_tex_vertex_data[X] + offx;
-                    tex_vertex_xy[Y] = (vertex_xyz[Z] + offy) * tex_scale;
+                    vertex_xyz[0] = current_vertex_data[0];
+                    vertex_xyz[1] = current_vertex_data[1];
+                    vertex_xyz[2] = (current_vertex_data[2] > -0.25f) ? room_water_level : current_vertex_data[2];
+                    tex_vertex_xy[0] = current_tex_vertex_data[0] + offx;
+                    tex_vertex_xy[1] = (vertex_xyz[2] + offy) * tex_scale;
 
 
                     // Add to draw list...
@@ -383,7 +387,7 @@ if(!key_down[SDLK_F5])
 
 
     tex_scale = 0.07f;
-    vertex_xyz[Z] = room_water_level;
+    vertex_xyz[2] = room_water_level;
     if(room_water_type == WATER_TYPE_WATER)
     {
         display_pick_texture(texture_water[(main_game_frame>>2)&(MAX_WATER_FRAME-1)]);
@@ -425,10 +429,10 @@ if(!key_down[SDLK_F5])
                 // Read the vertex and tex vertex
                 vertex = (*((unsigned short*) triangle_data));  triangle_data+=4;
                 current_vertex_data = (float*) (vertex_data+(vertex*26));
-                vertex_xyz[X] = current_vertex_data[X];
-                vertex_xyz[Y] = current_vertex_data[Y];
-                tex_vertex_xy[X] = (vertex_xyz[X] + offx) * tex_scale;
-                tex_vertex_xy[Y] = (vertex_xyz[Y] + offy) * tex_scale;
+                vertex_xyz[0] = current_vertex_data[0];
+                vertex_xyz[1] = current_vertex_data[1];
+                tex_vertex_xy[0] = (vertex_xyz[0] + offx) * tex_scale;
+                tex_vertex_xy[1] = (vertex_xyz[1] + offy) * tex_scale;
 
 
                 // Add to draw list...
@@ -457,9 +461,9 @@ if(!key_down[SDLK_F6])
         angle = ((main_game_frame & 32767) % 1638) * -6.2832f / 1638.0f;
         offx = ((float) sin(angle)) * 4.0f;
         offy = ((float) cos(angle)) * 4.0f;
-        offx += (camera_fore_xyz[X]*0.5f);
-        offy += (camera_fore_xyz[Y]*0.5f);
-        vertex_xyz[Z] = room_water_level;
+        offx += (camera_fore_xyz[0]*0.5f);
+        offy += (camera_fore_xyz[1]*0.5f);
+        vertex_xyz[2] = room_water_level;
         if(room_water_type == WATER_TYPE_WATER)
         {
             display_pick_texture(texture_shimmer[((main_game_frame+30)/3)&(MAX_WATER_FRAME-1)]);
@@ -494,10 +498,10 @@ if(!key_down[SDLK_F6])
                     // Read the vertex and tex vertex
                     vertex = (*((unsigned short*) triangle_data));  triangle_data+=4;
                     current_vertex_data = (float*) (vertex_data+(vertex*26));
-                    vertex_xyz[X] = current_vertex_data[X];
-                    vertex_xyz[Y] = current_vertex_data[Y];
-                    tex_vertex_xy[X] = (vertex_xyz[Y] + offx) * tex_scale;
-                    tex_vertex_xy[Y] = (vertex_xyz[X] + offy) * tex_scale;
+                    vertex_xyz[0] = current_vertex_data[0];
+                    vertex_xyz[1] = current_vertex_data[1];
+                    tex_vertex_xy[0] = (vertex_xyz[1] + offx) * tex_scale;
+                    tex_vertex_xy[1] = (vertex_xyz[0] + offy) * tex_scale;
 
 
                     // Add to draw list...

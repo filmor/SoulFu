@@ -13,30 +13,7 @@
 // !!!BAD!!!
 
 
-//-Includes--------------------------------------------------------------------------------------
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <setjmp.h>
-#include <vorbis/codec.h>
-#include <time.h>
-#include <GL/gl.h>
-#include <GL/glext.h>
-#include "jpeglib.h"
-
-// Include platform specific stuff here
-#ifdef WIN32
-    #undef FAR          // WinDef.h declares FAR the same as jpeglib...
-    #include <windows.h>
-#endif
-
-
-// Stuff for SDL
-#include "SDL.h"
-#include "SDL_net.h"
-
-//-Defines---------------------------------------------------------------------------------------
+//Defines
 #define MEG (1048576)
 #ifndef FALSE
     #define FALSE 0
@@ -47,23 +24,12 @@
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
     #define LIL_ENDIAN
 #endif
-#define X 0
-#define Y 1
-#define Z 2
-#define A 0
-#define B 1
-#define C 2
-
 
 #define MAX_LOCAL_PLAYER 4              // Total players on local machine...
 unsigned char update_performed=FALSE;   // Do any files need decompressing?
 
-
-
 // Stops player input from keyboard...
 unsigned short global_block_keyboard_timer = 0;
-
-
 
 // For Window3D
 float script_matrix[12];
@@ -173,7 +139,6 @@ unsigned short local_player_character[MAX_LOCAL_PLAYER];
 
 
 
-#define PI 3.1415929f
 //#define DEVTOOL                     // Compile time option for running in developer mode
 //#define SHOW_JOYSTICK_POSITIONS     // Compile time option to show joystick movement...
 #define KEEP_COMPRESSED_FILES       // Compile time option to not delete compressed data...  DO NOT REMOVE!!!
@@ -512,8 +477,6 @@ unsigned int main_game_frame;        // Should update at a rate of GAME_FRAMES_P
 unsigned int main_video_frame;       // Number of times the screen has been drawn...
 unsigned int main_video_frame_skipped;  // Should update at a rate of GAME_FRAMES_PER_SECOND (even when game isn't active...)
 unsigned short main_frame_skip = 0;  // Number of game frames in last update...
-unsigned char* random_table = NULL;  // The random number table
-
 
 // Network and game system stuff...
 unsigned char main_game_active;         // TRUE if the local machine has joined or started a game
@@ -702,8 +665,6 @@ unsigned char fast_function_found = FALSE;
     }                                                                                   \
 }
 #endif
-
-
 
 //-Things I Dislike Doing------------------------------------------------------------------------
 signed char decode_jpg(unsigned char* index, unsigned char* filename);
