@@ -3,7 +3,6 @@
 
 float page_xy[PAGE_FRAME][PAGE_COL*2];      // The page animation
 
-
 void page_setup(void)
 {
     // <ZZ> This function loads the page data from a datafile...

@@ -1,11 +1,7 @@
-// <ZZ> This file has all the stuff for rendering objects...
-//      setup_shadow            - Reads shadow names from SHADOW.TXT
-//      render_rdy              - Renders a model
 
 #ifdef DEVTOOL
 unsigned char global_billboard_active = TRUE;
 #endif
-
 
 // For modeler...
 #define MOVE_MODE_MOVE      0
@@ -14,7 +10,6 @@ unsigned char global_billboard_active = TRUE;
 
 // For room editor...
 #define MOVE_MODE_BRIDGE_PLOP 3
-
 
 // For modeler/border tools
 #define BORDER_SIMPLE       0
@@ -26,7 +21,6 @@ unsigned char global_billboard_active = TRUE;
 #define BORDER_SPECIAL_SELECT_ALL  20
 #define BORDER_SPECIAL_SELECT_INVERT  21
 #define BORDER_SPECIAL_SELECT_CONNECTED  22
-
 
 #define MAX_SHADOW_TEXTURE 256
 unsigned int shadow_texture[MAX_SHADOW_TEXTURE];
@@ -41,24 +35,6 @@ unsigned int shadow_texture[MAX_SHADOW_TEXTURE];
 #endif
 
 
-//-----------------------------------------------------------------------------------------------
-//void render_set_light(unsigned char* light_data)
-//{
-//    // <ZZ> This function sets up the light position and color for a character.  Must be called
-//    //      before rendering the character...  light_data is a pointer to 3 bytes of color info,
-//    //      1 byte of padding, and 3 floats of light position...
-//    global_render_light_color_rgb[0] = light_data[0];
-//    global_render_light_color_rgb[1] = light_data[1];
-//    global_render_light_color_rgb[2] = light_data[2];
-//
-//
-//    // Figure out the cartoon texture offset, depending on light position...
-//    light_data+=4;
-//    global_render_light_offset_xy[X] = (camera_rotation_xy[X]/65535.0f) + ((float) atan2(((float*) (light_data))[Y], ((float*) (light_data))[X])/(2.0f*PI)) + 0.25f;
-//    global_render_light_offset_xy[Y] = 0.38f;
-//}
-
-//-----------------------------------------------------------------------------------------------
 unsigned char* render_generate_model_world_data(unsigned char* data, unsigned short frame, float* matrix, unsigned char* write)
 {
     // <ZZ> This function generates new bone frame data for a given model (skipping first 11 values).

@@ -11,6 +11,7 @@
 //      obj_recompile_start - Figures out which script each object is attached to
 //      obj_recompile_end   - Gets the new script address for each object
 
+#include "soulfu.h"
 
 #define CHARACTER 0         // Object types...
 #define PARTICLE 1          //
@@ -25,11 +26,11 @@
 #define MAX_PROPERTY 256
 extern int obj_num_property;
 extern char property_type[MAX_PROPERTY];
-
+extern unsigned char* main_window_script_start[MAX_WINDOW];
+extern unsigned short main_unused_particle_count;
 extern unsigned char main_character_data[MAX_CHARACTER][CHARACTER_SIZE]; 
 extern unsigned char main_character_on[MAX_CHARACTER];
 extern unsigned char* main_character_script_start[MAX_CHARACTER];
-
 
 void obj_setup(void);
 void obj_get_script_name(unsigned char *file_start, unsigned char *file_name);

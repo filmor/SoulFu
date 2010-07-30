@@ -152,8 +152,8 @@
 #define MAX_VARIABLE               32   // I00 - I31, F00 - F31...
 #define MAX_ARGUMENT               16
 #define SRC_BUFFER_SIZE 65550
-//16384 extra big so src_buffer_used doesn't write other stuff...
-// Size of the RUN file...
+
+extern signed char compiler_error;
 
 /* dcodesrc.c */
 void src_close_jumps(unsigned char indent, unsigned char last_indent);

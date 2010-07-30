@@ -1,5 +1,15 @@
-// <ZZ> This file contains functions to handle networking
-//      network_blah			- Blah
+#include "network.h"
+
+#include "soulfu.h"
+#include "common.h"
+#include "datafile.h"
+#include "random.h"
+#include "object.h"
+#include "map.h"
+#include "damage.h"
+#include "room.h"
+#include <SDL/SDL_net.h>
+
 
 // !!!BAD!!!
 // !!!BAD!!!
@@ -19,13 +29,8 @@
 #endif
 #define MAX_REMOTE       1024   // Maximum number of network'd computers...
 
-
-
-
-
 unsigned char network_on;
 unsigned char* netlist = NULL;
-
 
 IPaddress       local_address;
 IPaddress       main_server_address;
@@ -34,16 +39,12 @@ unsigned char   main_server_on = FALSE;
 //#define MAIN_SERVER_NAME "www.aaronbishopgames.com"
 #define MAIN_SERVER_NAME "FooFoo"
 
-
 UDPsocket       remote_socket;
 IPaddress	    remote_address[MAX_REMOTE];
 unsigned short	remote_room_number[MAX_REMOTE];
 unsigned char	remote_is_neighbor[MAX_REMOTE];
 unsigned char	remote_on[MAX_REMOTE];
 unsigned short  num_remote = 0;
-
-
-
 
 #define MAX_PACKET_SIZE 8192
 #define PACKET_HEADER_SIZE  3
@@ -112,7 +113,6 @@ unsigned short network_script_mount_index;          // high-data only
 // packet_buffer[2] is the random seed
 
 
-//-----------------------------------------------------------------------------------------------
 #define packet_add_string(string)                                           \
 {                                                                           \
     packet_counter = 0;                                                     \
@@ -126,7 +126,6 @@ unsigned short network_script_mount_index;          // high-data only
     packet_length++;                                                        \
 }
 
-//-----------------------------------------------------------------------------------------------
 #define packet_add_unsigned_int(number)                                     \
 {                                                                           \
     packet_buffer[packet_length] = (unsigned char) (packet_counter>>24);    \
@@ -136,7 +135,6 @@ unsigned short network_script_mount_index;          // high-data only
     packet_length+=4;                                                       \
 }
 
-//-----------------------------------------------------------------------------------------------
 #define packet_add_unsigned_short(number)                                   \
 {                                                                           \
     packet_buffer[packet_length] = (unsigned char) (number>>8);             \
@@ -144,14 +142,12 @@ unsigned short network_script_mount_index;          // high-data only
     packet_length+=2;                                                       \
 }
 
-//-----------------------------------------------------------------------------------------------
 #define packet_add_unsigned_char(number)                                    \
 {                                                                           \
     packet_buffer[packet_length] = (unsigned char) number;                  \
     packet_length++;                                                        \
 }
 
-//-----------------------------------------------------------------------------------------------
 #define packet_read_string(string)                                          \
 {                                                                           \
     packet_counter = 0;                                                     \
@@ -195,31 +191,6 @@ unsigned short network_script_mount_index;          // high-data only
 }
 
 //-----------------------------------------------------------------------------------------------
-#define packet_encrypt()                                                    \
-{                                                                           \
-    packet_seed = random_number;                                            \
-    packet_buffer[1] = packet_seed;                                         \
-    packet_counter = PACKET_HEADER_SIZE;                                    \
-    while(packet_counter < packet_length)                                   \
-    {                                                                       \
-        packet_buffer[packet_counter] += random_table[(packet_seed+2173-packet_counter)&and_random];         \
-        packet_counter++;                                                   \
-    }                                                                       \
-}
-
-//-----------------------------------------------------------------------------------------------
-#define packet_decrypt()                                                    \
-{                                                                           \
-    packet_counter = PACKET_HEADER_SIZE;                                    \
-    packet_seed = packet_buffer[1];                                         \
-    while(packet_counter < packet_length)                                   \
-    {                                                                       \
-        packet_buffer[packet_counter] -= random_table[(packet_seed+2173-packet_counter)&and_random];         \
-        packet_counter++;                                                   \
-    }                                                                       \
-}
-
-//-----------------------------------------------------------------------------------------------
 #define calculate_packet_checksum()                                         \
 {                                                                           \
     packet_checksum = 0;                                                    \
@@ -236,7 +207,6 @@ unsigned short network_script_mount_index;          // high-data only
 {                                                                           \
     calculate_packet_checksum();                                            \
     packet_buffer[2] = packet_checksum;                                     \
-    packet_encrypt();                                                       \
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -597,7 +567,6 @@ void network_listen(void)
             // We've got a new packet...
             log_message("INFO:   Got a UDP packet from %d.%d.%d.%d:%d...  Length = %d, Type = %d", ((unsigned char*)&udp_packet.address.host)[0], ((unsigned char*)&udp_packet.address.host)[1], ((unsigned char*)&udp_packet.address.host)[2], ((unsigned char*)&udp_packet.address.host)[3], (((unsigned char*)&udp_packet.address.port)[0]<<8) | ((unsigned char*)&udp_packet.address.port)[1], udp_packet.len, packet_buffer[0]);
             packet_length = udp_packet.len;
-            packet_decrypt();
             if(packet_valid())
             {
                 // Screen out any packets we accidentally sent to ourself...
@@ -980,9 +949,9 @@ void network_send_room_update()
                             character_xyz = (float*) character_data;
                             packet_add_unsigned_char(i);                        // Local index number
                             packet_add_unsigned_char(character_data[251]);      // Script index (in NETLIST.DAT)
-                            x = ((unsigned short) ((character_xyz[X]*ROOM_HEIGHTMAP_PRECISION) + 512.0f))&1023;
-                            y = ((unsigned short) ((character_xyz[Y]*ROOM_HEIGHTMAP_PRECISION) + 512.0f))&1023;
-                            fz = (character_xyz[Z] - character_xyz[11])*0.5f;  clip(0.0f, fz, 15.0f);  z = (unsigned char) fz;
+                            x = ((unsigned short) ((character_xyz[0]*ROOM_HEIGHTMAP_PRECISION) + 512.0f))&1023;
+                            y = ((unsigned short) ((character_xyz[1]*ROOM_HEIGHTMAP_PRECISION) + 512.0f))&1023;
+                            fz = (character_xyz[2] - character_xyz[11])*0.5f;  clip(0.0f, fz, 15.0f);  z = (unsigned char) fz;
                             pmod = ((x>>8)<<6) | ((y>>8)<<4) | z;
                             packet_add_unsigned_char(pmod);                     // Position modifiers (top 2 bits for x) (mid 2 bits for y) (low 4 bits are z above floor)
                             packet_add_unsigned_char(x);                        // X position (with modifier should range from 0-1023)

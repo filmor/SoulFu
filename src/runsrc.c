@@ -1,6 +1,28 @@
-// <ZZ> This file contains functions to run scripts after they've been compiled
-//      run_script                  - The main function to run a script
+#include "runsrc.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+#include "input.h"
+#include "dcodesrc.h"
+#include "damage.h"
+#include "message.h"
+#include "sound.h"
+#include "room.h"
+#include "map.h"
+#include "logfile.h"
+#include "object.h"
+#include "common.h"
+#include "page.h"
+#include "network.h"
+#include "random.h"
+#include "render.h"
+#include "display.h"
+
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <GL/gl.h>
 
 // For WindowEmacs
 #define EMACS_SIZE 2048
@@ -278,13 +300,8 @@ int emacs_return_count = 0;
 #define NETWORK_SCRIPT_CLASS            25
 #define NETWORK_SCRIPT_MOUNT_INDEX      26
 
-
-
-
-
 // For luck
 unsigned short global_luck_timer = 0;
-
 
 // For SYS_MAPROOM...
 #define MAP_ROOM_SRF                  0
@@ -313,13 +330,11 @@ unsigned short global_luck_timer = 0;
 #define MAP_ROOM_UPDATE_FLAGS       254
 #define MAP_ROOM_ADD                255
 
-
 #define GLOBAL_SPAWN_OWNER      0
 #define GLOBAL_SPAWN_TARGET     1
 #define GLOBAL_SPAWN_TEAM       2
 #define GLOBAL_SPAWN_SUBTYPE    3
 #define GLOBAL_SPAWN_CLASS      4
-
 
 #define UPDATE_END                  1
 #define UPDATE_RECOMPILE            2
@@ -327,24 +342,12 @@ unsigned short global_luck_timer = 0;
 #define UPDATE_SDFREORGANIZE        4
 #define UPDATE_RELOADALLTEXTURES    5
 
-
-//#define TILE_UPDATE_OPEN        0
-//#define TILE_UPDATE_X           1
-//#define TILE_UPDATE_Y           2
-//#define TILE_UPDATE_Z           3
-//#define TILE_UPDATE_CLOSE       4
-//unsigned char tile_update_which = 0;
-
-
-
 // For modeler...
 #define SELECT_ALL                  0
 #define SELECT_REMOVE               1
 #define SELECT_SWAP                 2
 #define SELECT_INVERT               3
 #define SELECT_CONNECTED            4
-
-
 
 // For Window3D
 #define WIN_CAMERA  0
@@ -354,8 +357,6 @@ unsigned short global_luck_timer = 0;
 #define WIN_FRUSTUM 4
 #define WIN_SCALE   5
 
-
-
 #define POOF_SELF                   0
 #define POOF_TARGET                 1
 #define POOF_ALL_OTHER_WINDOWS      2
@@ -364,7 +365,6 @@ unsigned short global_luck_timer = 0;
 #define POOF_TARGET_STUCK_PARTICLES 5
 #define POOF_ALL_PARTICLES          6
 #define POOF_ALL_CHARACTERS         7
-
 
 #define ALPHA_NONE 0
 #define ALPHA_TRANS 256
@@ -381,7 +381,6 @@ unsigned short global_luck_timer = 0;
 float script_point[4][2];
 float script_texpoint[4][2];
 
-
 signed int return_int;      // Set by run_script...  Only valid if return_int_is_set == TRUE
 float return_float;         // Set by run_script...  Only valid if return_int_is_set == FALSE
 #define word_temp color_temp
@@ -390,7 +389,6 @@ float return_float;         // Set by run_script...  Only valid if return_int_is
 
 char system_file_name[16];
 char unused_file_name[16] = "-UNUSED-";
-
 
 int global_keep_item = 0;
 
@@ -401,7 +399,7 @@ FILE* savelog;
 int x, size, slot, file_index, str_length, number_of_particles;
 unsigned int srf_file_pointer;
 unsigned char file[15], file_name[13], file_name2[9];
-unsigned char* index;
+// unsigned char* index;
 
 //-----------------------------------------------------------------------------------------------
 // <ZZ> Little function wrapper for doing an enchantment...  Assumes that all of the global
@@ -469,7 +467,7 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
 
 
     // First find the random velocity...  Do that by picking a random angle within the cone...
-    i = random_number;  i = i<<8;  i = i | random_number;
+    i = random_number();  i = i<<8;  i = i | random_number();
     if(cone > 0)
     {
         random_angle = i % cone;
@@ -481,21 +479,21 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
     random_angle = spin + random_angle - (cone>>1);
     // We've now got our random angle...  Convert to cartesian and scale...
     float_angle = random_angle * 0.0000958737992429f;
-    random_velocity_xyz[X] = ((float) cos(float_angle)) * speed_xy;
-    random_velocity_xyz[Y] = ((float) sin(float_angle)) * speed_xy;
+    random_velocity_xyz[0] = ((float) cos(float_angle)) * speed_xy;
+    random_velocity_xyz[1] = ((float) sin(float_angle)) * speed_xy;
     if(function == AUTOAIM_CRUNCH_BALLISTIC)
     {
         speed_z = speed_z * 0.01745329f;  // Speed Z specifies maximum angle (in degrees...)
         float_angle = 0.78539805f;  // 45 degrees...
         if(float_angle > speed_z) { float_angle = speed_z; }
-        random_velocity_xyz[Z] = speed_xy * ((float) sin(float_angle));
+        random_velocity_xyz[2] = speed_xy * ((float) sin(float_angle));
         float_angle = ((float) cos(float_angle));
-        random_velocity_xyz[X] *= float_angle;
-        random_velocity_xyz[Y] *= float_angle;
+        random_velocity_xyz[0] *= float_angle;
+        random_velocity_xyz[1] *= float_angle;
     }
     else
     {
-        random_velocity_xyz[Z] = 0.0f;
+        random_velocity_xyz[2] = 0.0f;
     }
     autoaim_target = MAX_CHARACTER;
 
@@ -503,9 +501,9 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
     if(dexterity == 0)
     {
         // Don't do funky thing, since our dexterity is so low...
-        precise_velocity_xyz[X] = 0.0f;
-        precise_velocity_xyz[Y] = 0.0f;
-        precise_velocity_xyz[Z] = 0.0f;
+        precise_velocity_xyz[0] = 0.0f;
+        precise_velocity_xyz[1] = 0.0f;
+        precise_velocity_xyz[2] = 0.0f;
     }
     else
     {
@@ -519,13 +517,13 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
         // is positive for each plane...  More like a wedge than a cone...
         left_angle = spin - (cone>>1);
         float_angle = left_angle * 0.0000958737992429f;
-        left_normal_xy[X] = -((float) sin(float_angle));
-        left_normal_xy[Y] = ((float) cos(float_angle));
+        left_normal_xy[0] = -((float) sin(float_angle));
+        left_normal_xy[1] = ((float) cos(float_angle));
 
         right_angle = spin + (cone>>1);
         float_angle = right_angle * 0.0000958737992429f;
-        right_normal_xy[X] = ((float) sin(float_angle));
-        right_normal_xy[Y] = -((float) cos(float_angle));
+        right_normal_xy[0] = ((float) sin(float_angle));
+        right_normal_xy[1] = -((float) cos(float_angle));
 
 
 
@@ -539,17 +537,17 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
                 {
                     // Looks like a valid character, but is it closer than our best one?
                     target_xyz = (float*) target_data;
-                    distance_xyz[X] = target_xyz[X] - character_xyz[X];
-                    distance_xyz[Y] = target_xyz[Y] - character_xyz[Y];
-                    distance_xyz[Z] = target_xyz[Z] - character_xyz[Z];
-                    distance = distance_xyz[X]*distance_xyz[X] + distance_xyz[Y]*distance_xyz[Y] + (distance_xyz[Z]*distance_xyz[Z]*0.2f);  // Actually distance squared, but that should be good enough for what we're doin'...
+                    distance_xyz[0] = target_xyz[0] - character_xyz[0];
+                    distance_xyz[1] = target_xyz[1] - character_xyz[1];
+                    distance_xyz[2] = target_xyz[2] - character_xyz[2];
+                    distance = distance_xyz[0]*distance_xyz[0] + distance_xyz[1]*distance_xyz[1] + (distance_xyz[2]*distance_xyz[2]*0.2f);  // Actually distance squared, but that should be good enough for what we're doin'...
                     if(target_data[78] == TEAM_NEUTRAL)
                     {
                         // Neutral targets are not as important as enemies...
                         distance+=4.0f;
                         distance*=4.0f;
                     }
-                    if((target_xyz[Z]+target_data[175]) < room_water_level && character_xyz[Z] > room_water_level)
+                    if((target_xyz[2]+target_data[175]) < room_water_level && character_xyz[2] > room_water_level)
                     {
                         // Targets below water are not important if character is above water...
                         distance = best_distance+1.0f;
@@ -557,8 +555,8 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
                     if(distance < best_distance)
                     {
                         // It's pretty darn close, but is it within our cone?
-                        left_dot = distance_xyz[X]*left_normal_xy[X] + distance_xyz[Y]*left_normal_xy[Y];
-                        right_dot = distance_xyz[X]*right_normal_xy[X] + distance_xyz[Y]*right_normal_xy[Y];
+                        left_dot = distance_xyz[0]*left_normal_xy[0] + distance_xyz[1]*left_normal_xy[1];
+                        right_dot = distance_xyz[0]*right_normal_xy[0] + distance_xyz[1]*right_normal_xy[1];
                         if(left_dot > 0.0f && right_dot > 0.0f)
                         {
                             // It is...  In fact, it's our best so far...
@@ -572,7 +570,7 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
 
 
 
-        precise_velocity_xyz[Z] = random_velocity_xyz[Z];
+        precise_velocity_xyz[2] = random_velocity_xyz[2];
         if(autoaim_target < MAX_CHARACTER)
         {
             // We found a target to aim at...
@@ -583,10 +581,10 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
             {
                 best_distance*=0.0625;     // Neutral targets are weighted as if they were four times as far away...
             }
-            distance_xyz[X] = target_xyz[X] - character_xyz[X];
-            distance_xyz[Y] = target_xyz[Y] - character_xyz[Y];
-            distance_xyz[Z] = target_xyz[Z] - character_xyz[Z] + ((((signed short) target_data[175])-((signed short)height))*0.5f);
-            distance = (float) sqrt((distance_xyz[X]*distance_xyz[X]) + (distance_xyz[Y]*distance_xyz[Y]) + (distance_xyz[Z]*distance_xyz[Z]));
+            distance_xyz[0] = target_xyz[0] - character_xyz[0];
+            distance_xyz[1] = target_xyz[1] - character_xyz[1];
+            distance_xyz[2] = target_xyz[2] - character_xyz[2] + ((((signed short) target_data[175])-((signed short)height))*0.5f);
+            distance = (float) sqrt((distance_xyz[0]*distance_xyz[0]) + (distance_xyz[1]*distance_xyz[1]) + (distance_xyz[2]*distance_xyz[2]));
 
 
             // Figger number of frames til we hit...
@@ -597,9 +595,9 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
                 frames = (distance / speed_xy);
 
                 // Lead the target by that many frames...  Only lead in xy...
-                distance_xyz[X] = target_xyz[X] - character_xyz[X] + (target_vel_xyz[X]*frames);
-                distance_xyz[Y] = target_xyz[Y] - character_xyz[Y] + (target_vel_xyz[Y]*frames);
-                distance = (float) sqrt((distance_xyz[X]*distance_xyz[X]) + (distance_xyz[Y]*distance_xyz[Y]) + (distance_xyz[Z]*distance_xyz[Z]));
+                distance_xyz[0] = target_xyz[0] - character_xyz[0] + (target_vel_xyz[0]*frames);
+                distance_xyz[1] = target_xyz[1] - character_xyz[1] + (target_vel_xyz[1]*frames);
+                distance = (float) sqrt((distance_xyz[0]*distance_xyz[0]) + (distance_xyz[1]*distance_xyz[1]) + (distance_xyz[2]*distance_xyz[2]));
 
                 // Recalculate number of frames to hit lead position
                 frames = (distance / speed_xy);
@@ -607,14 +605,14 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
 
 
             // Find the xy velocity vector...
-            distance = (float) sqrt((distance_xyz[X]*distance_xyz[X]) + (distance_xyz[Y]*distance_xyz[Y]));
+            distance = (float) sqrt((distance_xyz[0]*distance_xyz[0]) + (distance_xyz[1]*distance_xyz[1]));
             if(distance > 0.0f)
             {
-                distance_xyz[X]/=distance;
-                distance_xyz[Y]/=distance;
+                distance_xyz[0]/=distance;
+                distance_xyz[1]/=distance;
             }
-            precise_velocity_xyz[X] = (distance_xyz[X]*speed_xy);
-            precise_velocity_xyz[Y] = (distance_xyz[Y]*speed_xy);
+            precise_velocity_xyz[0] = (distance_xyz[0]*speed_xy);
+            precise_velocity_xyz[1] = (distance_xyz[1]*speed_xy);
 
 
 
@@ -627,10 +625,10 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
                 {
                     // Simple ballistics calculation...  More complicated ones seemed to not
                     // work as well...
-                    float_angle = distance_xyz[Z]/distance;
+                    float_angle = distance_xyz[2]/distance;
                     float_angle = ((float) atan(float_angle));
                     float_angle = float_angle + (frames*0.030f)/speed_xy;
-                    if(distance_xyz[Z] < distance && float_angle > 0.78539805f)
+                    if(distance_xyz[2] < distance && float_angle > 0.78539805f)
                     {
                         // Arc at 45' for maximum range...
                         float_angle = 0.78539805f;
@@ -641,19 +639,19 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
                     // Also calculate the final xyz velocities...
                     if(float_angle > speed_z) { float_angle = speed_z; }
                     if(float_angle < -speed_z) { float_angle = -speed_z; }
-                    precise_velocity_xyz[Z] = speed_xy*((float) sin(float_angle));
+                    precise_velocity_xyz[2] = speed_xy*((float) sin(float_angle));
                     float_angle = (float) cos(float_angle);
-                    precise_velocity_xyz[X] *= float_angle;
-                    precise_velocity_xyz[Y] *= float_angle;
+                    precise_velocity_xyz[0] *= float_angle;
+                    precise_velocity_xyz[1] *= float_angle;
                 }
                 else
                 {
                     // Simple z velocity calculation...
                     // Z velocity is z distance over number of game frames it'll take to hit...
-                    precise_velocity_xyz[Z] = (distance_xyz[Z] / frames);
+                    precise_velocity_xyz[2] = (distance_xyz[2] / frames);
 
                     // Limit the z velocity...
-                    clip(-speed_z, precise_velocity_xyz[Z], speed_z);
+                    clip(-speed_z, precise_velocity_xyz[2], speed_z);
                 }
             }
         }
@@ -661,17 +659,17 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
         {
             // No target, so just try to shoot as straight as possible...
             float_angle = spin * 0.0000958737992429f;
-            precise_velocity_xyz[X] = ((float) cos(float_angle)) * speed_xy;
-            precise_velocity_xyz[Y] = ((float) sin(float_angle)) * speed_xy;
+            precise_velocity_xyz[0] = ((float) cos(float_angle)) * speed_xy;
+            precise_velocity_xyz[1] = ((float) sin(float_angle)) * speed_xy;
             if(function == AUTOAIM_CRUNCH_BALLISTIC)
             {
                 // We're arc'ing at 45' for maximum range...
                 float_angle = 0.78539805f;  // 45 degrees...
                 if(float_angle > speed_z) { float_angle = speed_z; }
-                precise_velocity_xyz[Z] = speed_xy * ((float)sin(float_angle));
+                precise_velocity_xyz[2] = speed_xy * ((float)sin(float_angle));
                 float_angle = ((float)cos(float_angle));
-                precise_velocity_xyz[X] *= float_angle;
-                precise_velocity_xyz[Y] *= float_angle;
+                precise_velocity_xyz[0] *= float_angle;
+                precise_velocity_xyz[1] *= float_angle;
             }
         }
     }
@@ -685,12 +683,12 @@ void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned
     }
     percent = dexterity / 50.0f;
     inverse = 1.0f-percent;
-    autoaim_velocity_xyz[X] = (random_velocity_xyz[X]*inverse) + (precise_velocity_xyz[X]*percent);
-    autoaim_velocity_xyz[Y] = (random_velocity_xyz[Y]*inverse) + (precise_velocity_xyz[Y]*percent);
-    autoaim_velocity_xyz[Z] = precise_velocity_xyz[Z];
+    autoaim_velocity_xyz[0] = (random_velocity_xyz[0]*inverse) + (precise_velocity_xyz[0]*percent);
+    autoaim_velocity_xyz[1] = (random_velocity_xyz[1]*inverse) + (precise_velocity_xyz[1]*percent);
+    autoaim_velocity_xyz[2] = precise_velocity_xyz[2];
 
 // Don't do randomized z vel...  Makes it too hard...
-//    autoaim_velocity_xyz[Z] = (random_velocity_xyz[Z]*inverse) + (precise_velocity_xyz[Z]*percent);
+//    autoaim_velocity_xyz[2] = (random_velocity_xyz[2]*inverse) + (precise_velocity_xyz[2]*percent);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -1478,9 +1476,9 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
                             if(key_down[SDLK_LSHIFT] || key_down[SDLK_RSHIFT])
                             {
                                 // Snapped to nearest quarter foot plop...
-                                select_center_xyz[X] = ((int) (select_center_xyz[X]*4.0f)) * 0.25f;
-                                select_center_xyz[Y] = ((int) (select_center_xyz[Y]*4.0f)) * 0.25f;
-                                select_center_xyz[Z] = ((int) (select_center_xyz[Z]*4.0f)) * 0.25f;
+                                select_center_xyz[0] = ((int) (select_center_xyz[0]*4.0f)) * 0.25f;
+                                select_center_xyz[1] = ((int) (select_center_xyz[1]*4.0f)) * 0.25f;
+                                select_center_xyz[2] = ((int) (select_center_xyz[2]*4.0f)) * 0.25f;
                                 render_insert_vertex((unsigned char*) j, (unsigned short) k, select_center_xyz, 0, MAX_VERTEX);
                             }
                             else
@@ -1503,21 +1501,21 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
                                 if(m < select_num && k < select_num)
                                 {
                                     j = select_list[m];
-                                    e = select_xyz[m][X];
-                                    f = select_xyz[m][Y];
-                                    script_temp_e = select_xyz[m][Z];
+                                    e = select_xyz[m][0];
+                                    f = select_xyz[m][1];
+                                    script_temp_e = select_xyz[m][2];
                                     call_address = (unsigned char*) select_data[m];
 
                                     select_list[m] = select_list[k];
-                                    select_xyz[m][X] = select_xyz[k][X];
-                                    select_xyz[m][Y] = select_xyz[k][Y];
-                                    select_xyz[m][Z] = select_xyz[k][Z];
+                                    select_xyz[m][0] = select_xyz[k][0];
+                                    select_xyz[m][1] = select_xyz[k][1];
+                                    select_xyz[m][2] = select_xyz[k][2];
                                     select_data[m] = select_data[k];
 
                                     select_list[k] = j;
-                                    select_xyz[k][X] = e;
-                                    select_xyz[k][X] = f;
-                                    select_xyz[k][X] = script_temp_e;
+                                    select_xyz[k][0] = e;
+                                    select_xyz[k][0] = f;
+                                    select_xyz[k][0] = script_temp_e;
                                     select_data[k] = (float*) call_address;
                                 }
                             }
@@ -1565,9 +1563,9 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
                             render_insert_joint((unsigned char*) j, (unsigned short) k, select_center_xyz, 0, (unsigned char) m);
                             if(key_down[SDLK_x])
                             {
-                                select_center_xyz[X]=-select_center_xyz[X];
+                                select_center_xyz[0]=-select_center_xyz[0];
                                 render_insert_joint((unsigned char*) j, (unsigned short) k, select_center_xyz, 0, (unsigned char) m);
-                                select_center_xyz[X]=-select_center_xyz[X];
+                                select_center_xyz[0]=-select_center_xyz[0];
                             }
                             break;
                         case SYS_MODELPLOPBONE:
@@ -1628,7 +1626,7 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
 
 // Temporary tools...
 //                              set_selected_vertices((unsigned char*) j, (unsigned short) k, (unsigned char) m, -1.25f);
-                            if(m == Z)
+                            if(m == 2)
                             {
 //                                move_selected_vertices((unsigned char*) j, (unsigned short) k, (unsigned char) m, 0.0625f);
 //                                move_selected_vertices((unsigned char*) j, (unsigned short) k, (unsigned char) m, -0.25f);
@@ -1636,34 +1634,17 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
 
 
                                 break_anim_joints((unsigned char*) j, (unsigned short) k);
-
-
-//                                scale_selected_vertices((unsigned char*) j, (unsigned short) k, (unsigned char) m, 0.86666666666666f);
-//                                scale_selected_vertices_centrid((unsigned char*) j, (unsigned short) k, 0.86666666666666f);
                             }
                             else
                             {
-//                                move_selected_vertices((unsigned char*) j, (unsigned short) k, (unsigned char) m, 1.00f);
-                                if(m == X)
+                                if(m == 0)
                                 {
                                     rotate_selected_vertices((unsigned char*) j, (unsigned short) k);
                                 }
                                 else
                                 {
                                     scale_all_joints_and_vertices((unsigned char*) j, 1.25f);
-//                                    scale_selected_vertices((unsigned char*) j, (unsigned short) k, X, 0.9f);
-//                                    scale_selected_vertices((unsigned char*) j, (unsigned short) k, Y, 0.9f);
-//                                    scale_selected_vertices((unsigned char*) j, (unsigned short) k, Z, 0.9f);
                                 }
-
-//                                if(m == X)
-//                                {
-//                                    tree_rotate_selected_vertices((unsigned char*) j, (unsigned short) k, 0.24f);
-//                                }
-//                                else
-//                                {
-//                                    tree_rotate_selected_vertices((unsigned char*) j, (unsigned short) k, -0.24f);
-//                                }
                             }
                             break;
                         case SYS_MODELTEXSCALE:
@@ -1808,7 +1789,7 @@ signed char run_script(unsigned char* address, unsigned char* file_start, unsign
                             remove_all_tex_vertex((unsigned char*) j, (unsigned short) k);
                             break;
                         case SYS_MODELPLOPATSTRING:
-                            sprintf(DEBUG_STRING, "SPACE=Plop %2.2f, %2.2f, %2.2f SHIFT=Snap", select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z]);
+                            sprintf(DEBUG_STRING, "SPACE=Plop %2.2f, %2.2f, %2.2f SHIFT=Snap", select_center_xyz[0], select_center_xyz[1], select_center_xyz[2]);
                             break;
                         case SYS_MODELMARKFRAME:
                             render_marked_frame = (unsigned short) k;
@@ -2313,7 +2294,7 @@ log_message("ERROR:  SYS_PLAYERCONTROLHANDLED Called...");
 // !!!BAD!!!
                         // Sets the x rotation for the camera...
                         // m is the new angle...
-//                        camera_to_rotation_xy[X] = (unsigned short) m;
+//                        camera_to_rotation_xy[0] = (unsigned short) m;
 // !!!BAD!!!
 // !!!BAD!!!
 // !!!BAD!!!
@@ -2361,7 +2342,7 @@ log_message("ERROR:  SYS_PLAYERCONTROLHANDLED Called...");
                         break;
                     #ifdef DEVTOOL
                         case SYS_ROOMPLOPATSTRING:
-                            sprintf(NAME_STRING, "%3.2f, %3.2f, %3.2f", select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z]);
+                            sprintf(NAME_STRING, "%3.2f, %3.2f, %3.2f", select_center_xyz[0], select_center_xyz[1], select_center_xyz[2]);
                             break;
                         case SYS_ROOMSELECT:
                             if(j == SELECT_CONNECTED)
@@ -2386,7 +2367,7 @@ log_message("ERROR:  SYS_PLAYERCONTROLHANDLED Called...");
                             break;
                         case SYS_ROOMPLOPVERTEX:
                             // j is the file, m is TRUE if you want the vertex to be selected after being plop'd...
-                            room_srf_add_vertex((unsigned char*) j, select_center_xyz[X], select_center_xyz[Y], select_center_xyz[Z], (unsigned char) m);
+                            room_srf_add_vertex((unsigned char*) j, select_center_xyz[0], select_center_xyz[1], select_center_xyz[2], (unsigned char) m);
                             break;
                         case SYS_ROOMDELETEVERTEX:
                             if(room_select_num > 0)
@@ -2428,7 +2409,7 @@ log_message("ERROR:  SYS_PLAYERCONTROLHANDLED Called...");
                             }
                             break;
                         case SYS_ROOMPLOPWAYPOINT:
-                            room_srf_add_waypoint((unsigned char*) j, select_center_xyz[X], select_center_xyz[Y]);
+                            room_srf_add_waypoint((unsigned char*) j, select_center_xyz[0], select_center_xyz[1]);
                             break;
                         case SYS_ROOMDELETEWAYPOINT:
                             if(room_select_num > 0)
@@ -2541,8 +2522,8 @@ log_message("ERROR:  SYS_PLAYERCONTROLHANDLED Called...");
                                     repeat(k, room_select_num)
                                     {
                                         j = (k+1) % room_select_num;
-                                        e = room_select_xyz[j][X] - room_select_xyz[k][X];
-                                        f = room_select_xyz[j][Y] - room_select_xyz[k][Y];
+                                        e = room_select_xyz[j][0] - room_select_xyz[k][0];
+                                        f = room_select_xyz[j][1] - room_select_xyz[k][1];
                                         autotrim_length += (float) sqrt(e*e + f*f);
                                     }
                                     if(autotrim_length > 0.0f)
@@ -2607,9 +2588,9 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                     case SYS_WEAPONREFRESHXYZ:
                         // Finds a random XYZ location at which to spawn an enchantment effect
                         // particle.  Should only be called during a weapon item's Refresh() function...
-                        weapon_refresh_xyz[X] = 0.0f;
-                        weapon_refresh_xyz[Y] = 0.0f;
-                        weapon_refresh_xyz[Z] = -500.0f;
+                        weapon_refresh_xyz[0] = 0.0f;
+                        weapon_refresh_xyz[1] = 0.0f;
+                        weapon_refresh_xyz[2] = -500.0f;
 
                         if(current_object_data >= main_character_data[0] && current_object_data <= main_character_data[MAX_CHARACTER-1])
                         {
@@ -2630,7 +2611,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                             if(m > 0)
                             {
                                 // Flashing color
-                                e = sine_table[(((main_game_frame%m)<<12)/m) & 4095];
+                                e = sin((((main_game_frame%m)<<12)/m) & 4095 / 4096.0 * 2.0 * M_PI);
                                 e = (e + 1.0f) * 0.5f;  // Should now range from 0.0 to 1.0...
                                 f = 1.0f - e;
                                 m = ((unsigned char) ((j&255)*e)) + ((unsigned char) ((k&255)*f));
@@ -2998,9 +2979,9 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         break;
                     case SYS_CAMERARESET:
                         // Makes the camera recenter on the players...
-                        target_xyz[X] = 0.0f;
-                        target_xyz[Y] = 0.0f;
-                        target_xyz[Z] = 5.0f;
+                        target_xyz[0] = 0.0f;
+                        target_xyz[1] = 0.0f;
+                        target_xyz[2] = 5.0f;
                         display_camera_position(1, 0.0f, 0.0f);
                         break;
                     case SYS_RESPAWNCHARACTER:
@@ -3134,7 +3115,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         break;
                     case SYS_CAMERASPIN:
                         // m is the new spin...
-                        camera_rotation_xy[X] = (unsigned short) m;
+                        camera_rotation_xy[0] = (unsigned short) m;
                         break;
                     case SYS_ROOMRESTOCK:
                         // Restocks a random object for the given room...
@@ -3311,7 +3292,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 
 							// Save Extra Stuff
 							fwrite(camera_rotation_xy, sizeof(short), 1, savefile);
-							fprintf(savelog,"\nCamera Spin: %d\n", camera_rotation_xy[X]);
+							fprintf(savelog,"\nCamera Spin: %d\n", camera_rotation_xy[0]);
 
 							// The End
                             fclose(savefile);
@@ -3474,7 +3455,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 
 							// Load Extra Stuff
 							fread(camera_rotation_xy, sizeof(short), 1, loadfile);
-							fprintf(savelog,"   Camera Spin: %hd\n", camera_rotation_xy[X]);
+							fprintf(savelog,"   Camera Spin: %hd\n", camera_rotation_xy[0]);
 
 							// Finish Up
                             fclose(loadfile);
@@ -3654,7 +3635,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         #endif
                         break;
                     case SYS_CURSORPOS:
-                        if(k == X)
+                        if(k == 0)
                         {
                             e = mouse_x - script_window_x;
                         }
@@ -3807,7 +3788,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         last_key_pressed = 0;
                         break;
                     case SYS_CURSORLASTPOS:
-                        if(k == X)
+                        if(k == 0)
                         {
                             e = mouse_last_x - script_window_x;
                         }
@@ -3856,7 +3837,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         }
                         break;
                     case SYS_CURSORSCREENPOS:
-                        if(k == X)
+                        if(k == 0)
                         {
                             i = (int) mouse_x;
                         }
@@ -3903,7 +3884,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 // !!!BAD!!!
 // !!!BAD!!!  Better way of doin' this...
 // !!!BAD!!!
-                        i = (int) ((((float) atan2(-j, k)) + PI) * (180/PI));
+                        i = (int) ((((float) atan2(-j, k)) + M_PI) * (180/M_PI));
                         break;
                     case SYS_MAINSERVERLOCATED:
 // !!!BAD!!!
@@ -4207,7 +4188,7 @@ log_message("ERROR:  Membuffer MAPBUFFER requested...");
                         // k is the axis...
                         // Return value is scaled by 1000...
                         i = 0;
-                        if(k >= X && k <= Z)
+                        if(k >= 0 && k <= 2)
                         {
                             i = (signed int) (weapon_refresh_xyz[k] * 1000.0f);
                         }
@@ -4269,11 +4250,11 @@ log_message("ERROR:  Membuffer MAPBUFFER requested...");
                                 }
                                 if(k == PLAYER_DEVICE_BUTTON_MOVE_UP || k == PLAYER_DEVICE_BUTTON_MOVE_DOWN)
                                 {
-                                    i = (int) (player_device_xy[j][Y] * 100.0f);
+                                    i = (int) (player_device_xy[j][1] * 100.0f);
                                 }
                                 if(k == PLAYER_DEVICE_BUTTON_MOVE_LEFT || k == PLAYER_DEVICE_BUTTON_MOVE_RIGHT)
                                 {
-                                    i = (int) (player_device_xy[j][X] * 100.0f);
+                                    i = (int) (player_device_xy[j][0] * 100.0f);
                                 }
                                 if(k == PLAYER_DEVICE_BUTTON_ITEMS_DOWN)
                                 {
@@ -4428,7 +4409,7 @@ log_message("ERROR:  Membuffer MAPBUFFER requested...");
                         break;
                     case SYS_LOCALPLAYERZ:
                         // Returns the z level that the camera is lookin' at...
-                        i = (int) target_xyz[Z];
+                        i = (int) target_xyz[2];
                         break;
                     case SYS_RESERVECHARACTER:
                         // Returns main_character_reserve_on for a given character...
@@ -4485,7 +4466,7 @@ log_message("ERROR:  Membuffer MAPBUFFER requested...");
                         break;
                     case SYS_CAMERASPIN:
                         // Returns the current camera spin...
-                        i = (int) camera_rotation_xy[X];
+                        i = (int) camera_rotation_xy[0];
                         break;
 					case SYS_LOAD:
 						// Check if a file corresponding to the specified load slot exists...
@@ -5378,9 +5359,9 @@ float_stack_head-=num_float_args;
                 if((current_object_data >= main_character_data[0] && current_object_data <= main_character_data[MAX_CHARACTER-1]) || (current_object_data >= main_particle_data[0] && current_object_data <= main_particle_data[MAX_PARTICLE-1]))
                 {
                     // We're dealing with a character or particle, so do volume falloff with distance...
-                    e = ((float*)current_object_data)[X] - target_xyz[X];
-                    f = ((float*)current_object_data)[Y] - target_xyz[Y];
-                    script_temp_e = ((float*)current_object_data)[Z] - target_xyz[Z];
+                    e = ((float*)current_object_data)[0] - target_xyz[0];
+                    f = ((float*)current_object_data)[1] - target_xyz[1];
+                    script_temp_e = ((float*)current_object_data)[2] - target_xyz[2];
                     script_temp_e = e*e + f*f + script_temp_e*script_temp_e;
 
                     // Should be full volume at 50 feet...
@@ -5389,7 +5370,7 @@ float_stack_head-=num_float_args;
                     j = (unsigned char) script_temp_e;
 
                     // Now figger pan based on side dot...
-                    script_temp_e = 128.0f + ((camera_side_xyz[X]*e + camera_side_xyz[Y]*f)*5.0f);
+                    script_temp_e = 128.0f + ((camera_side_xyz[0]*e + camera_side_xyz[1]*f)*5.0f);
                     clip(0.0f, script_temp_e, 255.0f);
                     opcode = (unsigned char) script_temp_e;
                 }
@@ -5564,7 +5545,7 @@ float_stack_head-=num_float_args;
                 break;
             case OPCODE_SIN:
                 pop_float_stack(e);  // angle from 0 to 360...
-                e = sine_table[((unsigned short)(e*182.04444f))>>4];
+                e = sin((((unsigned short)(e*182.04444f))>>4)*2.0*M_PI);
                 push_float_stack(e);
                 break;
             case OPCODE_ACQUIRETARGET:
@@ -5762,20 +5743,20 @@ float_stack_head-=num_float_args;
                                             if(selection_box_on == FALSE)
                                             {
                                                 selection_box_on = TRUE;
-                                                selection_box_tl[X] = mouse_x;
-                                                selection_box_tl[Y] = mouse_y;
-                                                selection_box_min[X] = script_window_x;
-                                                selection_box_min[Y] = script_window_y;
-                                                selection_box_max[X] = script_window_x+(i*script_window_scale);
-                                                selection_box_max[Y] = script_window_y+(j*script_window_scale);
+                                                selection_box_tl[0] = mouse_x;
+                                                selection_box_tl[1] = mouse_y;
+                                                selection_box_min[0] = script_window_x;
+                                                selection_box_min[1] = script_window_y;
+                                                selection_box_max[0] = script_window_x+(i*script_window_scale);
+                                                selection_box_max[1] = script_window_y+(j*script_window_scale);
                                                 if(key_down[SDLK_LSHIFT] == FALSE && key_down[SDLK_RSHIFT] == FALSE)
                                                 {
                                                     select_clear();
                                                     room_select_clear();
                                                 }
                                             }
-                                            selection_box_br[X] = mouse_x;
-                                            selection_box_br[Y] = mouse_y;
+                                            selection_box_br[0] = mouse_x;
+                                            selection_box_br[1] = mouse_y;
                                         }
                                         else if(opcode == BORDER_CROSS_HAIRS)
                                         {
@@ -6719,34 +6700,34 @@ float_stack_head-=num_float_args;
                 // Texture coordinates
                 pop_float_stack(f);                                     // ty
                 pop_float_stack(e);                                     // tx
-                script_texpoint[2][Y] = f;                              // t2y
-                script_texpoint[2][X] = e;                              // t2x
-                script_texpoint[3][Y] = f;                              // t3y
-                script_texpoint[1][X] = e;                              // t1x
+                script_texpoint[2][1] = f;                              // t2y
+                script_texpoint[2][0] = e;                              // t2x
+                script_texpoint[3][1] = f;                              // t3y
+                script_texpoint[1][0] = e;                              // t1x
                 pop_float_stack(f);                                     // ty
                 pop_float_stack(e);                                     // tx
-                script_texpoint[0][Y] = f;                              // t0y
-                script_texpoint[0][X] = e;                              // t0x
-                script_texpoint[1][Y] = f;                              // t1y
-                script_texpoint[3][X] = e;                              // t3x
+                script_texpoint[0][1] = f;                              // t0y
+                script_texpoint[0][0] = e;                              // t0x
+                script_texpoint[1][1] = f;                              // t1y
+                script_texpoint[3][0] = e;                              // t3x
 
                 // Shape coordinates
                 pop_float_stack(f);                                     // p3y
                 pop_float_stack(e);                                     // p3x
-                script_point[3][Y] = (f*script_window_scale)+script_window_y;
-                script_point[3][X] = (e*script_window_scale)+script_window_x;
+                script_point[3][1] = (f*script_window_scale)+script_window_y;
+                script_point[3][0] = (e*script_window_scale)+script_window_x;
                 pop_float_stack(f);                                     // p3y
                 pop_float_stack(e);                                     // p3x
-                script_point[2][Y] = (f*script_window_scale)+script_window_y;
-                script_point[2][X] = (e*script_window_scale)+script_window_x;
+                script_point[2][1] = (f*script_window_scale)+script_window_y;
+                script_point[2][0] = (e*script_window_scale)+script_window_x;
                 pop_float_stack(f);                                     // p3y
                 pop_float_stack(e);                                     // p3x
-                script_point[1][Y] = (f*script_window_scale)+script_window_y;
-                script_point[1][X] = (e*script_window_scale)+script_window_x;
+                script_point[1][1] = (f*script_window_scale)+script_window_y;
+                script_point[1][0] = (e*script_window_scale)+script_window_x;
                 pop_float_stack(f);                                     // p3y
                 pop_float_stack(e);                                     // p3x
-                script_point[0][Y] = (f*script_window_scale)+script_window_y;
-                script_point[0][X] = (e*script_window_scale)+script_window_x;
+                script_point[0][1] = (f*script_window_scale)+script_window_y;
+                script_point[0][0] = (e*script_window_scale)+script_window_x;
 
 
 
@@ -6771,23 +6752,23 @@ float_stack_head-=num_float_args;
                     display_texture_off();
                     // Draw the image
                     display_start_fan();
-                        display_vertex_xy(script_point[0][X], script_point[0][Y]);
-                        display_vertex_xy(script_point[1][X], script_point[1][Y]);
-                        display_vertex_xy(script_point[2][X], script_point[2][Y]);
-                        display_vertex_xy(script_point[3][X], script_point[3][Y]);
+                        display_vertex_xy(script_point[0][0], script_point[0][1]);
+                        display_vertex_xy(script_point[1][0], script_point[1][1]);
+                        display_vertex_xy(script_point[2][0], script_point[2][1]);
+                        display_vertex_xy(script_point[3][0], script_point[3][1]);
                     display_end();
                     display_texture_on();
                 }
                 else
                 {
                     call_address+=2;
-                    display_pick_texture(*((unsigned int*) call_address))
+                    display_pick_texture(*((unsigned int*) call_address));
                     // Draw the image
                     display_start_fan();
-                        display_texpos_xy(script_texpoint[0][X], script_texpoint[0][Y]);  display_vertex_xy(script_point[0][X], script_point[0][Y]);
-                        display_texpos_xy(script_texpoint[1][X], script_texpoint[1][Y]);  display_vertex_xy(script_point[1][X], script_point[1][Y]);
-                        display_texpos_xy(script_texpoint[2][X], script_texpoint[2][Y]);  display_vertex_xy(script_point[2][X], script_point[2][Y]);
-                        display_texpos_xy(script_texpoint[3][X], script_texpoint[3][Y]);  display_vertex_xy(script_point[3][X], script_point[3][Y]);
+                        display_texpos_xy(script_texpoint[0][0], script_texpoint[0][1]);  display_vertex_xy(script_point[0][0], script_point[0][1]);
+                        display_texpos_xy(script_texpoint[1][0], script_texpoint[1][1]);  display_vertex_xy(script_point[1][0], script_point[1][1]);
+                        display_texpos_xy(script_texpoint[2][0], script_texpoint[2][1]);  display_vertex_xy(script_point[2][0], script_point[2][1]);
+                        display_texpos_xy(script_texpoint[3][0], script_texpoint[3][1]);  display_vertex_xy(script_point[3][0], script_point[3][1]);
                     display_end();
                 }
                 if(k & ALPHA_LIGHT)
@@ -6813,13 +6794,13 @@ float_stack_head-=num_float_args;
                 global_render_light_color_rgb[0] = 255;
                 global_render_light_color_rgb[1] = 255;
                 global_render_light_color_rgb[2] = 255;
-                global_render_light_offset_xy[X] = 0.75f;  // 0.25f;
-                global_render_light_offset_xy[Y] = 0.60f;  // 0.38f;
+                global_render_light_offset_xy[0] = 0.75f;  // 0.25f;
+                global_render_light_offset_xy[1] = 0.60f;  // 0.38f;
 
 
-// global_render_light_offset_xy[X] = ((screen_x - mouse_x) * 0.00125f);
-// global_render_light_offset_xy[Y] = ((screen_y - mouse_y) * 0.0016666f);
-// sprintf(DEBUG_STRING, "%f, %f", global_render_light_offset_xy[X], global_render_light_offset_xy[Y]);
+// global_render_light_offset_xy[0] = ((screen_x - mouse_x) * 0.00125f);
+// global_render_light_offset_xy[1] = ((screen_y - mouse_y) * 0.0016666f);
+// sprintf(DEBUG_STRING, "%f, %f", global_render_light_offset_xy[0], global_render_light_offset_xy[1]);
 
 
                 // Remember the position of the new viewport...
@@ -6867,16 +6848,16 @@ float_stack_head-=num_float_args;
                 pop_float_stack(e);                             // X
                 if(opcode == WIN_CAMERA)
                 {
-                    window3d_camera_xyz[X] = e;
-                    window3d_camera_xyz[Y] = f;
-                    window3d_camera_xyz[Z] = script_temp_e;
+                    window3d_camera_xyz[0] = e;
+                    window3d_camera_xyz[1] = f;
+                    window3d_camera_xyz[2] = script_temp_e;
                     display_look_at(window3d_camera_xyz, window3d_target_xyz);
                 }
                 else if(opcode == WIN_TARGET)
                 {
-                    window3d_target_xyz[X] = e;
-                    window3d_target_xyz[Y] = f;
-                    window3d_target_xyz[Z] = script_temp_e;
+                    window3d_target_xyz[0] = e;
+                    window3d_target_xyz[1] = f;
+                    window3d_target_xyz[2] = script_temp_e;
                 }
                 else if(opcode == WIN_LIGHT)
                 {
@@ -7011,10 +6992,10 @@ float_stack_head-=num_float_args;
 // !!!BAD!!!
 //                incoming_xyz = ((float*) (current_object_data+24));
 //                e = 2.0f * dot_product(incoming_xyz, collision_normal_xyz);
-//                incoming_xyz[X] -= collision_normal_xyz[X]*e;
-//                incoming_xyz[Y] -= collision_normal_xyz[Y]*e;
-//                incoming_xyz[Z] -= collision_normal_xyz[Z]*e;
-//                push_int_stack(collision_normal_xyz[Z] > 0.707f)  // Return landability...
+//                incoming_xyz[0] -= collision_normal_xyz[0]*e;
+//                incoming_xyz[1] -= collision_normal_xyz[1]*e;
+//                incoming_xyz[2] -= collision_normal_xyz[2]*e;
+//                push_int_stack(collision_normal_xyz[2] > 0.707f)  // Return landability...
 push_int_stack(TRUE);
                 break;
             case OPCODE_WINDOWEDITKANJI:
@@ -7334,7 +7315,7 @@ push_int_stack(TRUE);
                                     e = (*((float*) (main_character_data[((unsigned short) m)]))) - (*((float*) (current_object_data)));
                                     f = (*((float*) (main_character_data[((unsigned short) m)]+4))) - (*((float*) (current_object_data+4)));
                                 }
-                                global_attack_spin = (unsigned short) (((float) atan2(f, e)) * (65535.0f / (2.0f*PI)));
+                                global_attack_spin = (unsigned short) (((float) atan2(f, e)) * (65535.0f / (2.0f*M_PI)));
                             }
                             else
                             {

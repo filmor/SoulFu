@@ -1,5 +1,13 @@
 #include "object.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+#include "common.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 // Spawn stuff...
 unsigned short global_spawn_owner = MAX_CHARACTER;
 unsigned short global_spawn_target = MAX_CHARACTER;

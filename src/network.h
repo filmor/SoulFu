@@ -1,6 +1,38 @@
 #ifndef SOULFU_NETWORK_H
 #define SOULFU_NETWORK_H
 
+// <ZZ> This file contains functions to handle networking
+//      network_blah			- Blah
+
+extern unsigned char  network_script_newly_spawned;
+extern unsigned char  network_script_extra_data;
+extern unsigned char  network_script_remote_index;
+extern unsigned char  network_script_netlist_index;
+extern unsigned short network_script_x;
+extern unsigned short network_script_y;
+extern unsigned char  network_script_z;
+extern unsigned char  network_script_facing;
+extern unsigned char  network_script_action;
+extern unsigned char  network_script_team;
+extern unsigned char  network_script_poison;
+extern unsigned char  network_script_petrify;
+extern unsigned char  network_script_alpha;
+extern unsigned char  network_script_deflect;
+extern unsigned char  network_script_haste;
+extern unsigned char  network_script_other_enchant;
+extern unsigned char  network_script_eqleft;
+extern unsigned char  network_script_eqright;
+extern unsigned char  network_script_eqcol01;
+extern unsigned char  network_script_eqcol23;              // high-data only
+extern unsigned char  network_script_eqspec1;              // high-data only
+extern unsigned char  network_script_eqspec2;              // high-data only
+extern unsigned char  network_script_eqhelm;               // high-data only
+extern unsigned char  network_script_eqbody;               // high-data only
+extern unsigned char  network_script_eqlegs;               // high-data only
+extern unsigned char  network_script_class;                // high-data only
+extern unsigned short network_script_mount_index;          // high-data only
+
+
 /* network.c */
 unsigned char packet_valid(void);
 void network_clear_remote_list(void);

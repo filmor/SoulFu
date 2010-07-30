@@ -1,5 +1,13 @@
 #include "item.h"
 
+#include "soulfu.h"
+#include "common.h"
+#include "random.h"
+#include "object.h"
+#include "room.h"
+
+#include <stdlib.h>
+
 unsigned char* item_type_script[MAX_ITEM_TYPE];
 unsigned char* item_type_icon[MAX_ITEM_TYPE];
 unsigned char* item_type_overlay[MAX_ITEM_TYPE];
@@ -159,7 +167,7 @@ unsigned char item_find_random_xyz(unsigned short character_index, unsigned char
         if(num_bone > 0)
         {
             joint_data = fourthbuffer + (24*num_bone);
-            i = random_number;
+            i = random_number();
             i = i%num_bone;
             bone_data = bone_data + (i*9) + 1;
             joint[0] = *((unsigned short*) bone_data);
@@ -167,12 +175,12 @@ unsigned char item_find_random_xyz(unsigned short character_index, unsigned char
             joint_xyz[0] = (float*) (joint_data+(joint[0]*12));
             joint_xyz[1] = (float*) (joint_data+(joint[1]*12));
 
-            i = random_number;
+            i = random_number();
             percent = i*ONE_OVER_256;
             inverse = 1.0f-percent;
-            weapon_refresh_xyz[X] = joint_xyz[0][X]*percent + joint_xyz[1][X]*inverse;
-            weapon_refresh_xyz[Y] = joint_xyz[0][Y]*percent + joint_xyz[1][Y]*inverse;
-            weapon_refresh_xyz[Z] = joint_xyz[0][Z]*percent + joint_xyz[1][Z]*inverse;
+            weapon_refresh_xyz[0] = joint_xyz[0][0]*percent + joint_xyz[1][0]*inverse;
+            weapon_refresh_xyz[1] = joint_xyz[0][1]*percent + joint_xyz[1][1]*inverse;
+            weapon_refresh_xyz[2] = joint_xyz[0][2]*percent + joint_xyz[1][2]*inverse;
             return TRUE;
         }
     }

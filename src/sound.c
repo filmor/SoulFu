@@ -6,10 +6,6 @@
 // !!!BAD!!!
 
 
-
-#define LEFT 0
-#define RIGHT 1
-
 #define INFI_LOOP_FADE 3                // How fast insect buzzing can go away (to make it not choppy)
 
 
@@ -26,9 +22,6 @@ unsigned char main_volume;              // For fades...
 unsigned char master_sfx_volume;        // User option
 unsigned char master_music_volume;      // User option
 
-
-
-#define MAX_CHANNEL 64                  // Maximum number of simultaneous sounds
 signed char    channel_active[MAX_CHANNEL];
 signed short*  channel_data[MAX_CHANNEL];
 signed int     channel_start_delay[MAX_CHANNEL];

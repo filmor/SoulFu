@@ -1,11 +1,6 @@
-// <ZZ> This file contains functions for handling the logfile.txt file
-//      log_message             - Writes a message to the log file using printf style formatting
-//      close_logfile           - Closes the logfile, automatically called via atexit()
-//      open_logfile            - Opens the logfile
 FILE* logfile;
 int log_error_count;
 
-//-----------------------------------------------------------------------------------------------
 void log_message(char *format, ...)
 {
     // <ZZ> This function spits out a message to the logfile.txt file, following standard printf
@@ -39,7 +34,7 @@ void log_message(char *format, ...)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
+
 void close_logfile(void)
 {
     // <ZZ> This function closes the logfile, and should be run automatically on program
@@ -51,7 +46,7 @@ void close_logfile(void)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
+
 signed char open_logfile(void)
 {
     // <ZZ> This function opens up the LOGFILE.TXT file and registers close_logfile() to run
@@ -68,4 +63,3 @@ signed char open_logfile(void)
     return FALSE;
 }
 
-//-----------------------------------------------------------------------------------------------

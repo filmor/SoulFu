@@ -22,5 +22,11 @@ extern unsigned short last_key_pressed;            // The sdlk value of the last
 #define BUTTON1    1
 #define BUTTON2    2
 #define BUTTON3    3
+extern unsigned char mouse_pressed[MAX_MOUSE_BUTTON];
+extern unsigned char mouse_unpressed[MAX_MOUSE_BUTTON];
+extern unsigned char* mouse_current_object;
+unsigned short mouse_current_item;
+unsigned short mouse_last_item;
+
 
 #endif

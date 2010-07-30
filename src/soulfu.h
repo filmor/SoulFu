@@ -1,3 +1,6 @@
+#ifndef SOULFU_SOULFU_H
+#define SOULFU_SOULFU_H
+
 // <ZZ> This file contains lots of global variables and defines and other fun stuff.
 
 // !!!BAD!!!
@@ -693,4 +696,5 @@ void character_bone_frame_clear();
 void character_update_all();
 unsigned char network_find_script_index(unsigned char* filename);
 
-//-----------------------------------------------------------------------------------------------
+
+#endif

@@ -1,21 +1,5 @@
+#include "display.h"
 
-
-//#define ZNEAR 1.25f                     // The near frustum plane
-#define ZNEAR 0.625f                     // The near frustum plane
-#define ALPHA_TOLERANCE 64              // Tolerance for color key transparency
-#define ALPHA_BLUR 75                   // Amount to fade neighbors in '=' prefixed files
-#define ALPHA_MIN  0                    // Minimum alpha allowed for neighbors
-
-#define FADE_IN             -4          //
-#define FADE_OUT            4           //
-#define FADE_TYPE_NONE      0           // No fade
-#define FADE_TYPE_CIRCLE    1           // Circle fade
-#define FADE_TYPE_WARNING   2           // Warning flash
-#define FADE_TYPE_FULL      3           // Fullscreen fade
-#define CIRCLE_QUARTER 8                // Points in a quarter circle
-#define CIRCLE_POINTS (CIRCLE_QUARTER*4)// Number of points in the circle fade effect
-#define CIRCLE_TOTAL_POINTS (CIRCLE_POINTS + 5)  // 4 for corners, 1 redundant
-#define WARNING_SIZE 20.0f              //
 float circle_xyz[CIRCLE_TOTAL_POINTS][3];  // Points for the circle fade
 float fade_x;                           // Center of the circle
 float fade_y;                           // Center of the circle

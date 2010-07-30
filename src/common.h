@@ -4,6 +4,8 @@
 extern unsigned char* fourthbuffer;
 extern unsigned char* roombuffer;
 extern unsigned char* mainbuffer;
+extern unsigned char* subbuffer;
+extern unsigned char* thirdbuffer;
 
 /* common.c */
 void timer_start(void);

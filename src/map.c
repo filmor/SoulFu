@@ -1,20 +1,8 @@
-// <ZZ> This file contains stuff for making the map work...
-//      map_clear           - Clears the map
-//      map_add_room        - Adds a room to the map
-//      map_remove_room     - Removes a room from the map
 
-#define MAP_ROOM_FLAG_FOUND       128
-#define MAP_ROOM_FLAG_DUAL_LEVEL  64
-#define MAP_ROOM_FLAG_TOWN        32
-#define MAP_ROOM_FLAG_BOSS        16
-#define MAP_ROOM_FLAG_VIRTUE      8
-#define MAP_ROOM_FLAG_OUTSIDE     4
 
-#define MAX_MAP_ROOM 4000
 unsigned short num_map_room = 0;
 unsigned char map_room_data[MAX_MAP_ROOM][40];
 
-#define MAX_AUTOMAP_ROOM 200
 unsigned short num_automap_room = 0;
 unsigned short automap_room_list[MAX_AUTOMAP_ROOM];
 

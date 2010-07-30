@@ -47,10 +47,32 @@
 //      display_fade                - Draws the fade effect
 //      display_look_at             - Sets up the camera matrix...
 
+#define ZNEAR 0.625f                     // The near frustum plane
+#define ALPHA_TOLERANCE 64              // Tolerance for color key transparency
+#define ALPHA_BLUR 75                   // Amount to fade neighbors in '=' prefixed files
+#define ALPHA_MIN  0                    // Minimum alpha allowed for neighbors
+
+#define FADE_IN             -4          //
+#define FADE_OUT            4           //
+#define FADE_TYPE_NONE      0           // No fade
+#define FADE_TYPE_CIRCLE    1           // Circle fade
+#define FADE_TYPE_WARNING   2           // Warning flash
+#define FADE_TYPE_FULL      3           // Fullscreen fade
+#define CIRCLE_QUARTER 8                // Points in a quarter circle
+#define CIRCLE_POINTS (CIRCLE_QUARTER*4)// Number of points in the circle fade effect
+#define CIRCLE_TOTAL_POINTS (CIRCLE_POINTS + 5)  // 4 for corners, 1 redundant
+#define WARNING_SIZE 20.0f              //
+
+extern unsigned int texture_ascii;
+extern unsigned int texture_bookfnt;
+extern float window_camera_matrix[16];
+extern float screen_frustum_x;
+extern float screen_frustum_y;
 extern float camera_to_distance;
 extern int camera_rotation_add_xy[2];
 extern unsigned char display_full_screen;
 extern float camera_fore_xyz[3];               // The forward vector of the camera
+extern float camera_side_xyz[3];
 extern float camera_xyz[3];
 extern float map_side_xy[2];
 #endif

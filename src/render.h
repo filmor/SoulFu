@@ -1,6 +1,13 @@
 #ifndef SOULFU_RENDER_H
 #define SOULFU_RENDER_H
 
+// <ZZ> This file has all the stuff for rendering objects...
+//      setup_shadow            - Reads shadow names from SHADOW.TXT
+//      render_rdy              - Renders a model
+
+extern unsigned char* global_bone_data;
+extern unsigned short global_num_bone;
+
 /* render.c */
 unsigned char *render_generate_model_world_data(unsigned char *data, unsigned short frame, float *matrix, unsigned char *write);
 void render_crunch_bone(unsigned char *data, unsigned short frame, unsigned short bone, unsigned char detail_level);
