@@ -8,7 +8,11 @@
 
 extern int music_tempo;
 extern unsigned char channel_new_volume[MAX_CHANNEL][2];
+extern unsigned char sound_flip_pan;
 
+extern unsigned char main_volume;              // For fades...
+extern unsigned char master_sfx_volume;        // User option
+extern unsigned char master_music_volume;      // User option
 
 /* sound.c */
 void play_sound(unsigned int start_delay, unsigned char *sound_file_start, unsigned char volume, unsigned char pan, unsigned short pitch_skip, unsigned char *loop_data);

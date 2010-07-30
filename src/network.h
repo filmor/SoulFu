@@ -32,6 +32,11 @@ extern unsigned char  network_script_eqlegs;               // high-data only
 extern unsigned char  network_script_class;                // high-data only
 extern unsigned short network_script_mount_index;          // high-data only
 
+extern unsigned short num_remote;
+extern unsigned char network_on;
+extern unsigned char global_version_error;
+extern unsigned short required_executable_version;
+extern unsigned short required_data_version;
 
 /* network.c */
 unsigned char packet_valid(void);

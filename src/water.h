@@ -7,7 +7,13 @@
 
 #define WATER_GENERATE_SIZE 64
 #define WATER_GENERATORS 256
+#define MAX_WATER_FRAME 32
 
+extern unsigned int texture_water[MAX_WATER_FRAME];
+extern unsigned int texture_shimmer[MAX_WATER_FRAME];
+extern unsigned char water_layers_active;
+
+extern unsigned int texture_sand;
 extern unsigned char drown_delay[256];
 void water_generate(unsigned short numer_of_frames);
 

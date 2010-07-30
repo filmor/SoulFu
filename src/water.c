@@ -178,7 +178,6 @@ void water_generate(unsigned short number_of_frames)
 #endif
 
 //-----------------------------------------------------------------------------------------------
-#define MAX_WATER_FRAME 32
 unsigned int texture_water[MAX_WATER_FRAME];
 unsigned int texture_shimmer[MAX_WATER_FRAME];
 unsigned int texture_sand;

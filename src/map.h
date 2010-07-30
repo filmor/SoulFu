@@ -15,8 +15,25 @@
 #define MAX_MAP_ROOM 4000
 #define MAX_AUTOMAP_ROOM 200
 
+extern unsigned short map_last_town_room;
+extern float map_room_door_pushback;
 extern unsigned char map_room_data[MAX_MAP_ROOM][40];
 extern unsigned short map_current_room;
+extern unsigned short num_map_room;
+
+extern unsigned char*  map_add_srf_file;
+extern float           map_add_x;
+extern float           map_add_y;
+extern unsigned short  map_add_rotation;
+extern unsigned char   map_add_seed;
+extern unsigned char   map_add_twset;
+extern unsigned char   map_add_level;
+extern unsigned char   map_add_flags;
+extern unsigned char   map_add_difficulty;
+extern unsigned char   map_add_area;
+extern unsigned short  map_add_from_room;
+extern unsigned char   map_add_multi_connect;
+
 
 /* map.c */
 void map_clear(void);

@@ -6,6 +6,8 @@ extern unsigned char* roombuffer;
 extern unsigned char* mainbuffer;
 extern unsigned char* subbuffer;
 extern unsigned char* thirdbuffer;
+extern float main_timer_fps;
+extern unsigned int main_timer_length;
 
 /* common.c */
 void timer_start(void);

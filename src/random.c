@@ -171,27 +171,3 @@ unsigned char* random_name(unsigned char* filedata)
     return NAME_STRING;
 }
 
-
-/*
-log_message("INFO:   Getting random name...");
-
-
-    index = sdf_find_index_by_data(filedata);
-    if(index != 65535)
-    {
-        // Found the file in the SDF datafile...
-        filesize = sdf_read_unsigned_int(sdf_index+(index<<4)+4) & 0x00FFFFFF;
-
-
-        count = filesize >> 4;
-log_message("INFO:     %d names in file...", count);
-        if(count > 0)
-        {
-            count = random_number;
-            count = count % (*filedata);
-            filedata+=(count << 4) + 16;
-        }
-    }
-    return filedata;
-*/
-

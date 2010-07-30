@@ -27,10 +27,47 @@
 extern int obj_num_property;
 extern char property_type[MAX_PROPERTY];
 extern unsigned char* main_window_script_start[MAX_WINDOW];
+extern unsigned char main_window_data[MAX_WINDOW][WINDOW_SIZE];
 extern unsigned short main_unused_particle_count;
 extern unsigned char main_character_data[MAX_CHARACTER][CHARACTER_SIZE]; 
 extern unsigned char main_character_on[MAX_CHARACTER];
 extern unsigned char* main_character_script_start[MAX_CHARACTER];
+extern unsigned short main_used_window_count;
+extern unsigned short main_window_order[MAX_WINDOW];
+
+extern unsigned char  main_character_on[MAX_CHARACTER];
+extern unsigned char  main_character_reserve_on[MAX_CHARACTER];
+extern unsigned char  main_particle_on[MAX_PARTICLE];
+extern unsigned short main_unused_window[MAX_WINDOW];
+extern unsigned short main_window_order[MAX_WINDOW];
+
+extern unsigned short main_unused_character_count;
+extern unsigned short main_unused_particle_count;
+extern unsigned short main_unused_window_count;
+extern unsigned short main_used_window_count;
+extern unsigned short main_window_poof_count;
+
+extern unsigned char main_particle_data[MAX_PARTICLE][PARTICLE_SIZE];
+
+extern unsigned char* main_character_script_start[MAX_CHARACTER];
+extern unsigned char* main_particle_script_start[MAX_PARTICLE];
+extern unsigned char* main_window_script_start[MAX_WINDOW];
+
+extern char main_character_script_name[MAX_CHARACTER][8];
+extern char main_particle_script_name[MAX_PARTICLE][8];
+extern char main_window_script_name[MAX_WINDOW][8];
+
+extern unsigned short global_spawn_owner;
+extern unsigned short global_spawn_target;
+extern unsigned char global_spawn_team;
+extern unsigned char global_spawn_subtype;
+extern unsigned char global_spawn_class;
+
+#define MAX_PROPERTY 256
+extern unsigned short property_offset[MAX_PROPERTY];
+
+extern unsigned short promotion_buffer[MAX_WINDOW];
+extern unsigned short promotion_count;
 
 void obj_setup(void);
 void obj_get_script_name(unsigned char *file_start, unsigned char *file_name);

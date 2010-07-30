@@ -11,7 +11,10 @@
 #include "map.h"
 #include "logfile.h"
 #include "object.h"
+#include "water.h"
+#include "gameseed.h"
 #include "common.h"
+#include "item.h"
 #include "page.h"
 #include "network.h"
 #include "random.h"
@@ -399,7 +402,7 @@ FILE* savelog;
 int x, size, slot, file_index, str_length, number_of_particles;
 unsigned int srf_file_pointer;
 unsigned char file[15], file_name[13], file_name2[9];
-// unsigned char* index;
+unsigned char* index_ptr;
 
 //-----------------------------------------------------------------------------------------------
 // <ZZ> Little function wrapper for doing an enchantment...  Assumes that all of the global
@@ -2023,7 +2026,7 @@ log_message("INFO:   Starting game");
                         break;
                     case SYS_RANDOMSEED:
                         // m is the new random seed...
-                        next_random = (unsigned short) m;
+                        srand(m);
                         break;
                     case SYS_MIPMAPACTIVE:
                         // m is either TRUE or FALSE
@@ -2611,7 +2614,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                             if(m > 0)
                             {
                                 // Flashing color
-                                e = sin((((main_game_frame%m)<<12)/m) & 4095 / 4096.0 * 2.0 * M_PI);
+                                e = sin(((((main_game_frame%m)<<12)/m) & 4095) / 4096.0 * 2.0 * M_PI);
                                 e = (e + 1.0f) * 0.5f;  // Should now range from 0.0 to 1.0...
                                 f = 1.0f - e;
                                 m = ((unsigned char) ((j&255)*e)) + ((unsigned char) ((k&255)*f));
@@ -3378,10 +3381,10 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 								fprintf(savelog,"   Character %d, Script Name: %s, On: %d, Reserve: %d\n", i, main_character_script_name[i], main_character_on[i], main_character_reserve_on[i]);
 
 								// Find the script start file pointer
-								index = sdf_find_filetype(main_character_script_name[i], SDF_FILE_IS_RUN);
-								if(index)
+								index_ptr = sdf_find_filetype(main_character_script_name[i], SDF_FILE_IS_RUN);
+								if(index_ptr)
 								{
-									main_character_script_start[i] = (unsigned char*) sdf_read_unsigned_int(index);
+									main_character_script_start[i] = (unsigned char*) sdf_read_unsigned_int(index_ptr);
 								}
 
 								// Clear out model assigns...
@@ -3425,10 +3428,10 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 								fread(file_name, 1, 8, loadfile);
 								if(file_name[0] != '\0')
 								{
-									index = sdf_find_filetype(file_name, SDF_FILE_IS_RGB);
-									if(index)
+									index_ptr = sdf_find_filetype(file_name, SDF_FILE_IS_RGB);
+									if(index_ptr)
 									{
-										*((unsigned int**) (main_particle_data[i]+44)) = (unsigned int*) sdf_read_unsigned_int(index);
+										*((unsigned int**) (main_particle_data[i]+44)) = (unsigned int*) sdf_read_unsigned_int(index_ptr);
 									}
 								}
 
@@ -3436,20 +3439,20 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
 								fread(file_name2, 1, 8, loadfile);
 								if(file_name2[0] != '\0')
 								{
-									index = sdf_find_filetype(file_name2, SDF_FILE_IS_RGB);
-									if(index)
+									index_ptr = sdf_find_filetype(file_name2, SDF_FILE_IS_RGB);
+									if(index_ptr)
 									{
-										*((unsigned int**) (main_particle_data[i]+68)) = (unsigned int*) sdf_read_unsigned_int(index);
+										*((unsigned int**) (main_particle_data[i]+68)) = (unsigned int*) sdf_read_unsigned_int(index_ptr);
 									}
 								}
 
 								fprintf(savelog,"   Particle %4d, Script Name: %8s, On: %d, Image1: %8s, Image2: %8s\n", i, main_particle_script_name[i], main_particle_on[i], file_name, file_name2);
 
 								// Find the script start file pointer
-								index = sdf_find_filetype(main_particle_script_name[i], SDF_FILE_IS_RUN);
-								if(index)
+								index_ptr = sdf_find_filetype(main_particle_script_name[i], SDF_FILE_IS_RUN);
+								if(index_ptr)
 								{
-									main_particle_script_start[i] = (unsigned char*) sdf_read_unsigned_int(index);
+									main_particle_script_start[i] = (unsigned char*) sdf_read_unsigned_int(index_ptr);
 								}
                             }
 
@@ -3994,7 +3997,7 @@ sprintf(DEBUG_STRING, "Autotrim length == %f", autotrim_length);
                         break;
                     case SYS_RANDOMSEED:
                         // Return the random seed...
-                        i = next_random;
+                        i = rand();
                         break;
                     case SYS_GLOBALATTACKSPIN:
                         // Return the global attack spin...

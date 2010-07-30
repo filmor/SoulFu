@@ -60,11 +60,9 @@ unsigned short packet_readpos;
 unsigned char packet_seed;
 unsigned char packet_checksum;
 
-
 unsigned char global_version_error = FALSE;
 unsigned short required_executable_version = 65535;
 unsigned short required_data_version = 65535;
-
 
 unsigned char  network_script_newly_spawned;
 unsigned char  network_script_extra_data;

@@ -9,6 +9,7 @@
 
 
 extern unsigned char* sanitize_file;
+extern unsigned short message_size;
 
 /* message.c */
 void message_reset(void);

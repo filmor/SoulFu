@@ -46,6 +46,7 @@ extern int sdf_extra_files;
 // !!!BAD!!! Noone should see the actual file ...
 extern char* sdf_read_file;
 extern unsigned char* sdf_index;
+extern char sdf_extension[16][4];
 
 /* datafile.c */
 float sdf_read_float(unsigned char *location);
