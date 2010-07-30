@@ -19,6 +19,10 @@
 //      src_headerize               - Generate header data before compiling an SRC file
 //      src_stage_compile           - Wrapper for headerize, compilerize, and functionize
 
+#include "dcodesrc.h"
+#include "soulfu.h"
+#include "datafile.h"
+#include "object.h"
 #include <string.h>
 
 // !!!BAD!!!
@@ -30,173 +34,6 @@
 // !!!BAD!!!
 // !!!BAD!!!
 // !!!BAD!!!
-
-
-
-
-#define SRC_REQUEST_ENTRY       0   // Used for mega_find...  Return pointer to function header
-#define SRC_REQUEST_OFFSET      1   // Tells us where a CallFunction should take us
-#define SRC_REQUEST_ARGUMENTS   2   // Return pointer to a function's argument/returncode string
-#define SRC_REQUEST_FILESTART   3   // Return pointer to the start of the function's run file data
-
-#define SRC_HEADERIZE   1   // The first stage of compilation
-#define SRC_COMPILERIZE 2   // The second stage of compilation
-#define SRC_FUNCTIONIZE 3   // The third stage of compilation
-
-#define OPCODE_EQUALS                   0
-#define OPCODE_ADD                      1
-#define OPCODE_SUBTRACT                 2
-#define OPCODE_MULTIPLY                 3
-#define OPCODE_DIVIDE                   4
-#define OPCODE_INCREMENT                5
-#define OPCODE_DECREMENT                6
-#define OPCODE_ISEQUAL                  7
-#define OPCODE_ISNOTEQUAL               8
-#define OPCODE_ISGREATEREQUAL           9
-#define OPCODE_ISLESSEREQUAL           10
-#define OPCODE_ISGREATER               11
-#define OPCODE_ISLESSER                12
-#define OPCODE_LOGICALAND              13
-#define OPCODE_LOGICALOR               14
-#define OPCODE_LOGICALNOT              15
-#define OPCODE_NEGATE                  16
-// !!!BAD!!!
-// !!!BAD!!!
-#define OPCODE_BITWISEAND              19
-#define OPCODE_BITWISEOR               20
-#define OPCODE_BITWISELEFT             21
-#define OPCODE_BITWISERIGHT            22
-#define OPCODE_MODULUS                 23
-#define OPCODE_LOCALMESSAGE            24
-#define OPCODE_LOGMESSAGE              25
-#define OPCODE_FINDSELF                26
-#define OPCODE_SYSTEMSET               27
-#define OPCODE_SYSTEMGET               28
-#define OPCODE_DEBUGMESSAGE            29
-#define OPCODE_TOFLOAT                 30
-#define OPCODE_TOINT                   31
-#define OPCODE_F_EQUALS                32
-#define OPCODE_F_ADD                   33
-#define OPCODE_F_SUBTRACT              34
-#define OPCODE_F_MULTIPLY              35
-#define OPCODE_F_DIVIDE                36
-#define OPCODE_F_INCREMENT             37
-#define OPCODE_F_DECREMENT             38
-#define OPCODE_F_ISEQUAL               39
-#define OPCODE_F_ISNOTEQUAL            40
-#define OPCODE_F_ISGREATEREQUAL        41
-#define OPCODE_F_ISLESSEREQUAL         42
-#define OPCODE_F_ISGREATER             43
-#define OPCODE_F_ISLESSER              44
-#define OPCODE_F_LOGICALAND            45
-#define OPCODE_F_LOGICALOR             46
-#define OPCODE_F_LOGICALNOT            47
-#define OPCODE_F_NEGATE                48
-#define OPCODE_STRING                  49
-#define OPCODE_STRINGGETNUMBER         50
-#define OPCODE_STRINGCLEAR             51
-#define OPCODE_STRINGCLEARALL          52
-#define OPCODE_STRINGAPPEND            53
-#define OPCODE_STRINGCOMPARE           54
-#define OPCODE_STRINGLENGTH            55
-#define OPCODE_STRINGCHOPLEFT          56
-#define OPCODE_STRINGCHOPRIGHT         57
-#define OPCODE_STRINGRANDOMNAME        58
-#define OPCODE_STRINGSANITIZE          59
-#define OPCODE_NETWORKMESSAGE          60
-#define OPCODE_STRINGLANGUAGE          61
-#define OPCODE_STRINGUPPERCASE         62
-#define OPCODE_STRINGAPPENDNUMBER      63
-#define OPCODE_CALLFUNCTION            64
-#define OPCODE_RETURNINT               65
-#define OPCODE_RETURNFLOAT             66
-#define OPCODE_IFFALSEJUMP             67
-#define OPCODE_JUMP                    68
-#define OPCODE_SQRT                    69
-#define OPCODE_FILEOPEN                70
-#define OPCODE_FILEREADBYTE            71
-#define OPCODE_FILEWRITEBYTE           72
-#define OPCODE_FILEINSERT              73
-#define OPCODE_SPAWN                   74
-#define OPCODE_GOPOOF                  75
-#define OPCODE_DISMOUNT                76
-#define OPCODE_ROLLDICE                77
-#define OPCODE_PLAYSOUND               78
-#define OPCODE_PLAYMEGASOUND           79
-#define OPCODE_DISTANCESOUND           80
-#define OPCODE_PLAYMUSIC               81
-#define OPCODE_UPDATEFILES             82
-#define OPCODE_SIN                     83
-#define OPCODE_ACQUIRETARGET           84
-#define OPCODE_FINDPATH                85
-#define OPCODE_BUTTONPRESS             86
-#define OPCODE_AUTOAIM                 87
-#define OPCODE_ROOMHEIGHTXY            88
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-#define OPCODE_WINDOWBORDER            96
-#define OPCODE_WINDOWSTRING            97
-#define OPCODE_WINDOWMINILIST          98
-#define OPCODE_WINDOWSLIDER            99
-#define OPCODE_WINDOWIMAGE            100
-#define OPCODE_WINDOWTRACKER          101
-#define OPCODE_WINDOWBOOK             102
-#define OPCODE_WINDOWINPUT            103
-#define OPCODE_WINDOWEMACS            104
-#define OPCODE_WINDOWMEGAIMAGE        105
-#define OPCODE_WINDOW3DSTART          106
-#define OPCODE_WINDOW3DEND            107
-#define OPCODE_WINDOW3DPOSITION       108
-#define OPCODE_WINDOW3DMODEL          109
-#define OPCODE_MODELASSIGN            110
-#define OPCODE_PARTICLEBOUNCE         111
-#define OPCODE_WINDOWEDITKANJI        112
-#define OPCODE_WINDOW3DROOM           113
-#define OPCODE_INDEXISLOCALPLAYER     114
-#define OPCODE_FINDBINDING            115
-#define OPCODE_FINDTARGET             116
-#define OPCODE_FINDOWNER              117
-#define OPCODE_FINDINDEX              118
-#define OPCODE_FINDBYINDEX            119
-#define OPCODE_FINDWINDOW             120
-#define OPCODE_FINDPARTICLE           121
-// !!!BAD!!!
-#define OPCODE_ATTACHTOTARGET         123
-#define OPCODE_GETDIRECTION           124
-#define OPCODE_DAMAGETARGET           125
-#define OPCODE_EXPERIENCEFUNCTION     126
-// !!!BAD!!!
-// !!!BAD!!!
-// !!!BAD!!!
-// Last basic function is 127...
-
-
-#define SRC_PERMANENT               0   // Define is permanent
-#define SRC_TEMPORARY_FILE          1   // Define goes away when done with file
-#define SRC_TEMPORARY_FUNCTION      2   // Define goes away when done with function
-
-#define SRC_MAX_TOKEN              64   // The maximum number of pieces per line of a SRC file
-#define SRC_MAX_DEFINE           2048   // The maximum number of defines
-#define SRC_MAX_TOKEN_SIZE        128   // The maximum size of each piece
-
-#define SRC_MAX_INDENT            256   // Allow up to 256 indentation levels...
-#define SRC_JUMP_INVALID            0   // Marked as unused...
-#define SRC_JUMP_IF                 1   // Used when an if is found
-#define SRC_JUMP_ELSE               2   // Used when an else is found
-#define SRC_JUMP_WHILE              3   // Used when a while is found
-
-#define VAR_INVALID               '?'   // Used a bunch
-#define VAR_INT                   'I'   // Used a bunch
-#define VAR_FLOAT                 'F'   // Used a bunch
-#define VAR_STRING                'S'   // For property extensions only
-#define VAR_TEXT                  'T'   // For property extensions only
-#define VAR_BYTE                  'B'   // For property extensions only
-#define VAR_WORD                  'W'   // For property extensions only
-
 
 #define MAX_VARIABLE               32   // I00 - I31, F00 - F31...
 #define MAX_ARGUMENT               16
@@ -259,18 +96,16 @@ char arg_list_ffffi[] = "FFFFI";            //
 char arg_list_ffffiii[] = "FFFFIII";        //
 char arg_list_ffffiiiiii[] = "FFFFIIIIII";  //
 char arg_list_ffffffffffffiii[] = "FFFFFFFFFFFFIII";
-signed char next_token_may_be_negative;     // For reading -5 as negative 5 instead of minus 5
+// For reading -5 as negative 5 instead of minus 5
+signed char next_token_may_be_negative;
 
 
-
-//-----------------------------------------------------------------------------------------------
 void src_close_jumps(unsigned char indent, unsigned char last_indent)
 {
-    // <ZZ> This function closes all of the if's and else's and while's down to the given
-    //      indent level.
+    // <ZZ> This function closes all of the if's and else's and while's down to the
+    //      given indent level.
     int i;
     int j;
-
 
     i = last_indent;
     while(i > indent)
@@ -328,15 +163,16 @@ void src_close_jumps(unsigned char indent, unsigned char last_indent)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
+
 void src_add_return_opcode(void)
 {
-    // <ZZ> This function appends a return opcode to the src_buffer.  Done to make sure
-    //      function calls go back to where they came from.
+    // <ZZ> This function appends a return opcode to the src_buffer.  Done to make
+    //      sure function calls go back to where they came from.
     if(last_function_returns_integer)
     {
         #ifdef VERBOSE_COMPILE
-            log_message("INFO:         OPC:  0x%02x", 225);         // Opcode for integer 1 is 225
+            // Opcode for integer 1 is 225
+            log_message("INFO:         OPC:  0x%02x", 225);
             log_message("INFO:         OPC:  0x%02x", OPCODE_RETURNINT);
         #endif
         src_buffer[src_buffer_used] = 225;  src_buffer_used++;
@@ -345,7 +181,8 @@ void src_add_return_opcode(void)
     else
     {
         #ifdef VERBOSE_COMPILE
-            log_message("INFO:         OPC:  0x%02x", 226);         // Opcode for float 1.0 is 226
+         // Opcode for float 1.0 is 226
+            log_message("INFO:         OPC:  0x%02x", 226);
             log_message("INFO:         OPC:  0x%02x", OPCODE_RETURNFLOAT);
         #endif
         src_buffer[src_buffer_used] = 226;  src_buffer_used++;
@@ -353,11 +190,11 @@ void src_add_return_opcode(void)
     }
 }
 
-//-----------------------------------------------------------------------------------------------
+
 int src_get_define(char* token)
 {
-    // <ZZ> This function returns the index of the first #define that matches token.  If there
-    //      aren't any matches, it returns -1.
+    // <ZZ> This function returns the index of the first #define that matches token.
+    //      If there aren't any matches, it returns -1.
     int i;
 
     // Check each define...
@@ -368,7 +205,7 @@ int src_get_define(char* token)
     return -1;
 }
 
-//-----------------------------------------------------------------------------------------------
+
 void src_set_priority(int start, int i, int end, signed char any_type)
 {
     // <ZZ> This function is a helper for the RPN code.  It sets the given token to be the

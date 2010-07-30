@@ -1,22 +1,4 @@
-// <ZZ> This file contains functions related to characters, particles, and windows...
-//      obj_setup           - Gets ready to spawn stuff
-//      obj_spawn           - Creates a new object of the desired type
-//      obj_reset_property  - Gets ready to use properties
-//      obj_add_property    - Registers a property name...  for window.x type stuff in script
-//      obj_get_property    - Searches for a property name...  Returns index or -1 if not found
-//      obj_get_script_name - Helper for the recompile functions
-//      obj_recompile_start - Figures out which script each object is attached to
-//      obj_recompile_end   - Gets the new script address for each object
-
-
-#define CHARACTER 0         // Object types...
-#define PARTICLE 1          //
-#define WINDOW 2            //
-
-#define CHARACTER_SIZE 616  // The number of bytes for a character's data
-#define PARTICLE_SIZE 88    // The number of bytes for a particle's data
-#define MAX_WINDOW 16       // The maximum number of windows a machine can have open
-#define WINDOW_SIZE 616     // The number of bytes for a window's data
+#include "object.h"
 
 // Spawn stuff...
 unsigned short global_spawn_owner = MAX_CHARACTER;
@@ -51,7 +33,7 @@ char main_window_script_name[MAX_WINDOW][8];
 
 
 // Property stuff...
-#define MAX_PROPERTY 256  // Must be 256...  Or else script props need to have 2 byte extensions...
+#define MAX_PROPERTY 256
 char property_token[MAX_PROPERTY][8];         // Tags for the properties...  the x of window.x...
 char property_type[MAX_PROPERTY];             // F or I or others...
 unsigned short property_offset[MAX_PROPERTY]; // Offset of data for this property
@@ -810,5 +792,3 @@ void obj_recompile_end(void)
         }
     }
 }
-
-//-----------------------------------------------------------------------------------------------

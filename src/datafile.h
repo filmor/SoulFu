@@ -38,6 +38,14 @@
     #define EXPORTRDYASDDD
     #define TELL_ME_ABOUT_EXPORT
 #endif
+
+extern int sdf_read_line_number;
+extern int sdf_read_remaining;
+extern int sdf_num_files;
+// !!!BAD!!! Noone should see the actual file ...
+extern char* sdf_read_file;
+extern unsigned char* sdf_index;
+
 /* datafile.c */
 float sdf_read_float(unsigned char *location);
 unsigned int sdf_read_unsigned_int(unsigned char *location);
