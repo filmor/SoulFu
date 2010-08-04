@@ -1,8 +1,18 @@
 // <ZZ> This file has all the stuff for drawing volumetric shadows...
 
+#include "volume.h"
+
+#include "soulfu.h"
+#include "common.h"
+#include "display.h"
+#include "render.h"
+#include "object.h"
+
+#include <stdlib.h>
+
 //-----------------------------------------------------------------------------------------------
 // The shadow vector tells us how much to offset the shadows for every foot dropped (x,y,z)
-// (value at [Z] should always be -1.0f) and also tells us the z value ([3]) at which to
+// (value at [2] should always be -1.0f) and also tells us the z value ([3]) at which to
 // cutoff the shadows...
 //float global_volumetric_shadow_vector_xyzz[4] = {0.0f, 1.0f, -1.0f, -20.0f};
 float global_volumetric_shadow_vector_xyzz[4] = {0.490f, -0.513f, -1.0f, -20.0f};
@@ -18,15 +28,15 @@ void volume_shadow_edge(float* start_xyz, float* end_xyz)
     float distance;
 
     // Calculate the projected xyz locations...
-    distance = start_xyz[Z]-global_volumetric_shadow_vector_xyzz[3];
-    start_projected_xyz[X] = start_xyz[X] + global_volumetric_shadow_vector_xyzz[X]*distance;
-    start_projected_xyz[Y] = start_xyz[Y] + global_volumetric_shadow_vector_xyzz[Y]*distance;
-    start_projected_xyz[Z] = global_volumetric_shadow_vector_xyzz[3];
+    distance = start_xyz[2]-global_volumetric_shadow_vector_xyzz[3];
+    start_projected_xyz[0] = start_xyz[0] + global_volumetric_shadow_vector_xyzz[0]*distance;
+    start_projected_xyz[1] = start_xyz[1] + global_volumetric_shadow_vector_xyzz[1]*distance;
+    start_projected_xyz[2] = global_volumetric_shadow_vector_xyzz[3];
 
-    distance = end_xyz[Z]-global_volumetric_shadow_vector_xyzz[3];
-    end_projected_xyz[X] = end_xyz[X] + global_volumetric_shadow_vector_xyzz[X]*distance;
-    end_projected_xyz[Y] = end_xyz[Y] + global_volumetric_shadow_vector_xyzz[Y]*distance;
-    end_projected_xyz[Z] = global_volumetric_shadow_vector_xyzz[3];
+    distance = end_xyz[2]-global_volumetric_shadow_vector_xyzz[3];
+    end_projected_xyz[0] = end_xyz[0] + global_volumetric_shadow_vector_xyzz[0]*distance;
+    end_projected_xyz[1] = end_xyz[1] + global_volumetric_shadow_vector_xyzz[1]*distance;
+    end_projected_xyz[2] = global_volumetric_shadow_vector_xyzz[3];
 
     // Now draw the quad...  Assume that display stuff has already been set...
     display_start_fan();
@@ -165,22 +175,22 @@ void volume_rdy_character_shadow(unsigned char* data, unsigned short frame, unsi
         repeat(i, num_edge_line)
         {
             // 4 vertices of cartoon line define two adjacent triangles with a shared edge...
-            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  a_xyz[X] = temp_xyz[X];  a_xyz[Y] = temp_xyz[Y];  a_xyz[Z] = temp_xyz[Z];
-                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  a_xyz[X] += temp_xyz[X]*cartoon_line_size;  a_xyz[Y] += temp_xyz[Y]*cartoon_line_size;  a_xyz[Z] += temp_xyz[Z]*cartoon_line_size;
-            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  b_xyz[X] = temp_xyz[X];  b_xyz[Y] = temp_xyz[Y];  b_xyz[Z] = temp_xyz[Z];
-                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  b_xyz[X] += temp_xyz[X]*cartoon_line_size;  b_xyz[Y] += temp_xyz[Y]*cartoon_line_size;  b_xyz[Z] += temp_xyz[Z]*cartoon_line_size;
-            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  c_xyz[X] = temp_xyz[X];  c_xyz[Y] = temp_xyz[Y];  c_xyz[Z] = temp_xyz[Z];
-                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  c_xyz[X] += temp_xyz[X]*cartoon_line_size;  c_xyz[Y] += temp_xyz[Y]*cartoon_line_size;  c_xyz[Z] += temp_xyz[Z]*cartoon_line_size;
-            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  d_xyz[X] = temp_xyz[X];  d_xyz[Y] = temp_xyz[Y];  d_xyz[Z] = temp_xyz[Z];
-                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  d_xyz[X] += temp_xyz[X]*cartoon_line_size;  d_xyz[Y] += temp_xyz[Y]*cartoon_line_size;  d_xyz[Z] += temp_xyz[Z]*cartoon_line_size;
+            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  a_xyz[0] = temp_xyz[0];  a_xyz[1] = temp_xyz[1];  a_xyz[2] = temp_xyz[2];
+                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  a_xyz[0] += temp_xyz[0]*cartoon_line_size;  a_xyz[1] += temp_xyz[1]*cartoon_line_size;  a_xyz[2] += temp_xyz[2]*cartoon_line_size;
+            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  b_xyz[0] = temp_xyz[0];  b_xyz[1] = temp_xyz[1];  b_xyz[2] = temp_xyz[2];
+                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  b_xyz[0] += temp_xyz[0]*cartoon_line_size;  b_xyz[1] += temp_xyz[1]*cartoon_line_size;  b_xyz[2] += temp_xyz[2]*cartoon_line_size;
+            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  c_xyz[0] = temp_xyz[0];  c_xyz[1] = temp_xyz[1];  c_xyz[2] = temp_xyz[2];
+                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  c_xyz[0] += temp_xyz[0]*cartoon_line_size;  c_xyz[1] += temp_xyz[1]*cartoon_line_size;  c_xyz[2] += temp_xyz[2]*cartoon_line_size;
+            value = (*((unsigned short*) temp_data));  temp_data++;  temp_data++;  temp_xyz = (float*) (vertex_data + (value<<6));  d_xyz[0] = temp_xyz[0];  d_xyz[1] = temp_xyz[1];  d_xyz[2] = temp_xyz[2];
+                    temp_xyz = (float*) (vertex_data + (value<<6) + 15);  d_xyz[0] += temp_xyz[0]*cartoon_line_size;  d_xyz[1] += temp_xyz[1]*cartoon_line_size;  d_xyz[2] += temp_xyz[2]*cartoon_line_size;
 
 
             // Shared edge and light direction give a plane that splits space in half...  Are check points on same side of plane?
-            edge_xyz[X] = b_xyz[X] - a_xyz[X];  edge_xyz[Y] = b_xyz[Y] - a_xyz[Y];  edge_xyz[Z] = b_xyz[Z] - a_xyz[Z];
+            edge_xyz[0] = b_xyz[0] - a_xyz[0];  edge_xyz[1] = b_xyz[1] - a_xyz[1];  edge_xyz[2] = b_xyz[2] - a_xyz[2];
             cross_product(edge_xyz, global_volumetric_shadow_vector_xyzz, plane_xyz);
-            vector_xyz[X] = d_xyz[X] - a_xyz[X];  vector_xyz[Y] = d_xyz[Y] - a_xyz[Y];  vector_xyz[Z] = d_xyz[Z] - a_xyz[Z];
+            vector_xyz[0] = d_xyz[0] - a_xyz[0];  vector_xyz[1] = d_xyz[1] - a_xyz[1];  vector_xyz[2] = d_xyz[2] - a_xyz[2];
             back_dot = dot_product(vector_xyz, plane_xyz);
-            vector_xyz[X] = c_xyz[X] - a_xyz[X];  vector_xyz[Y] = c_xyz[Y] - a_xyz[Y];  vector_xyz[Z] = c_xyz[Z] - a_xyz[Z];
+            vector_xyz[0] = c_xyz[0] - a_xyz[0];  vector_xyz[1] = c_xyz[1] - a_xyz[1];  vector_xyz[2] = c_xyz[2] - a_xyz[2];
             front_dot = dot_product(vector_xyz, plane_xyz);
 
 
@@ -235,10 +245,10 @@ void volume_draw_room_shadows(unsigned char* data)
 //    float vertex_xyz[4][3];
 
 
-//    vertex_xyz[0][X] = 0.0f;    vertex_xyz[0][Y] = 30.0f;    vertex_xyz[0][Z] = 20.0f;
-//    vertex_xyz[1][X] = 20.0f;   vertex_xyz[1][Y] = 30.0f;    vertex_xyz[1][Z] = 20.0f;
-//    vertex_xyz[2][X] = 20.0f;   vertex_xyz[2][Y] = 30.0f;    vertex_xyz[2][Z] = 0.0f;
-//    vertex_xyz[3][X] = 0.0f;    vertex_xyz[3][Y] = 30.0f;    vertex_xyz[3][Z] = 0.0f;
+//    vertex_xyz[0][0] = 0.0f;    vertex_xyz[0][1] = 30.0f;    vertex_xyz[0][2] = 20.0f;
+//    vertex_xyz[1][0] = 20.0f;   vertex_xyz[1][1] = 30.0f;    vertex_xyz[1][2] = 20.0f;
+//    vertex_xyz[2][0] = 20.0f;   vertex_xyz[2][1] = 30.0f;    vertex_xyz[2][2] = 0.0f;
+//    vertex_xyz[3][0] = 0.0f;    vertex_xyz[3][1] = 30.0f;    vertex_xyz[3][2] = 0.0f;
 
 
 //    volume_shadow_edge(vertex_xyz[0], vertex_xyz[1]);
@@ -269,20 +279,20 @@ void volume_draw_room_shadows(unsigned char* data)
     repeat(i, num_edge_line)
     {
         // 4 vertices of cartoon line define two adjacent triangles with a shared edge...
-        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  a_xyz[X] = temp_xyz[X];  a_xyz[Y] = temp_xyz[Y];  a_xyz[Z] = temp_xyz[Z];
-        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  b_xyz[X] = temp_xyz[X];  b_xyz[Y] = temp_xyz[Y];  b_xyz[Z] = temp_xyz[Z];
-        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  c_xyz[X] = temp_xyz[X];  c_xyz[Y] = temp_xyz[Y];  c_xyz[Z] = temp_xyz[Z];  c = value;
-        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  d_xyz[X] = temp_xyz[X];  d_xyz[Y] = temp_xyz[Y];  d_xyz[Z] = temp_xyz[Z];  d = value;
+        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  a_xyz[0] = temp_xyz[0];  a_xyz[1] = temp_xyz[1];  a_xyz[2] = temp_xyz[2];
+        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  b_xyz[0] = temp_xyz[0];  b_xyz[1] = temp_xyz[1];  b_xyz[2] = temp_xyz[2];
+        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  c_xyz[0] = temp_xyz[0];  c_xyz[1] = temp_xyz[1];  c_xyz[2] = temp_xyz[2];  c = value;
+        value = (*((unsigned short*) edge_line_data));  edge_line_data+=2;  temp_xyz = (float*) (vertex_data + (value*26));  d_xyz[0] = temp_xyz[0];  d_xyz[1] = temp_xyz[1];  d_xyz[2] = temp_xyz[2];  d = value;
 
 
         if(c != d)
         {
             // Shared edge and light direction give a plane that splits space in half...  Are check points on same side of plane?
-            edge_xyz[X] = b_xyz[X] - a_xyz[X];  edge_xyz[Y] = b_xyz[Y] - a_xyz[Y];  edge_xyz[Z] = b_xyz[Z] - a_xyz[Z];
+            edge_xyz[0] = b_xyz[0] - a_xyz[0];  edge_xyz[1] = b_xyz[1] - a_xyz[1];  edge_xyz[2] = b_xyz[2] - a_xyz[2];
             cross_product(edge_xyz, global_volumetric_shadow_vector_xyzz, plane_xyz);
-            vector_xyz[X] = d_xyz[X] - a_xyz[X];  vector_xyz[Y] = d_xyz[Y] - a_xyz[Y];  vector_xyz[Z] = d_xyz[Z] - a_xyz[Z];
+            vector_xyz[0] = d_xyz[0] - a_xyz[0];  vector_xyz[1] = d_xyz[1] - a_xyz[1];  vector_xyz[2] = d_xyz[2] - a_xyz[2];
             back_dot = dot_product(vector_xyz, plane_xyz);
-            vector_xyz[X] = c_xyz[X] - a_xyz[X];  vector_xyz[Y] = c_xyz[Y] - a_xyz[Y];  vector_xyz[Z] = c_xyz[Z] - a_xyz[Z];
+            vector_xyz[0] = c_xyz[0] - a_xyz[0];  vector_xyz[1] = c_xyz[1] - a_xyz[1];  vector_xyz[2] = c_xyz[2] - a_xyz[2];
             front_dot = dot_product(vector_xyz, plane_xyz);
 
 
@@ -527,24 +537,24 @@ void volume_shadow_draw_all()
 
 
     // Find screen corners...  Scooch the camera back a bit, so I can find the corners by goin' forward...
-    old_camera_xyz[X] = camera_xyz[X];  camera_xyz[X]-=rotate_camera_matrix[1] * CORNER_FORE_SCALE;
-    old_camera_xyz[Y] = camera_xyz[Y];  camera_xyz[Y]-=rotate_camera_matrix[5] * CORNER_FORE_SCALE;
-    old_camera_xyz[Z] = camera_xyz[Z];  camera_xyz[Z]-=rotate_camera_matrix[9] * CORNER_FORE_SCALE;
+    old_camera_xyz[0] = camera_xyz[0];  camera_xyz[0]-=rotate_camera_matrix[1] * CORNER_FORE_SCALE;
+    old_camera_xyz[1] = camera_xyz[1];  camera_xyz[1]-=rotate_camera_matrix[5] * CORNER_FORE_SCALE;
+    old_camera_xyz[2] = camera_xyz[2];  camera_xyz[2]-=rotate_camera_matrix[9] * CORNER_FORE_SCALE;
 
 
     // Top corners...
     corner = 0;
     repeat(i, 2)
     {
-        screen_corner_xyz[corner][X] = camera_xyz[X]
+        screen_corner_xyz[corner][0] = camera_xyz[0]
                                   + rotate_camera_matrix[0] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[1] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[2] * CORNER_UP_SCALE;
-        screen_corner_xyz[corner][Y] = camera_xyz[Y]
+        screen_corner_xyz[corner][1] = camera_xyz[1]
                                   + rotate_camera_matrix[4] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[5] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[6] * CORNER_UP_SCALE;
-        screen_corner_xyz[corner][Z] = camera_xyz[Z]
+        screen_corner_xyz[corner][2] = camera_xyz[2]
                                   + rotate_camera_matrix[8] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[9] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[10] * CORNER_UP_SCALE;
@@ -554,15 +564,15 @@ void volume_shadow_draw_all()
     corner = 3;
     repeat(i, 2)
     {
-        screen_corner_xyz[corner][X] = camera_xyz[X]
+        screen_corner_xyz[corner][0] = camera_xyz[0]
                                   + rotate_camera_matrix[0] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[1] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[2] * -CORNER_UP_SCALE;
-        screen_corner_xyz[corner][Y] = camera_xyz[Y]
+        screen_corner_xyz[corner][1] = camera_xyz[1]
                                   + rotate_camera_matrix[4] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[5] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[6] * -CORNER_UP_SCALE;
-        screen_corner_xyz[corner][Z] = camera_xyz[Z]
+        screen_corner_xyz[corner][2] = camera_xyz[2]
                                   + rotate_camera_matrix[8] * CORNER_LEFT_SCALE * ((i<<1)-1)
                                   + rotate_camera_matrix[9] * CORNER_FORE_SCALE
                                   + rotate_camera_matrix[10] * -CORNER_UP_SCALE;
@@ -596,9 +606,9 @@ void volume_shadow_draw_all()
 
 
     // Restore the camera to where it was...
-    camera_xyz[X] = old_camera_xyz[X];
-    camera_xyz[Y] = old_camera_xyz[Y];
-    camera_xyz[Z] = old_camera_xyz[Z];
+    camera_xyz[0] = old_camera_xyz[0];
+    camera_xyz[1] = old_camera_xyz[1];
+    camera_xyz[2] = old_camera_xyz[2];
 
 
     // Undo display settings...

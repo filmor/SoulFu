@@ -11,7 +11,7 @@
 #define DAMAGE_WOUND     6
 
 extern unsigned char* pnumber_file;
-extern unsigned int global_attacker;
+extern unsigned short global_attacker;
 extern unsigned short global_attack_spin;
 extern unsigned char damage_color_rgb[MAX_DAMAGE_TYPE][3];
 extern signed short global_damage_amount;

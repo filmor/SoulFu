@@ -5,17 +5,20 @@
 
 #include "random.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+#include <stdlib.h>
+
 int random_setup(int seed)
 {
-    return srand(seed);
+    srand(seed);
+    return seed;
 }
-
 
 unsigned char random_number()
 {
     return (unsigned char) (rand() * 256.0 / RAND_MAX);
 }
-
 
 unsigned short random_dice(unsigned char number, unsigned short sides)
 {

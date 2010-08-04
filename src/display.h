@@ -71,6 +71,7 @@ extern unsigned int texture_automap_virtue;
 extern unsigned int texture_armorst;
 extern unsigned int texture_armor;
 extern unsigned int texture_petrify;
+extern unsigned int texture_winalt;
 
 extern float rotate_enviro_matrix[6]; 
 extern unsigned int texture_ascii;

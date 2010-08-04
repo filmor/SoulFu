@@ -1,5 +1,14 @@
 #include "display.h"
 
+#include "soulfu.h"
+#include "datafile.h"
+#include "object.h"
+#include "dcodejpg.h"
+#include <math.h>
+#include <GL/gl.h>
+#include <SDL/SDL_video.h>
+#include <SDL/SDL.h>
+
 float circle_xyz[CIRCLE_TOTAL_POINTS][3];  // Points for the circle fade
 float fade_x;                           // Center of the circle
 float fade_y;                           // Center of the circle
@@ -319,14 +328,14 @@ void display_get_onscreen_xyd(float* in_xyz, float* out_xyd)
     // <ZZ> Test for another way of getting onscreen point locations, rather than using
     //      glFeedback...
 
-    out_xyd[X] = onscreen_matrix[0] * in_xyz[X] + onscreen_matrix[4] * in_xyz[Y] + onscreen_matrix[8]  * in_xyz[Z] + onscreen_matrix[12];
-    out_xyd[Y] = onscreen_matrix[1] * in_xyz[X] + onscreen_matrix[5] * in_xyz[Y] + onscreen_matrix[9]  * in_xyz[Z] + onscreen_matrix[13];
-    out_xyd[2] = onscreen_matrix[3] * in_xyz[X] + onscreen_matrix[7] * in_xyz[Y] + onscreen_matrix[11] * in_xyz[Z] + onscreen_matrix[15];
+    out_xyd[0] = onscreen_matrix[0] * in_xyz[0] + onscreen_matrix[4] * in_xyz[1] + onscreen_matrix[8]  * in_xyz[2] + onscreen_matrix[12];
+    out_xyd[1] = onscreen_matrix[1] * in_xyz[0] + onscreen_matrix[5] * in_xyz[1] + onscreen_matrix[9]  * in_xyz[2] + onscreen_matrix[13];
+    out_xyd[2] = onscreen_matrix[3] * in_xyz[0] + onscreen_matrix[7] * in_xyz[1] + onscreen_matrix[11] * in_xyz[2] + onscreen_matrix[15];
     if(out_xyd[2] != 0.0f)
     {
-         out_xyd[X]/=out_xyd[2]; out_xyd[Y]/=out_xyd[2];
-         out_xyd[X]*=200.0f;   out_xyd[X]+=200.0f;
-         out_xyd[Y]*=-150.0f;  out_xyd[Y]+=150.0f;
+         out_xyd[0]/=out_xyd[2]; out_xyd[1]/=out_xyd[2];
+         out_xyd[0]*=200.0f;   out_xyd[0]+=200.0f;
+         out_xyd[1]*=-150.0f;  out_xyd[1]+=150.0f;
     }
 }
 
@@ -2354,9 +2363,9 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
 
 
     // Track local player characters...  Centrid of local players is the camera target...
-    target_temp_xyz[X] = 0.0f;
-    target_temp_xyz[Y] = 0.0f;
-    target_temp_xyz[Z] = 0.0f;
+    target_temp_xyz[0] = 0.0f;
+    target_temp_xyz[1] = 0.0f;
+    target_temp_xyz[2] = 0.0f;
     num_local_player = 0;
     repeat(i, MAX_LOCAL_PLAYER)
     {
@@ -2369,9 +2378,9 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
             {
                 if(main_character_on[character])
                 {
-                    target_temp_xyz[X] += ((float*) (main_character_data[character]))[X];
-                    target_temp_xyz[Y] += ((float*) (main_character_data[character]))[Y];
-                    target_temp_xyz[Z] += ((float*) (main_character_data[character]))[Z] + 4.0f;  // Plus 4 so we center more on character faces...
+                    target_temp_xyz[0] += ((float*) (main_character_data[character]))[0];
+                    target_temp_xyz[1] += ((float*) (main_character_data[character]))[1];
+                    target_temp_xyz[2] += ((float*) (main_character_data[character]))[2] + 4.0f;  // Plus 4 so we center more on character faces...
                     num_local_player++;
                 }
             }
@@ -2379,15 +2388,15 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
     }
     if(num_local_player > 0)
     {
-        target_temp_xyz[X]/=num_local_player;
-        target_temp_xyz[Y]/=num_local_player;
-        target_temp_xyz[Z]/=num_local_player;
+        target_temp_xyz[0]/=num_local_player;
+        target_temp_xyz[1]/=num_local_player;
+        target_temp_xyz[2]/=num_local_player;
     }
     else
     {
-        target_temp_xyz[X] = target_xyz[X];
-        target_temp_xyz[Y] = target_xyz[Y];
-        target_temp_xyz[Z] = target_xyz[Z];
+        target_temp_xyz[0] = target_xyz[0];
+        target_temp_xyz[1] = target_xyz[1];
+        target_temp_xyz[2] = target_xyz[2];
     }
 
 
@@ -2407,9 +2416,9 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
                 {
                     if(main_character_on[character])
                     {
-                        offset_xyz[X] = target_temp_xyz[X] - ((float*) (main_character_data[character]))[X];
-                        offset_xyz[Y] = target_temp_xyz[Y] - ((float*) (main_character_data[character]))[Y];
-                        offset_xyz[Z] = 0.0f;
+                        offset_xyz[0] = target_temp_xyz[0] - ((float*) (main_character_data[character]))[0];
+                        offset_xyz[1] = target_temp_xyz[1] - ((float*) (main_character_data[character]))[1];
+                        offset_xyz[2] = 0.0f;
                         centrid_distance += vector_length(offset_xyz);
                     }
                 }
@@ -2454,47 +2463,47 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
     times_to_slog++;
     repeat(i, times_to_slog)
     {
-        target_xyz[X] = (target_xyz[X]*slog_weight) + (target_temp_xyz[X]*inverse_weight);
-        target_xyz[Y] = (target_xyz[Y]*slog_weight) + (target_temp_xyz[Y]*inverse_weight);
-        target_xyz[Z] = (target_xyz[Z]*slog_z_weight) + (target_temp_xyz[Z]*inverse_z_weight);
+        target_xyz[0] = (target_xyz[0]*slog_weight) + (target_temp_xyz[0]*inverse_weight);
+        target_xyz[1] = (target_xyz[1]*slog_weight) + (target_temp_xyz[1]*inverse_weight);
+        target_xyz[2] = (target_xyz[2]*slog_z_weight) + (target_temp_xyz[2]*inverse_z_weight);
 
 //        camera_distance = (camera_distance*0.95f) + (camera_to_distance*0.05f);
         camera_distance = (camera_distance*0.90f) + (camera_to_distance*0.05f) + ((camera_distance+centrid_distance)*0.05f);
         camera_to_distance = (camera_to_distance*0.99f) + (35.0f*0.01f);  // Gradually return camera to default zoom...
 
-        camera_rotation_xy[X] += camera_rotation_add_xy[X]>>4;
-        camera_rotation_add_xy[X] -= camera_rotation_add_xy[X]>>4;
-        camera_rotation_xy[Y] += camera_rotation_add_xy[Y]>>4;
-        camera_rotation_add_xy[Y] -= camera_rotation_add_xy[Y]>>4;
+        camera_rotation_xy[0] += camera_rotation_add_xy[0]>>4;
+        camera_rotation_add_xy[0] -= camera_rotation_add_xy[0]>>4;
+        camera_rotation_xy[1] += camera_rotation_add_xy[1]>>4;
+        camera_rotation_add_xy[1] -= camera_rotation_add_xy[1]>>4;
     }
 
 
 
     // Limit camera rotation
-    if(((signed short) camera_rotation_xy[Y]) < MIN_CAMERA_Y)
+    if(((signed short) camera_rotation_xy[1]) < MIN_CAMERA_Y)
     {
-        camera_rotation_xy[Y] = MIN_CAMERA_Y;
+        camera_rotation_xy[1] = MIN_CAMERA_Y;
     }
-    if(camera_rotation_xy[Y] > MAX_CAMERA_Y)
+    if(camera_rotation_xy[1] > MAX_CAMERA_Y)
     {
-        camera_rotation_xy[Y] = MAX_CAMERA_Y;
+        camera_rotation_xy[1] = MAX_CAMERA_Y;
     }
 
 
     // Do screen shake effect...
     if(screen_shake_timer > 0)
     {
-        offset_xyz[X] = (random_table[((screen_shake_timer>>2))&and_random]-128) * screen_shake_amount;
-        offset_xyz[Y] = (random_table[((screen_shake_timer>>2)+1)&and_random]-128) * screen_shake_amount;
-        offset_xyz[Z] = (random_table[((screen_shake_timer>>2)+2)&and_random]-128) * screen_shake_amount;
+        offset_xyz[0] = (((screen_shake_timer>>2))-128) * screen_shake_amount;
+        offset_xyz[1] = (((screen_shake_timer>>2)+1)-128) * screen_shake_amount;
+        offset_xyz[2] = (((screen_shake_timer>>2)+2)-128) * screen_shake_amount;
         shake_modifier = (float) sin((screen_shake_timer & 3) * 0.7854f);
-        offset_xyz[X] *= shake_modifier;
-        offset_xyz[Y] *= shake_modifier;
-        offset_xyz[Z] *= shake_modifier;
+        offset_xyz[0] *= shake_modifier;
+        offset_xyz[1] *= shake_modifier;
+        offset_xyz[2] *= shake_modifier;
 
-        target_xyz[X] += offset_xyz[X];
-        target_xyz[Y] += offset_xyz[Y];
-        target_xyz[Z] += offset_xyz[Z];
+        target_xyz[0] += offset_xyz[0];
+        target_xyz[1] += offset_xyz[1];
+        target_xyz[2] += offset_xyz[2];
 
         screen_shake_timer -= main_frame_skip;
     }
@@ -2509,25 +2518,25 @@ void display_camera_position(unsigned short times_to_slog, float slog_weight, fl
     // !!!BAD!!!
     // !!!BAD!!!  Use look up table...
     // !!!BAD!!!
-    angle_xy[X] = camera_rotation_xy[X]*2*PI/65536.0f;
-    angle_xy[Y] = camera_rotation_xy[Y]*2*PI/65536.0f;
-    camera_xyz[X] = (float) sin(angle_xy[X]);
-    camera_xyz[Y] = (float) cos(angle_xy[X]);
+    angle_xy[0] = camera_rotation_xy[0]*2*M_PI/65536.0f;
+    angle_xy[1] = camera_rotation_xy[1]*2*M_PI/65536.0f;
+    camera_xyz[0] = (float) sin(angle_xy[0]);
+    camera_xyz[1] = (float) cos(angle_xy[0]);
 
-    camera_xyz[Z] = (float) cos(angle_xy[Y]);
-    camera_xyz[X] *= camera_xyz[Z];
-    camera_xyz[Y] *= camera_xyz[Z];
-    camera_xyz[Z] = (float) sin(angle_xy[Y]);
+    camera_xyz[2] = (float) cos(angle_xy[1]);
+    camera_xyz[0] *= camera_xyz[2];
+    camera_xyz[1] *= camera_xyz[2];
+    camera_xyz[2] = (float) sin(angle_xy[1]);
 
-    camera_xyz[X] *= camera_distance;
-    camera_xyz[Y] *= camera_distance;
-    camera_xyz[Z] *= camera_distance;
+    camera_xyz[0] *= camera_distance;
+    camera_xyz[1] *= camera_distance;
+    camera_xyz[2] *= camera_distance;
 
-    camera_xyz[X] += target_xyz[X];
-    camera_xyz[Y] += target_xyz[Y];
-    camera_xyz[Z] += target_xyz[Z];
+    camera_xyz[0] += target_xyz[0];
+    camera_xyz[1] += target_xyz[1];
+    camera_xyz[2] += target_xyz[2];
 
-//sprintf(DEBUG_STRING, "%3.6f, %3.6f, %3.6f", target_xyz[X], target_xyz[Y], target_xyz[Z]);
+//sprintf(DEBUG_STRING, "%3.6f, %3.6f, %3.6f", target_xyz[0], target_xyz[1], target_xyz[2]);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2538,9 +2547,9 @@ void display_look_at(float* lilcam_xyz, float* liltarg_xyz)
 
     // Front
     glLoadMatrixf(initial_camera_matrix);
-    x = lilcam_xyz[X]-liltarg_xyz[X];
-    y = lilcam_xyz[Y]-liltarg_xyz[Y];
-    z = lilcam_xyz[Z]-liltarg_xyz[Z];
+    x = lilcam_xyz[0]-liltarg_xyz[0];
+    y = lilcam_xyz[1]-liltarg_xyz[1];
+    z = lilcam_xyz[2]-liltarg_xyz[2];
     distance = (float) sqrt(x*x + y*y + z*z);
     if(distance < 0.0001) distance = 0.0001f;
     rotate_camera_matrix[1] = x/distance;
@@ -2561,7 +2570,7 @@ void display_look_at(float* lilcam_xyz, float* liltarg_xyz)
     rotate_camera_matrix[6] = -rotate_camera_matrix[0]*rotate_camera_matrix[9];
     rotate_camera_matrix[10] = rotate_camera_matrix[0]*rotate_camera_matrix[5]-rotate_camera_matrix[4]*rotate_camera_matrix[1];
     glMultMatrixf(rotate_camera_matrix);
-    glTranslatef(-lilcam_xyz[X], -lilcam_xyz[Y], -lilcam_xyz[Z]);
+    glTranslatef(-lilcam_xyz[0], -lilcam_xyz[1], -lilcam_xyz[2]);
 
 
     // Stuff for cartoon lighting
@@ -2574,12 +2583,12 @@ void display_look_at(float* lilcam_xyz, float* liltarg_xyz)
 
 
     // Remember where the camera is lookin'
-    camera_fore_xyz[X] = -rotate_camera_matrix[1];
-    camera_fore_xyz[Y] = -rotate_camera_matrix[5];
-    camera_fore_xyz[Z] = -rotate_camera_matrix[9];
-    camera_side_xyz[X] = rotate_camera_matrix[0];
-    camera_side_xyz[Y] = rotate_camera_matrix[4];
-    camera_side_xyz[Z] = rotate_camera_matrix[8];
+    camera_fore_xyz[0] = -rotate_camera_matrix[1];
+    camera_fore_xyz[1] = -rotate_camera_matrix[5];
+    camera_fore_xyz[2] = -rotate_camera_matrix[9];
+    camera_side_xyz[0] = rotate_camera_matrix[0];
+    camera_side_xyz[1] = rotate_camera_matrix[4];
+    camera_side_xyz[2] = rotate_camera_matrix[8];
 
 
     // Figure out the onscreen point matrix...

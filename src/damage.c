@@ -1,3 +1,11 @@
+#include "damage.h"
+
+#include "datafile.h"
+#include "item.h"
+#include "object.h"
+
+#include <stdlib.h>
+
 // <ZZ> This file has stuff related to damage...
 unsigned char* pnumber_file = NULL;
 
@@ -166,14 +174,14 @@ void damage_character(unsigned short character, unsigned char damage_type, unsig
                 {
                     damage_amount = start_hits - character_data[82];
                     global_damage_amount = damage_amount;
-                    spawn_xyz[X] = *((float*) (character_data));
-                    spawn_xyz[Y] = *((float*) (character_data+4));
-                    spawn_xyz[Z] = (*((float*) (character_data+8))) + (character_data[175] - 1);
+                    spawn_xyz[0] = *((float*) (character_data));
+                    spawn_xyz[1] = *((float*) (character_data+4));
+                    spawn_xyz[2] = (*((float*) (character_data+8))) + (character_data[175] - 1);
 
 
     //log_message("INFO:     Particle number amount == %d", damage_amount);
 
-                    child_data = obj_spawn(PARTICLE, spawn_xyz[X], spawn_xyz[Y], spawn_xyz[Z], pnumber_file, MAX_PARTICLE);
+                    child_data = obj_spawn(PARTICLE, spawn_xyz[0], spawn_xyz[1], spawn_xyz[2], pnumber_file, MAX_PARTICLE);
                     current_object_item = backup_item;
                     current_object_data = backup_data;
                     if(child_data)

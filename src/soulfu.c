@@ -1,36 +1,20 @@
 #define EXECUTABLE_VERSION   "1.5 NICEWARE"
 
-unsigned short onscreen_draw_count;
 #include "soulfu.h"
-#include "logfile.c"
-#include "gameseed.c"
-#include "common.c"
-#include "datafile.c"
-#include "random.c"
-#include "object.c"
-#include "dcodejpg.c"
-#include "dcodepcx.c"
-#include "dcodeogg.c"
-#include "dcodeddd.c"
-#include "display.c"
-#include "sound.c"
-#include "input.c"
-#include "tool.c"
-#include "dcodesrc.c"
-#include "page.c"
-#include "message.c"
-#include "render.c"
-#include "volume.c"
-#include "room.c"
-#include "map.c"
-#include "water.c"
-#include "damage.c"
-#include "network.c"
-#include "experi.c"
-#include "item.c"
-#include "runsrc.c"
-#include "particle.c"
-#include "charact.c"
+#include "gameseed.h"
+#include "datafile.h"
+#include "dcodesrc.h"
+#include "object.h"
+#include "input.h"
+#include "display.h"
+#include "common.h"
+#include "map.h"
+#include "runsrc.h"
+
+#include <string.h>
+#include <stdlib.h>
+
+unsigned short onscreen_draw_count;
 
 //-----------------------------------------------------------------------------------------------
 void main_loop(void)
@@ -161,8 +145,8 @@ onscreen_draw_count = 0;
             display_look_at(camera_xyz, target_xyz);
             // Remember camera facing for automap...  Use side, because fore can look down and
             // that screws up the scaling...
-            map_side_xy[X] = camera_side_xyz[X];
-            map_side_xy[Y] = camera_side_xyz[Y];
+            map_side_xy[0] = camera_side_xyz[0];
+            map_side_xy[1] = camera_side_xyz[1];
 
 
 
@@ -347,17 +331,17 @@ onscreen_draw_count = 0;
                     selection_box_on = FALSE;
                     selection_close_type = BORDER_SELECT;
                     // Ensure that top left is less than bottom right...
-                    if(selection_box_tl[X] > selection_box_br[X])
+                    if(selection_box_tl[0] > selection_box_br[0])
                     {
-                        x = selection_box_tl[X];
-                        selection_box_tl[X] = selection_box_br[X];
-                        selection_box_br[X] = x;
+                        x = selection_box_tl[0];
+                        selection_box_tl[0] = selection_box_br[0];
+                        selection_box_br[0] = x;
                     }
-                    if(selection_box_tl[Y] > selection_box_br[Y])
+                    if(selection_box_tl[1] > selection_box_br[1])
                     {
-                        y = selection_box_tl[Y];
-                        selection_box_tl[Y] = selection_box_br[Y];
-                        selection_box_br[Y] = y;
+                        y = selection_box_tl[1];
+                        selection_box_tl[1] = selection_box_br[1];
+                        selection_box_br[1] = y;
                     }
 
                 }
@@ -502,8 +486,8 @@ onscreen_draw_count = 0;
                     display_color(instrument_color[i]);
                     display_start_line();
                         display_vertex_xy(x, y);
-                        x+=player_device_xy[i][X]*25.0f;
-                        y+=player_device_xy[i][Y]*25.0f;
+                        x+=player_device_xy[i][0]*25.0f;
+                        y+=player_device_xy[i][1]*25.0f;
                         display_vertex_xy(x, y);
                     display_end();
                 }
@@ -625,7 +609,7 @@ int main(int argc, char *argv[])
         mip_map_active = (*(config+98));
         fast_and_ugly_active = (*(config+101));
         log_message("INFO:   Config file read okay...");
-        if(!display_setup(screen_sizes_xy[screen_size][X], screen_sizes_xy[screen_size][Y], bit_depth, z_depth, full_screen)) { log_message("ERROR:  display_setup() failed");  exit(1); }
+        if(!display_setup(screen_sizes_xy[screen_size][0], screen_sizes_xy[screen_size][1], bit_depth, z_depth, full_screen)) { log_message("ERROR:  display_setup() failed");  exit(1); }
     }
     else
     {

@@ -5,6 +5,13 @@
 // !!!BAD!!!
 // !!!BAD!!!
 
+#include "sound.h"
+
+#include "soulfu.h"
+#include "datafile.h"
+
+#include <stdio.h>
+#include <SDL/SDL_audio.h>
 
 #define INFI_LOOP_FADE 3                // How fast insect buzzing can go away (to make it not choppy)
 

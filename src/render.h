@@ -7,6 +7,7 @@
 
 extern unsigned char* global_bone_data;
 extern unsigned short global_num_bone;
+extern unsigned char global_rdy_detail_level;
 
 /* render.c */
 unsigned char *render_generate_model_world_data(unsigned char *data, unsigned short frame, float *matrix, unsigned char *write);

@@ -4,6 +4,9 @@
 // <ZZ> This file contains functions to run scripts after they've been compiled
 //      run_script                  - The main function to run a script
 
+extern signed int return_int;
+extern unsigned short global_luck_timer;
+
 /* runsrc.c */
 void call_enchantment_function(void);
 void autoaim_helper(float speed_xy, float speed_z, unsigned short spin, unsigned char team, unsigned char dexterity, unsigned short cone, unsigned char height, unsigned char function);
